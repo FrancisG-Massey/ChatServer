@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright (c) 2013 Francis G.
+  
+  This file is part of ChatServer.
+  
+  ChatServer is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+  
+  ChatServer is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+  
+  You should have received a copy of the GNU General Public License
+  along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:web="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" id="WebApp_ID" version="2.5">
+  <display-name>Chat Server</display-name>
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+    <welcome-file>index.htm</welcome-file>
+    <welcome-file>index.jsp</welcome-file>
+    <welcome-file>default.html</welcome-file>
+    <welcome-file>default.htm</welcome-file>
+    <welcome-file>default.jsp</welcome-file>
+  </welcome-file-list>
+  <servlet>
+    <description></description>
+    <display-name>ChatServer</display-name>
+    <servlet-name>ChatServer</servlet-name>
+    <servlet-class>com.example.chat.server.ChatServer</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>ChatServer</servlet-name>
+    <url-pattern>/ChatServer</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description></description>
+    <display-name>ChannelRequestManager</display-name>
+    <servlet-name>ChannelRequestManager</servlet-name>
+    <servlet-class>com.example.chat.request.ChannelRequestManager</servlet-class>
+    <init-param>
+      <param-name>configFile</param-name>
+      <param-value>/WEB-INF/default.properties</param-value>
+    </init-param>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>ChannelRequestManager</servlet-name>
+    <url-pattern>/channel/*</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description></description>
+    <display-name>SearchManager</display-name>
+    <servlet-name>SearchManager</servlet-name>
+    <servlet-class>com.example.chat.request.SearchManager</servlet-class>
+    <init-param>
+      <param-name>configFile</param-name>
+      <param-value>/WEB-INF/default.properties</param-value>
+    </init-param>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>SearchManager</servlet-name>
+    <url-pattern>/search/*</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description></description>
+    <display-name>UserRequestManager</display-name>
+    <servlet-name>UserRequestManager</servlet-name>
+    <servlet-class>com.example.chat.request.UserRequestManager</servlet-class>
+    <init-param>
+      <param-name>configFile</param-name>
+      <param-value>/WEB-INF/default.properties</param-value>
+    </init-param>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>UserRequestManager</servlet-name>
+    <url-pattern>/user/*</url-pattern>
+  </servlet-mapping>
+  <listener>
+    <listener-class>com.example.chat.server.ServerMonitor</listener-class>
+  </listener>
+</web-app>

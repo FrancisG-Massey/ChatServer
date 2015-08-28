@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>-->
+<script type="text/javascript" src="javascripts/jquery-2.0.3.js"></script>
+<script type="text/javascript" src="chat_client.js"></script>
+<title>Chat Client</title>
+<link href="styles/chat_client.css" type="text/css" rel="stylesheet" >
+</head>
+<body onload="chatClient.init()">
+<table id="main">
+	<tr><td colspan=2>
+	<ul id="menu_bar"></ul>
+	</td></tr>
+	<tr><td id="message_cell">
+		<span id="messages"></span>
+	</td><td id="userlist_cell">
+		<ul id="userlist"></ul>
+	</td></tr>
+	<tr><td colspan=2 id="display_bar">
+	<span id="username"></span>
+	<input type="text" id="message_input" disabled="disabled" />
+	<div id="channel_name"></div>
+	</td></tr>
+</table>
+<div id="error_txt"></div>
+</body>
+</html>

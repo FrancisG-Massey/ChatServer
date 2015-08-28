@@ -1,0 +1,214 @@
+@CHARSET "UTF-8";
+
+
+#main {
+    height: 500px;
+    width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid black;
+}
+
+#message_cell {
+	height: 450px;
+	width: 70%;
+	border: 1px solid black;
+	vertical-align: bottom;
+	padding: 10px;
+}
+
+#messages {
+	vertical-align: bottom;
+}
+
+.message_text span {
+	vertical-align: middle;
+	font-size: 16px;
+	font-family: sans-serif;
+}
+
+.message_text img {
+	vertical-align: middle;
+	height: 17px;
+}
+
+#userlist_cell {
+	height: 450px;
+	width: 25%;
+	border: 1px solid black;
+	vertical-align: top;
+}
+
+#userlist {
+	list-style-type: none;
+	margin: 0px;
+	padding: 0px;
+	text-align: center;
+}
+
+.channel_user {
+	margin-left: auto;
+	margin-right: auto;
+	border: 1px solid black;
+	border-radius: 5px;
+	cursor: pointer;
+	postition: relative;
+}
+
+.channel_user span {
+	vertical-align: middle;
+	font-size: 18px;
+	font-family: sans-serif;
+	font-weight: bold;
+}
+
+.channel_user img {
+	vertical-align: middle;
+	height: 18px;
+}
+
+#channel_name {
+	float: right;
+}
+
+.dialogList {
+	list-style-type: none;
+	display: inline-block;
+	width: 500px;
+	overflow: auto;
+	max-height: 10em;
+}
+
+#ranklist {
+	
+}
+
+#banlist {
+	
+}
+
+/*Drop-down menu*/
+#menu_bar {
+	padding: 2px;
+	border: 1px black solid;
+	border-radius: 5px;
+	list-style-type: none;
+	background-color: #000;
+	color: #fff;
+	font-family: sans-serif;
+}
+#menu_bar li {
+	display: inline-block;
+	position: relative;
+	cursor: pointer;
+    padding: 2px 5px;    
+    font-size: 16px;
+    font-weight: bold;
+}
+
+#menu_bar li:hover {
+	background-color: #444;
+}
+
+#menu_bar li ul {
+	left: -9999px;
+    position: absolute;
+    text-align: left;
+    padding: 0px;
+}
+
+#menu_bar li:hover ul {	
+    left: 0px;
+}
+
+#menu_bar ul li {
+    font-weight: normal;
+    font-size: 14px;
+    width: 120px;
+    background-color: #444;	
+}
+
+#menu_bar ul li:hover {
+	background-color: #777;
+}
+
+ul.dropdown {
+	position: absolute;
+    text-align: center;
+    padding: 0;	
+    width: 120px;
+    list-style-type: none;
+}
+
+ul.dropdown li {
+    font-weight: normal;
+    font-size: 14px;
+    background-color: #BBB;	
+}
+
+ul.dropdown li:hover {
+	background-color: #999;
+}
+
+/*Dialogs*/
+#dialog_filter {
+    z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: block;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    left: 0px;
+    top: 0px;
+    overflow-y: scroll;
+}
+
+#dialog {
+    z-index: 10000;
+    border:1px solid #346789;
+    border-radius:0.5em;
+    position:absolute;
+    background-color:#FFF;
+    height: 10em;
+    width: 40em;
+    left: 50%;
+    top: 50%;
+    margin-left: -20em;
+    margin-top: -5em;
+    overflow: auto;
+    padding: 0 1em;
+}
+
+#dialog_close {
+    position: absolute;
+    bottom: 1em;
+    right: 1em;    
+}
+
+#dialog_controls {
+    position: absolute;
+    bottom: 1em;
+    left: 1em;
+}
+
+#dialog_heading {
+    text-align: center;
+}
+
+/*Colours*/
+.green {
+	color: green;
+}
+.red {
+	color: red;
+}
+.orange {
+	color: orange;
+}
+.blue {
+	color: blue;
+}
+
+.b {
+	font-weight: bold;
+}

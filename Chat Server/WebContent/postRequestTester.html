@@ -1,0 +1,55 @@
+<!--
+Copyright (c) 2013 Francis G.
+
+This file is part of ChatServer.
+
+ChatServer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+ChatServer is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>POST Request Tester</title>
+<script type="text/javascript">
+function submitPostData () {
+	var postUrl = document.getElementById("postUrl").value,
+	json = document.getElementById("postRequest").value,
+	ajax = new XMLHttpRequest();
+	ajax.open("POST", postUrl, false);
+	ajax.setRequestHeader("Content-Type", "application/json");
+	ajax.send(json);
+	document.getElementById("response").innerHTML = ajax.responseText;
+}
+function genSession () {
+	var username = "test1", password = "test", loginURL = "user/login/standard/", response;
+	ajax = new XMLHttpRequest();
+	ajax.open("POST", loginURL, false);
+	ajax.setRequestHeader("Content-Type", "application/json");
+	ajax.send('{"username":"'+username+'", "password":"'+password+'"}');
+	if (response=JSON.parse(ajax.responseText)) {
+		document.getElementById("session").value = response.session;
+	} else {
+		document.getElementById("response").innerHTML = ajax.responseText;
+	}
+}
+</script>
+</head>
+<body>
+<input type="button" value="Generate session ID" onclick="genSession()" /> <input type="text" id="session" readonly="readonly" /><br />
+URL: <input type="text" size="100" id="postUrl" /><br />
+JSON string: <input type="text" size="100" id="postRequest" /><br />
+<input type="button" onclick="submitPostData()" value="Send Request" /><br />
+Response: <div id="response"></div>
+</body>
+</html>
