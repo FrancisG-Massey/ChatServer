@@ -36,13 +36,29 @@ public interface ChannelDataManager {
 	//Rank changes
 	public void addRank (int channelID, int userID);
 	
+	/**
+	 * Requests that the rank for the specified user be changed
+	 * @param channelID The ID of the channel who the user belongs to
+	 * @param userID The ID of the user
+	 * @param rankID The rank to change to
+	 */
 	public void changeRank (int channelID, int userID, int rankID);
 	
 	public void removeRank (int channelID, int userID);
 	
 	//Ban changes
+	/**
+	 * Notifies the channel IO that the specified user should be added to the channel's ban list
+	 * @param channelID The ID of the channel
+	 * @param userID The ID of the user to ban
+	 */
 	public void addBan (int channelID, int userID);
 	
+	/**
+	 * Notifies the channel IO that the specified user should be removed from the channel's ban list
+	 * @param channelID The ID of the channel
+	 * @param userID The ID of the user to unban
+	 */
 	public void removeBan (int channelID, int userID);
 	
 	//Group changes
