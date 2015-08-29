@@ -133,4 +133,16 @@ public class JDBCUserManager implements UserDataManager {
 		return false;
 	}
 
+	@Override
+	public void close() throws Exception {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void commitChanges() throws IOException {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

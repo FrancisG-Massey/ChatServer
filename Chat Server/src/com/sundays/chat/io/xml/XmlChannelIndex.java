@@ -41,6 +41,12 @@ import org.apache.log4j.Logger;
 import com.sundays.chat.io.ChannelIndex;
 
 /**
+ * The XML implementation of the {@link ChannelIndex} persistance layer interface.<br /><br />
+ * 
+ * This class loads channel data from an XML file and stores it in memory.
+ * Any changes made to the index are retained in memory until either the {@link #close()} or {@link #commitChanges()} methods are called.<br /><br />
+ * 
+ * As this class loads and stores the entire index in memory, it is not suitable for large indicies.
  * 
  * @author Francis
  */
@@ -54,18 +60,25 @@ public class XmlChannelIndex implements ChannelIndex {
 	private Map<Integer, String> lookupById = new HashMap<>();
 
 	private final File indexFile;
+	
+	private boolean changesPending = false;
 
 	public XmlChannelIndex(File indexFile) {
 		this.indexFile = indexFile;
-
-		try (Reader input = new BufferedReader(new FileReader(indexFile))) {
-			readIndex(input);
-		} catch (XMLStreamException | IOException ex) {
-			logger.error("Failed to load channel index", ex);
+		if (!indexFile.exists()) {
+			logger.warn("Channel index file "+indexFile.getAbsolutePath()+" does not exist - creating empty index.");
+			commitChanges();
+		} else {
+			try (Reader input = new BufferedReader(new FileReader(indexFile))) {
+				readIndex(input);
+				logger.info("Loaded channel index - "+lookupByName.size()+" channels.");
+			} catch (XMLStreamException | IOException ex) {
+				logger.error("Failed to load channel index", ex);
+			}
 		}
 	}
 
-	public void readIndex(Reader input) throws XMLStreamException {
+	private void readIndex(Reader input) throws XMLStreamException {
 		XMLInputFactory factory = XMLInputFactory.newInstance();
 
 		XMLStreamReader reader = factory.createXMLStreamReader(input);
@@ -89,8 +102,24 @@ public class XmlChannelIndex implements ChannelIndex {
 
 	@Override
 	public Map<String, Integer> search(String term, SearchType type, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+		Map<String, Integer> results = new HashMap<>();
+		int count = 0;
+		for (Map.Entry<String, Integer> channel : lookupByName.entrySet()) {
+			if (count > limit) {
+				break;
+			}
+			switch (type) {
+			case ALL:
+				results.put(channel.getKey(), channel.getValue());
+				break;
+			case CONTAINS:
+				if (channel.getKey().contains(term)) {
+					results.put(channel.getKey(), channel.getValue());
+				}
+				break;		
+			}
+		}
+		return results;
 	}
 
 	@Override
@@ -98,7 +127,15 @@ public class XmlChannelIndex implements ChannelIndex {
 		return lookupById.containsKey(id);
 	}
 	
-	public void save () {
+	@Override
+	public synchronized void close () throws Exception {
+		if (changesPending) {
+			commitChanges();
+		}
+	}
+	
+	@Override
+	public synchronized void commitChanges () {
 		try (Writer writer = new BufferedWriter(new FileWriter(indexFile))) {
 			writeIndex(writer);
 		} catch (XMLStreamException | IOException ex) {
@@ -106,7 +143,7 @@ public class XmlChannelIndex implements ChannelIndex {
 		}
 	}
 
-	public void writeIndex(Writer output) throws XMLStreamException {
+	private void writeIndex(Writer output) throws XMLStreamException {
 		XMLOutputFactory factory = XMLOutputFactory.newInstance();
 		XMLStreamWriter writer = factory.createXMLStreamWriter(output);
 		writer.writeStartDocument("UTF-8", "1.1");
@@ -118,6 +155,7 @@ public class XmlChannelIndex implements ChannelIndex {
 		}
 		writer.writeEndElement();
 		writer.writeEndDocument();
+		changesPending = false;
 	}
 
 }

@@ -130,10 +130,11 @@ public final class UserManager {
 		} catch (IOException ex) {
 			logger.error("Failed to fetch user ID for username "+username, ex);
 		}
-        if (userID != -1) {
-        	cachedUsernames.put(userID, username);
-            lookupByUsername.put(username.toLowerCase(), userID);
-        }
+		if (userID != -1) {
+			cachedUsernames.put(userID, username);
+	        lookupByUsername.put(username.toLowerCase(), userID);
+		}
+    	
         return userID;
     }
     

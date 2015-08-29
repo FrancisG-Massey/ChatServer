@@ -16,10 +16,31 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
+package com.sundays.chat.utils;
+
 /**
- * An implementation of the ChatServer persistence layer which uses XML files to store and retrieve data.<br /><br />
+ * Thrown to indicate there is a problem with configuration.
  * 
- * This implementation is designed for smaller, portable applications, where the ability to move the application data is more important than the ability to sustain large numbers of users.<br />
- * If it is necessary to sustain a large number of users and channels, the {@link com.sundays.chat.io.jdbc JDBC persistence layer} should be used instead.
+ * @author Francis
  */
-package com.sundays.chat.io.xml;
+public class ConfigurationException extends Exception {
+
+	private static final long serialVersionUID = 1088210868075023383L;
+
+	public ConfigurationException() {
+		super();
+	}
+
+	public ConfigurationException(String message) {
+		super(message);
+	}
+
+	public ConfigurationException(String message, Throwable cause) {
+		super(message, cause);
+	}
+
+	public ConfigurationException(Throwable cause) {
+		super(cause);
+	}
+
+}

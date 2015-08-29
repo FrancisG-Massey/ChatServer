@@ -18,6 +18,7 @@
  *******************************************************************************/
 package com.sundays.chat.io.jdbc;
 
+import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -110,6 +111,17 @@ public class DbChannelIndex implements ChannelIndex {
 	public Map<String, Integer> search(String term, SearchType type, int limit) {
 		Map<String, Integer> results = new HashMap<String, Integer>();
 		return results;
+	}
+
+	@Override
+	public void close() throws Exception {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void commitChanges() throws IOException {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

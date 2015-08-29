@@ -18,6 +18,7 @@
  *******************************************************************************/
 package com.sundays.chat.io;
 
+import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -27,7 +28,7 @@ import java.util.Map;
  * 
  * @author Francis
  */
-public interface ChannelIndex {
+public interface ChannelIndex extends AutoCloseable {
 	
 	public static enum SearchType {
 		ALL, CONTAINS;
@@ -56,4 +57,6 @@ public interface ChannelIndex {
 	 * @return true if the channel exists, false otherwise.
 	 */
 	public boolean channelExists (int id);
+	
+	public void commitChanges () throws IOException;
 }
