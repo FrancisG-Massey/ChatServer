@@ -21,6 +21,9 @@ package com.sundays.chat.io;
 import java.util.Map;
 
 /**
+ * The persistence layer interface for resolving channel names and IDs.
+ * 
+ * The application will not use caching when calling methods in this interface, so implementations should use their own caching where appropriate.
  * 
  * @author Francis
  */
@@ -46,5 +49,11 @@ public interface ChannelIndex {
 	 */
 	public Map<String, Integer> search (String term, SearchType type, int limit);
 	
+	/**
+	 * Checks whether a channel exists with the specified ID.
+	 * 
+	 * @param id The ID of the channel to check
+	 * @return true if the channel exists, false otherwise.
+	 */
 	public boolean channelExists (int id);
 }

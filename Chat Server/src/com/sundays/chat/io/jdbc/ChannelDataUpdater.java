@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.io.database;
+package com.sundays.chat.io.jdbc;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -32,7 +32,7 @@ import javax.sql.rowset.serial.SerialBlob;
 import org.apache.log4j.Logger;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
-import com.sundays.chat.interfaces.ChannelDetails;
+import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.server.Permission;
 import com.sundays.chat.server.Settings;
 import com.sundays.chat.utils.ByteArrayBuilder;
@@ -42,7 +42,7 @@ public class ChannelDataUpdater {
 	
 	private static final Logger logger = Logger.getLogger(ChannelDataUpdater.class);
 	
-	public static final String CHANNEL_TABLE_NAME = ChannelDatabaseManager.DETAIL_TABLE_NAME;
+	public static final String CHANNEL_TABLE_NAME = JDBCChannelManager.DETAIL_TABLE_NAME;
 
 	public static Integer[] decompressPermissions (byte[] permissions) {
 		Integer[] permissionArray = new Integer[Permission.values().length];

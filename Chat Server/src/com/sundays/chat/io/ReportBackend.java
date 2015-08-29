@@ -16,14 +16,12 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.interfaces;
+package com.sundays.chat.io;
 
 import java.util.List;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import com.sundays.chat.server.User;
 
 public interface ReportBackend {
 
@@ -36,7 +34,7 @@ public interface ReportBackend {
      * @param message			a custom message sent by the reporter, explaining the issue
      * @throws JSONException	throws an exception if the data could not be inserted into a JSONObject, for whatever reason.
      */
-	public void sendChannelReport(List<JSONObject> channelMessages, User reporter, int channelID, String message) throws JSONException;
+	public void sendChannelReport(List<JSONObject> channelMessages, UserDetails reporter, int channelID, String message) throws JSONException;
 	
 	public void sendUserReport(List<JSONObject> userMessages, JSONObject report, String message) throws JSONException;
 }

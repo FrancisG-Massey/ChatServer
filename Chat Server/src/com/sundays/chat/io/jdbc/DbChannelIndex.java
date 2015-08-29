@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.io.database;
+package com.sundays.chat.io.jdbc;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -36,9 +36,9 @@ import com.sundays.chat.io.ChannelIndex;
  * 
  * @author Francis
  */
-public class DatabaseChannelIndex implements ChannelIndex {
+public class DbChannelIndex implements ChannelIndex {
 	
-	private static final Logger logger = Logger.getLogger(DatabaseChannelIndex.class);
+	private static final Logger logger = Logger.getLogger(DbChannelIndex.class);
 	
 	private final Cache<String, Integer> lookupCache = CacheBuilder.newBuilder().maximumSize(1000).build();
 	private final Cache<Integer, Boolean> existsCache = CacheBuilder.newBuilder().maximumSize(1000).build();
@@ -48,7 +48,7 @@ public class DatabaseChannelIndex implements ChannelIndex {
 	private PreparedStatement checkExistanceQuery;
 	
 	
-	public DatabaseChannelIndex (ConnectionManager dbCon) {
+	public DbChannelIndex (ConnectionManager dbCon) {
 		this.dbCon = dbCon;
 	}
 	

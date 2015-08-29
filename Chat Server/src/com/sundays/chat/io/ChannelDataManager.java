@@ -21,12 +21,11 @@ package com.sundays.chat.io;
 import java.util.List;
 import java.util.Map;
 
-import com.sundays.chat.interfaces.ChannelDetails;
-import com.sundays.chat.interfaces.ChannelGroupData;
-
 /**
- * This interface is used to communicate permanent channel data between a variable back-end and the ChatServer module.
+ * This interface is used to communicate permanent channel data between the persistence layer and the application.
  * The design is open, so that alterations can occur to any back-end (eg database, xml files, remote server)
+ * 
+ * @author Francis
  */
 public interface ChannelDataManager {	
 	
@@ -39,8 +38,8 @@ public interface ChannelDataManager {
 	/**
 	 * Requests that the rank for the specified user be changed
 	 * @param channelID The ID of the channel who the user belongs to
-	 * @param userID The ID of the user
-	 * @param rankID The rank to change to
+	 * @param userID The ID of the user to change
+	 * @param rankID The ID of the rank to change to
 	 */
 	public void changeRank (int channelID, int userID, int rankID);
 	
@@ -72,6 +71,9 @@ public interface ChannelDataManager {
 	public void syncDetails (int channelID, ChannelDetails details);
 	
 	//Synchronise all changes
+	/**
+	 * Called 
+	 */
 	public void commitPendingChanges ();
 
 	//Data retrieval

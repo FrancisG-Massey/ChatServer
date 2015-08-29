@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.io.database;
+package com.sundays.chat.io.jdbc;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,11 +28,11 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.sundays.chat.interfaces.ChannelDetails;
-import com.sundays.chat.interfaces.ChannelGroupData;
 import com.sundays.chat.io.ChannelDataManager;
+import com.sundays.chat.io.ChannelDetails;
+import com.sundays.chat.io.ChannelGroupData;
 
-public class ChannelDatabaseManager implements ChannelDataManager {
+public class JDBCChannelManager implements ChannelDataManager {
 
 	private static final Logger logger = Logger.getLogger(GroupDataUpdater.class);
 
@@ -50,7 +50,7 @@ public class ChannelDatabaseManager implements ChannelDataManager {
 	private PreparedStatement banFetchQuery;
 	private PreparedStatement groupFetchQuery;
 
-	public ChannelDatabaseManager(ConnectionManager dbCon) {
+	public JDBCChannelManager(ConnectionManager dbCon) {
 		this.dbCon = dbCon;
 	}
 

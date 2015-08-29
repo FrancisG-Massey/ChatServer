@@ -19,17 +19,30 @@
 package com.sundays.chat.io;
 
 /**
- * An interface used between the server layer and the persistence layer to return the relevant IO managers for the percistance layer used.
+ * An interface used to centralise all different communication interfaces for the persistence layer.
+ * 
+ * Classes which implement this interface should ensure communication interfaces returned when methods are called remain <b>the same for every call to the method</b>, as the application is not guaranteed to only call each method once.
+ * 
  * @author Francis
  */
-public interface IOManager {
+public interface IOManager extends AutoCloseable {
 	
+	/**
+	 * Returns the IO interface for loading and saving user data
+	 * @return the {@linkplain UserDataManager} implementation for the persistance layer
+	 */
 	public UserDataManager getUserIO();
 	
+	/**
+	 * Returns the IO interface for finding channels
+	 * @return the {@linkplain ChannelIndex} implementation for the persistance layer
+	 */
 	public ChannelIndex getChannelIndex();
 	
+	/**
+	 * Returns the IO interface for loading and saving channel data
+	 * @return the {@linkplain ChannelDataManager} implementation for the persistance layer
+	 */
 	public ChannelDataManager getChannelIO();
-	
-	public void shutdown() throws Exception;
 
 }

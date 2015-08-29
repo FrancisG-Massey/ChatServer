@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright (c) 2013 Francis G.
+  Copyright (c) 2015 Francis G.
   
   This file is part of ChatServer.
   
@@ -41,7 +41,7 @@
     <description></description>
     <display-name>ChannelRequestManager</display-name>
     <servlet-name>ChannelRequestManager</servlet-name>
-    <servlet-class>com.example.chat.request.ChannelRequestManager</servlet-class>
+    <servlet-class>com.example.chat.api.servlet.ChannelRequestManager</servlet-class>
     <init-param>
       <param-name>configFile</param-name>
       <param-value>/WEB-INF/default.properties</param-value>
@@ -55,7 +55,7 @@
     <description></description>
     <display-name>SearchManager</display-name>
     <servlet-name>SearchManager</servlet-name>
-    <servlet-class>com.example.chat.request.SearchManager</servlet-class>
+    <servlet-class>com.example.chat.api.servlet.SearchManager</servlet-class>
     <init-param>
       <param-name>configFile</param-name>
       <param-value>/WEB-INF/default.properties</param-value>
@@ -69,7 +69,7 @@
     <description></description>
     <display-name>UserRequestManager</display-name>
     <servlet-name>UserRequestManager</servlet-name>
-    <servlet-class>com.example.chat.request.UserRequestManager</servlet-class>
+    <servlet-class>com.example.chat.api.servlet.UserRequestManager</servlet-class>
     <init-param>
       <param-name>configFile</param-name>
       <param-value>/WEB-INF/default.properties</param-value>

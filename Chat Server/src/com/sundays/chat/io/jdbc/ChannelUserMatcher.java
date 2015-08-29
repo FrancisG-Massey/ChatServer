@@ -16,41 +16,59 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.interfaces;
+package com.sundays.chat.io.jdbc;
 
-public class ChannelGroupData {
-	
-	public final int groupID, channelID;
-	public String groupName;
-	public String permissions;
-	public String type;
+public class ChannelUserMatcher {
 
-	public String groupIconUrl;
-	public int overrides;
-	
-	public ChannelGroupData (int channelID, int groupID, String groupName, String permissions, 
-			String type, String groupIconUrl) {
+	public final int channelID, userID;
+
+	public ChannelUserMatcher (int channelID, int userID) {
 		this.channelID = channelID;
-		this.groupID = groupID;
-		this.groupName = groupName;
-		this.permissions = permissions;
-		this.type = type;
-		this.groupIconUrl = groupIconUrl;
+		this.userID = userID;
 	}
-	
-	public ChannelGroupData overrides (int overrides) {
-		this.overrides = overrides;
-		return this;
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + channelID;
+		result = prime * result + userID;
+		return result;
 	}
-	
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		ChannelUserMatcher other = (ChannelUserMatcher) obj;
+		if (channelID != other.channelID) {
+			return false;
+		}
+		if (userID != other.userID) {
+			return false;
+		}
+		return true;
+	}
+
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
-		return "ChannelGroupData [groupID=" + groupID + ", channelID="
-				+ channelID + ", groupName=" + groupName + ", permissions="
-				+ permissions + ", type=" + type + ", groupIconUrl="
-				+ groupIconUrl + ", overrides=" + overrides + "]";
+		return "ChannelUserMatcher [channelID=" + channelID + ", userID="
+				+ userID + "]";
 	}
 }

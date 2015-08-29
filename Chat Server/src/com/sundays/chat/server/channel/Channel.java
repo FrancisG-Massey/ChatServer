@@ -35,9 +35,9 @@ import java.util.logging.Logger;
 
 import org.json.JSONObject;
 
-import com.sundays.chat.interfaces.ChannelDetails;
-import com.sundays.chat.interfaces.ChannelGroupData;
 import com.sundays.chat.io.ChannelDataManager;
+import com.sundays.chat.io.ChannelDetails;
+import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.server.Permission;
 import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.User;

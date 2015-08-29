@@ -28,7 +28,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.sundays.chat.interfaces.ChannelGroupData;
+import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.server.Settings.GroupType;
 
 public class ChannelGroup {

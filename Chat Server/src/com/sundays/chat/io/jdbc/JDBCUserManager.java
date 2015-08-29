@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.io.database;
+package com.sundays.chat.io.jdbc;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -27,7 +27,7 @@ import java.sql.SQLException;
 import com.sundays.chat.io.UserDataManager;
 import com.sundays.chat.io.UserDetails;
 
-public class DatabaseUserManager implements UserDataManager {
+public class JDBCUserManager implements UserDataManager {
 	
 	private Connection dbCon;
 	private PreparedStatement userCreation;
@@ -35,7 +35,7 @@ public class DatabaseUserManager implements UserDataManager {
 	private PreparedStatement usernameLookup;
 	private PreparedStatement userDataSave;
 	
-	public DatabaseUserManager (Connection dbCon) {
+	public JDBCUserManager (Connection dbCon) {
 		this.dbCon = dbCon;
 	}
 

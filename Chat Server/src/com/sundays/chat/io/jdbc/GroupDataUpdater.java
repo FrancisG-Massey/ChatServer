@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.io.database;
+package com.sundays.chat.io.jdbc;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -28,16 +28,16 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.log4j.Logger;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
-import com.sundays.chat.interfaces.ChannelGroupData;
+import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.server.Settings;
 
 public class GroupDataUpdater {
 	
 	private static final Logger logger = Logger.getLogger(GroupDataUpdater.class);
 	
-	public static final String RANK_TABLE_NAME = ChannelDatabaseManager.RANK_TABLE_NAME;
-	public static final String BAN_TABLE_NAME = ChannelDatabaseManager.BAN_TABLE_NAME;
-	public static final String GROUP_TABLE_NAME = ChannelDatabaseManager.GROUP_TABLE_NAME;
+	public static final String RANK_TABLE_NAME = JDBCChannelManager.RANK_TABLE_NAME;
+	public static final String BAN_TABLE_NAME = JDBCChannelManager.BAN_TABLE_NAME;
+	public static final String GROUP_TABLE_NAME = JDBCChannelManager.GROUP_TABLE_NAME;
 	
 	public GroupDataUpdater () {
 		

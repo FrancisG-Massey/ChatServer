@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.io.database;
+package com.sundays.chat.io.jdbc;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -24,17 +24,17 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.sundays.chat.interfaces.ReportBackend;
-import com.sundays.chat.server.User;
+import com.sundays.chat.io.ReportBackend;
+import com.sundays.chat.io.UserDetails;
 
-public class ReportDatabaseManager implements ReportBackend {
+public class JDBCReportManager implements ReportBackend {
 
     //A list which contains any channel reports to be sent to a global moderator
     private final LinkedList<JSONObject> channelReportCue = new LinkedList<JSONObject>();
 	
 	@Override
 	public void sendChannelReport(List<JSONObject> channelMessages,
-			User reporter, int channelID, String message) throws JSONException {
+			UserDetails reporter, int channelID, String message) throws JSONException {
     	JSONObject report = new JSONObject();
     	report.put("reporter", reporter.getUserID());
     	report.put("channelID", channelID);

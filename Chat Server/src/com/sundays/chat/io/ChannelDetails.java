@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.interfaces;
+package com.sundays.chat.io;
 
 import java.util.Arrays;
 import java.util.Map;

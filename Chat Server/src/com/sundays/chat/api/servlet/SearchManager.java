@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.request;
+package com.sundays.chat.api.servlet;
 
 import java.io.IOException;
 import java.util.ArrayList;

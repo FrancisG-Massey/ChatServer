@@ -45,7 +45,7 @@ public class XmlIOManager implements IOManager {
 	}
 
 	@Override
-	public void shutdown() throws Exception {
+	public void close() throws Exception {
 		// TODO Auto-generated method stub
 
 	}

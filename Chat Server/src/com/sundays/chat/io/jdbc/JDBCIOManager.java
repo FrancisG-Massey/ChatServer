@@ -16,25 +16,25 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.io.database;
+package com.sundays.chat.io.jdbc;
 
 import com.sundays.chat.io.ChannelDataManager;
 import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.io.IOManager;
 import com.sundays.chat.io.UserDataManager;
 
-public class DatabaseIOManager implements IOManager {
+public class JDBCIOManager implements IOManager {
 	
 	private UserDataManager userManager;
 	private ChannelIndex channelIndex;
 	private ChannelDataManager channelManager;
 	private ConnectionManager dbcon;
 	
-	public DatabaseIOManager (String url, String username, String password) {
+	public JDBCIOManager (String url, String username, String password) {
 		this.dbcon = new ConnectionManager(url, username, password);
-		this.userManager = new DatabaseUserManager(dbcon.getConnection());
-		this.channelIndex = new DatabaseChannelIndex(dbcon);
-		this.channelManager = new ChannelDatabaseManager(dbcon);
+		this.userManager = new JDBCUserManager(dbcon.getConnection());
+		this.channelIndex = new DbChannelIndex(dbcon);
+		this.channelManager = new JDBCChannelManager(dbcon);
 	}
 
 	@Override
@@ -53,7 +53,7 @@ public class DatabaseIOManager implements IOManager {
 	}
 
 	@Override
-	public void shutdown() throws Exception {
+	public void close() throws Exception {
 		dbcon.close();
 	}
 
