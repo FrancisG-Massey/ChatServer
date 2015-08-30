@@ -26,6 +26,8 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 
+import org.apache.log4j.BasicConfigurator;
+
 import com.sundays.chat.io.IOManager;
 import com.sundays.chat.io.jdbc.JDBCIOManager;
 import com.sundays.chat.server.channel.ChannelAPI;
@@ -67,6 +69,7 @@ public final class ChatServer {
 		}
 		InputStream cfgFile = context.getResourceAsStream(configFile);
 		Properties p = new Properties();
+		BasicConfigurator.configure();
 		try {
 			p.load(cfgFile);
 		} catch (IOException e) {

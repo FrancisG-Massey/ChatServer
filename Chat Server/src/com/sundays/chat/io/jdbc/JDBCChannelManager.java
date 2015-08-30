@@ -34,7 +34,7 @@ import com.sundays.chat.io.ChannelGroupData;
 
 public class JDBCChannelManager implements ChannelDataManager {
 
-	private static final Logger logger = Logger.getLogger(GroupDataUpdater.class);
+	private static final Logger logger = Logger.getLogger(JDBCChannelManager.class);
 
 	public static final String RANK_TABLE_NAME = "channelRanks";
 	public static final String BAN_TABLE_NAME = "channelBans";
@@ -100,7 +100,7 @@ public class JDBCChannelManager implements ChannelDataManager {
 	}
 
 	@Override
-	public void commitPendingChanges() {
+	public void commitChanges() {
 		// Commits all pending updates to the database back-end
 		rankBanUpdater.commitPendingChanges(dbCon);// Commits the rank and ban changes
 		channelUpdater.commitPendingChanges(dbCon);// Commits pending channel details changes
@@ -112,9 +112,9 @@ public class JDBCChannelManager implements ChannelDataManager {
 		try {
 			if (detailFetchQuery == null) {
 				detailFetchQuery = dbCon.getConnection().prepareStatement(
-						"SELECT `channelID`, `channelName`, `channelAbbr`, "
+						"SELECT `id`, `name`, `abbrieviation`, "
 								+ "`permissions`, `rankNames`, `openingMessage`, `trackMessages`," + "`owner`" + " FROM `"
-								+ DETAIL_TABLE_NAME + "` WHERE `channelID` = ?");
+								+ DETAIL_TABLE_NAME + "` WHERE `id` = ?");
 			}
 			detailFetchQuery.setInt(1, channelID);
 			detailFetchQuery.execute();

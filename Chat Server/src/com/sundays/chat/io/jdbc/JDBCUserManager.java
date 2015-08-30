@@ -36,6 +36,9 @@ public class JDBCUserManager implements UserDataManager {
 	private PreparedStatement userDataSave;
 	
 	public JDBCUserManager (Connection dbCon) {
+		if (dbCon == null) {
+			throw new NullPointerException();
+		}
 		this.dbCon = dbCon;
 	}
 

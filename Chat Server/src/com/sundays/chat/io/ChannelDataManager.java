@@ -18,6 +18,7 @@
  *******************************************************************************/
 package com.sundays.chat.io;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -43,18 +44,24 @@ public interface ChannelDataManager {
 	 */
 	public void changeRank (int channelID, int userID, int rankID);
 	
+	/**
+	 * Requests that the rank is removed from the specified user within the specified channel.<br />
+	 * Calling this method on a user who does not hold a rank should have no effect.
+	 * 
+	 * @param channelID The ID of the channel from which to remove the rank.
+	 * @param userID The ID of the user to remove the rank from.
+	 */
 	public void removeRank (int channelID, int userID);
 	
-	//Ban changes
 	/**
-	 * Notifies the channel IO that the specified user should be added to the channel's ban list
+	 * Requests that the specified user is added to the channel's ban list
 	 * @param channelID The ID of the channel
 	 * @param userID The ID of the user to ban
 	 */
 	public void addBan (int channelID, int userID);
 	
 	/**
-	 * Notifies the channel IO that the specified user should be removed from the channel's ban list
+	 * Requests that the specified user is removed from the channel's ban list
 	 * @param channelID The ID of the channel
 	 * @param userID The ID of the user to unban
 	 */
@@ -69,12 +76,6 @@ public interface ChannelDataManager {
 	
 	//Channel detail changes
 	public void syncDetails (int channelID, ChannelDetails details);
-	
-	//Synchronise all changes
-	/**
-	 * Called 
-	 */
-	public void commitPendingChanges ();
 
 	//Data retrieval
 	public ChannelDetails getChannelDetails (int channelID);
@@ -84,4 +85,12 @@ public interface ChannelDataManager {
 	public Map<Integer, Byte> getChannelRanks (int channelID);
 	
 	public List<ChannelGroupData> getChannelGroups (int channelID);
+	
+	/**
+	 * Called regularly to notify the implementation that any pending changes should be saved to the persistance layer.<br />
+	 * This method is included so implementations can use buffering, to avoid setters blocking the application while the data is saved to the back-end.<br />
+	 * As this method is run outside the main thread, appropriate synchronisation should be used.
+	 * @throws IOException if an IO issue occurs during the commit.
+	 */
+	public void commitChanges () throws IOException;
 }

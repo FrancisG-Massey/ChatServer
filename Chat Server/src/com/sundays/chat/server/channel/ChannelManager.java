@@ -19,6 +19,7 @@
 package com.sundays.chat.server.channel;
 
 import java.awt.Color;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map.Entry;
@@ -117,7 +118,11 @@ public class ChannelManager {
     		public void run () {
     			joinLock = true;
     			
-    			permDataUpdater.commitPendingChanges();
+    			try {
+					permDataUpdater.commitChanges();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
     		}
     	}, TaskPriority.HIGH);//Sets synchronising the channel permanent data as a high-priority shutdown task
     }
@@ -159,7 +164,11 @@ public class ChannelManager {
 						}
 					}
 				}
-				permDataUpdater.commitPendingChanges();
+				try {
+					permDataUpdater.commitChanges();
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
 				synchronized (channelUnloadQueue) {
 					for (Channel c : channelUnloadQueue) {
 						try {

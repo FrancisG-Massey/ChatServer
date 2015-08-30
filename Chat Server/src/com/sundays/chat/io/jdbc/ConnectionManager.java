@@ -65,8 +65,8 @@ public class ConnectionManager implements AutoCloseable {
         	Class.forName("com.mysql.jdbc.Driver");
             con = DriverManager.getConnection(connectionString, username, password);
             logger.info("Successfully connected to the chat database.");
-        } catch (SQLException | ClassNotFoundException e) {
-        	logger.error(e);
+        } catch (SQLException | ClassNotFoundException ex) {
+        	logger.error("Problem connecting to database", ex);
         }        
     }
     

@@ -80,10 +80,10 @@ public final class Channel {
         this.channelID = id;
         this.channelBackEnd = backEnd;
         ChannelDetails details = channelBackEnd.getChannelDetails(channelID);
-        this.channelName = details.channelName;
-        this.channelOwner = details.channelOwner;
+        this.channelName = details.name;
+        this.channelOwner = details.owner;
         this.openingMessage = details.openingMessage;
-        this.channelAbbr = details.channelAbbreviation;
+        this.channelAbbr = details.abbreviation;
         this.permissions = validatePermissions(details.permissions);
         this.rankNames = validateRankNames(details.rankNames);
         this.trackMessages = details.trackMessages;

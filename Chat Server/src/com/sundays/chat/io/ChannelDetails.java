@@ -30,25 +30,25 @@ public class ChannelDetails {
 	public static final int MIN_VERSION = 3;//The minimum supported version
 	
 	//Basic string details
-	public String channelName, openingMessage, channelAbbreviation;
-	public final int channelID;//Channel ID	
+	public String name, openingMessage, abbreviation;
+	public final int id;//Channel ID	
 	public Integer[] permissions;//Channel permissions
 	public Map<Integer, String> rankNames;//Channel rank names (these replace the default "Rank One", "Rank Two", etc)
 	public boolean trackMessages;
-	public int channelOwner;
+	public int owner;
 	
-	public ChannelDetails (int channelID, String channelName, String openingMessage, 
-			String channelAbbreviation, Integer[] permissions, Map<Integer, String> rankNames, 
-			boolean trackMessages, int channelOwner) {
+	public ChannelDetails (int id, String name, String openingMessage, 
+			String abbreviation, Integer[] permissions, Map<Integer, String> rankNames, 
+			boolean trackMessages, int owner) {
 		//Full constructor used when data can be added all at once
-		this.channelID = channelID;
-		this.channelName = channelName;
+		this.id = id;
+		this.name = name;
 		this.openingMessage = openingMessage;
-		this.channelAbbreviation = channelAbbreviation;
+		this.abbreviation = abbreviation;
 		this.permissions = permissions;
 		this.rankNames = rankNames;
 		this.trackMessages = trackMessages;
-		this.channelOwner = channelOwner;
+		this.owner = owner;
 	}
 
 	/* (non-Javadoc)
@@ -56,12 +56,12 @@ public class ChannelDetails {
 	 */
 	@Override
 	public String toString() {
-		return "ChannelDetails [channelName=" + channelName
+		return "ChannelDetails [name=" + name
 				+ ", openingMessage=" + openingMessage
-				+ ", channelAbbreviation=" + channelAbbreviation
-				+ ", channelID=" + channelID + ", permissions="
+				+ ", abbreviation=" + abbreviation
+				+ ", id=" + id + ", permissions="
 				+ Arrays.toString(permissions) + ", rankNames=" + rankNames
-				+ ", trackMessages=" + trackMessages + ", channelOwner="
-				+ channelOwner + "]";
+				+ ", trackMessages=" + trackMessages + ", owner="
+				+ owner + "]";
 	}
 }

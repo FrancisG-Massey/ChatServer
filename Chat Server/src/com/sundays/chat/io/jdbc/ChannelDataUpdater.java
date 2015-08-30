@@ -153,9 +153,9 @@ public class ChannelDataUpdater {
 			try {
 				if (channelUpdateQuery == null) {
 					channelUpdateQuery = dbCon.getConnection().prepareStatement("UPDATE `"+CHANNEL_TABLE_NAME+"` SET" +
-							" `channelName` = ?, `channelAbbr` = ?, `permissions` = ?, `rankNames` = ?," +
+							" `name` = ?, `abbrieviation` = ?, `permissions` = ?, `rankNames` = ?," +
 							" `openingMessage` = ?, `trackMessages` = ?, " +
-							" `owner` = ? WHERE `channelID` = ?");
+							" `owner` = ? WHERE `id` = ?");
 				}
 				HashMap<Integer, ChannelDetails> detailChangesCopy = new HashMap<Integer, ChannelDetails>();
 				synchronized (detailChanges) {
@@ -164,14 +164,14 @@ public class ChannelDataUpdater {
 				}
 				for (Entry<Integer, ChannelDetails> update : detailChangesCopy.entrySet()) {
 					ChannelDetails details = update.getValue();
-					channelUpdateQuery.setString(1, details.channelName);
-					channelUpdateQuery.setString(2, details.channelAbbreviation);					
+					channelUpdateQuery.setString(1, details.name);
+					channelUpdateQuery.setString(2, details.abbreviation);					
 					channelUpdateQuery.setBlob(3, new SerialBlob(compressPermissions(details.permissions)));
 					channelUpdateQuery.setBlob(4, new SerialBlob(compressRankNamesV2(details.rankNames)));
 					channelUpdateQuery.setString(5, details.openingMessage);
 					channelUpdateQuery.setBoolean(6, details.trackMessages);
-					channelUpdateQuery.setInt(7, details.channelOwner);
-					channelUpdateQuery.setInt(8, details.channelID);
+					channelUpdateQuery.setInt(7, details.owner);
+					channelUpdateQuery.setInt(8, details.id);
 					try {
 						channelUpdateQuery.execute();
 		            } catch (MySQLIntegrityConstraintViolationException ex) {
