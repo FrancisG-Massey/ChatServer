@@ -187,7 +187,7 @@ public class JDBCChannelManager implements ChannelDataManager {
 		List<ChannelGroupData> groups = new ArrayList<ChannelGroupData>();
 		try {
 			if (groupFetchQuery == null) {
-				groupFetchQuery = dbCon.getConnection().prepareStatement("SELECT `groupID`, `groupName`, `permissions`, `groupType`, `groupIconUrl`," + " `overrides` FROM `"
+				groupFetchQuery = dbCon.getConnection().prepareStatement("SELECT `id`, `name`, `permissions`, `type`, `icon`," + " `overrides` FROM `"
 				+ GROUP_TABLE_NAME + "` WHERE `channelID` = ?");
 			}
 			groupFetchQuery.setInt(1, channelID);

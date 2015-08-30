@@ -332,7 +332,7 @@ var chatClient = {
 					chatClient.runMessageChecking();
 					chatClient.getMemberList();
 					chatClient.getPermissions();
-					//chatClient.getRankDetails();
+					chatClient.getRankDetails();
 					chatClient.getGroups();
 					$("#joinchannel_button").text("Leave").unbind('click').click(function () {
 						chatClient.leaveChannel(chatClient.channelID);

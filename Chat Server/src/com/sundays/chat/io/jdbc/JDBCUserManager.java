@@ -23,6 +23,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import com.sundays.chat.io.UserDataManager;
 import com.sundays.chat.io.UserDetails;
@@ -46,7 +47,7 @@ public class JDBCUserManager implements UserDataManager {
 	public int createUser(String username, char[] hashedPassword) throws IOException {		
 		try {
 			if (userCreation == null) {
-				userCreation = dbCon.prepareStatement("INSERT INTO `users` SET `username` = ?, `password` = ?, `registered_on` = UTC_TIMESTAMP()");
+				userCreation = dbCon.prepareStatement("INSERT INTO `users` SET `username` = ?, `password` = ?, `registered_on` = UTC_TIMESTAMP()", Statement.RETURN_GENERATED_KEYS);
 			}
 			userCreation.setString(1, username);
 			userCreation.setString(2, String.copyValueOf(hashedPassword));

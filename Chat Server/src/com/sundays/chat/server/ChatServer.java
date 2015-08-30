@@ -59,6 +59,9 @@ public final class ChatServer {
 	}
 
 	public void init(ServletConfig config) throws ServletException {
+		if (initalised) {
+			return;
+		}
 		ServletContext context = config.getServletContext();
 		context.log("Java chat server (beta). Version " + Settings.VERSION_NAME);
 		String configFile = config.getInitParameter("configFile");

@@ -253,7 +253,7 @@ public final class UserManager {
     		String un = data.getString("username"),
     				ln = data.getString("loginName"),
     				password = data.getString("password");
-    		if (getUserID(un) != 0) {
+    		if (getUserID(un) != -1) {
     			response.put("status", 409);//Username already registered
     			response.put("message", "An account already exists with the username: "+un+". Please use a different name.");
     		} else {

@@ -37,9 +37,9 @@ import com.sundays.chat.io.ChannelIndex;
  * 
  * @author Francis
  */
-public class DbChannelIndex implements ChannelIndex {
+public class JDBCChannelIndex implements ChannelIndex {
 	
-	private static final Logger logger = Logger.getLogger(DbChannelIndex.class);
+	private static final Logger logger = Logger.getLogger(JDBCChannelIndex.class);
 	
 	private final Cache<String, Integer> lookupCache = CacheBuilder.newBuilder().maximumSize(1000).build();
 	private final Cache<Integer, Boolean> existsCache = CacheBuilder.newBuilder().maximumSize(1000).build();
@@ -49,19 +49,22 @@ public class DbChannelIndex implements ChannelIndex {
 	private PreparedStatement checkExistanceQuery;
 	
 	
-	public DbChannelIndex (ConnectionManager dbCon) {
+	public JDBCChannelIndex (ConnectionManager dbCon) {
 		this.dbCon = dbCon;
 	}
 	
 	private int findName (String name) throws SQLException {
 		if (idResolveQuery == null) {
-			idResolveQuery = dbCon.getConnection().prepareStatement("SELECT `channelID` FROM channels WHERE `channelName` = ?");
+			idResolveQuery = dbCon.getConnection().prepareStatement("SELECT `id` FROM channels WHERE `name` = ?");
 		}
 		idResolveQuery.setString(1, name);
 		if (!idResolveQuery.execute()) {
 			return -1;
 		}
         ResultSet results = idResolveQuery.getResultSet();
+        if (!results.next()) {
+        	return -1;
+        }
 		return results.getInt(1);
 	}
 
@@ -90,13 +93,14 @@ public class DbChannelIndex implements ChannelIndex {
 				@Override
 				public Boolean call() throws Exception {
 					if (checkExistanceQuery == null) {
-						checkExistanceQuery = dbCon.getConnection().prepareStatement("SELECT COUNT(*) FROM channels WHERE `channelID` = ?");
+						checkExistanceQuery = dbCon.getConnection().prepareStatement("SELECT COUNT(*) FROM channels WHERE `id` = ?");
 					}
 					checkExistanceQuery.setInt(1, id);
 					if (!checkExistanceQuery.execute()) {
 						throw new SQLException();
 					}
 					ResultSet results = checkExistanceQuery.getResultSet();
+					results.next();
 					return results.getInt(1) > 0;
 				}			
 			});

@@ -33,7 +33,7 @@ public class JDBCIOManager implements IOManager {
 	public JDBCIOManager (String url, String username, String password) {
 		this.dbcon = new ConnectionManager(url, username, password);
 		this.userManager = new JDBCUserManager(dbcon.getConnection());
-		this.channelIndex = new DbChannelIndex(dbcon);
+		this.channelIndex = new JDBCChannelIndex(dbcon);
 		this.channelManager = new JDBCChannelManager(dbcon);
 	}
 
