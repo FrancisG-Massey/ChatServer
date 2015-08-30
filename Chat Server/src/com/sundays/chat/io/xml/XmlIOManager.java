@@ -18,19 +18,8 @@
  *******************************************************************************/
 package com.sundays.chat.io.xml;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
-
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-
-import org.apache.log4j.Logger;
+import java.util.Properties;
 
 import com.sundays.chat.io.ChannelDataManager;
 import com.sundays.chat.io.ChannelIndex;
@@ -44,67 +33,55 @@ import com.sundays.chat.utils.ConfigurationException;
  * @author Francis
  */
 public class XmlIOManager implements IOManager {
-
-	private static final Logger logger = Logger.getLogger(XmlIOManager.class);
 	
 	private UserDataManager userManager;
 	
 	private ChannelIndex channelIndex;
 	
-	public XmlIOManager (String configFile) throws FileNotFoundException, ConfigurationException {
-		if (!new File(configFile).exists()) {
-			throw new FileNotFoundException("Configuration file does not exist: "+configFile);
+	private ChannelDataManager channelManager;
+	
+	public XmlIOManager () {
+		
+	}
+
+	@Override
+	public void init(Properties properties) throws ConfigurationException {
+		if (!properties.containsKey("channels.index")) {
+			throw new ConfigurationException("No channel index filename specified.");
 		}
-		try (Reader input = new BufferedReader(new FileReader(configFile))) {
-			readConfig(input);
-		} catch (XMLStreamException | IOException ex) {
-			logger.error("Failed to load XML IO configuration.", ex);
-		}
-		if (channelIndex == null) {
-			throw new ConfigurationException("No channel index specified.");
-		}
-		if (userManager == null) {
+		channelIndex = new XmlChannelIndex(new File((String) properties.get("channels.index")));
+		if (!properties.containsKey("users.index")) {
 			throw new ConfigurationException("No user index specified.");
 		}
-	}
-	
-	private final void readConfig (Reader input) throws XMLStreamException, ConfigurationException {
-		XMLInputFactory factory = XMLInputFactory.newInstance();
-		XMLStreamReader reader = factory.createXMLStreamReader(input);		
-		while (reader.hasNext()) {
-			reader.next();
-			if (reader.getEventType() == XMLStreamConstants.START_ELEMENT) {
-				if (reader.getLocalName().equalsIgnoreCase("channelIndex")) {
-					String filename = reader.getAttributeValue(null, "filename");	
-					if (filename == null) {
-						throw new ConfigurationException("No channel index filename specified.");
-					}
-					channelIndex = new XmlChannelIndex(new File(filename));
-				} else if (reader.getLocalName().equalsIgnoreCase("userIndex")) {
-					String filename = reader.getAttributeValue(null, "filename");	
-					if (filename == null) {
-						throw new ConfigurationException("No user index filename specified.");
-					}
-					userManager = new XmlUserManager(new File(filename));
-				}
-			}
+		userManager = new XmlUserManager(new File((String) properties.get("users.index")));
+		if (!properties.containsKey("channels.dir")) {
+			throw new ConfigurationException("No channels directory specified.");
 		}
+		channelManager = new XmlChannelManager(new File((String) properties.get("channels.dir")));
 	}
 
 	@Override
 	public UserDataManager getUserIO() {
+		if (userManager == null) {
+			throw new IllegalStateException("User IO is not initialised.");
+		}
 		return userManager;
 	}
 
 	@Override
 	public ChannelIndex getChannelIndex() {
+		if (channelIndex == null) {
+			throw new IllegalStateException("Channel index is not initialised.");
+		}
 		return channelIndex;
 	}
 
 	@Override
 	public ChannelDataManager getChannelIO() {
-		// TODO Auto-generated method stub
-		return null;
+		if (channelManager == null) {
+			throw new IllegalStateException("Channel manager is not initialised.");
+		}
+		return channelManager;
 	}
 
 	@Override

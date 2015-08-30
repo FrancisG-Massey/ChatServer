@@ -18,10 +18,13 @@
  *******************************************************************************/
 package com.sundays.chat.io.jdbc;
 
+import java.util.Properties;
+
 import com.sundays.chat.io.ChannelDataManager;
 import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.io.IOManager;
 import com.sundays.chat.io.UserDataManager;
+import com.sundays.chat.utils.ConfigurationException;
 
 public class JDBCIOManager implements IOManager {
 	
@@ -30,8 +33,25 @@ public class JDBCIOManager implements IOManager {
 	private ChannelDataManager channelManager;
 	private ConnectionManager dbcon;
 	
-	public JDBCIOManager (String url, String username, String password) {
-		this.dbcon = new ConnectionManager(url, username, password);
+	public JDBCIOManager () {
+		
+	}
+
+	@Override
+	public void init(Properties properties) throws ConfigurationException {
+		String uri = properties.getProperty("jdbc.uri");
+		String username = properties.getProperty("jdbc.username");
+		String password = properties.getProperty("jdbc.password");
+		if (uri == null) {
+			throw new ConfigurationException("jdbc.uri not specfied!");
+		}
+		if (username == null) {
+			throw new ConfigurationException("jdbc.username not specfied!");
+		}
+		if (password == null) {
+			throw new ConfigurationException("jdbc.password not specfied!");
+		}
+		this.dbcon = new ConnectionManager(uri, username, password);
 		this.userManager = new JDBCUserManager(dbcon.getConnection());
 		this.channelIndex = new JDBCChannelIndex(dbcon);
 		this.channelManager = new JDBCChannelManager(dbcon);

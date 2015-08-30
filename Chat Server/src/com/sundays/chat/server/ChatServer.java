@@ -29,15 +29,10 @@ import javax.servlet.ServletException;
 import org.apache.log4j.BasicConfigurator;
 
 import com.sundays.chat.io.IOManager;
-import com.sundays.chat.io.jdbc.JDBCIOManager;
 import com.sundays.chat.server.channel.ChannelAPI;
 import com.sundays.chat.server.channel.ChannelManager;
 
 public final class ChatServer {
-
-	private static final String DB_USERNAME = "sundays4_chat";
-	private static final String DB_PASSWORD = "Sm4fztbVB3CdGwVa";
-	private static final String DB_URL = "jdbc:mysql://localhost:3306/sundays4_chat";
 
 	private static ChatServer server;
 	private UserManager userManager;
@@ -58,6 +53,7 @@ public final class ChatServer {
 		server = this;
 	}
 
+	@SuppressWarnings("unchecked")
 	public void init(ServletConfig config) throws ServletException {
 		if (initalised) {
 			return;
@@ -69,20 +65,43 @@ public final class ChatServer {
 			context.log("No configuration file specified; Using default configuration located at /WEB-INF/default.properties.");
 			context.log("A different configuration can be specified by passing the 'configFile' init parameter.");
 			configFile = "/WEB-INF/default.properties";
+		} else {
+			context.log("Loading server properties from "+configFile);
 		}
 		InputStream cfgFile = context.getResourceAsStream(configFile);
-		Properties p = new Properties();
+		Properties properties = new Properties();
 		BasicConfigurator.configure();
 		try {
-			p.load(cfgFile);
+			properties.load(cfgFile);
 		} catch (IOException e) {
 			context.log("Failed to load application configuration file; using built-in defaults", e);
 		}
+		String ioClassname = properties.getProperty("io.class");
+		if (ioClassname == null) {
+			throw new ServletException("IO manager (io.class) not specified in properties!");
+		}
+		Class<? extends IOManager> ioClass;
+		try {
+			ioClass = (Class<? extends IOManager>) Class.forName(ioClassname);
+		} catch (ClassNotFoundException | ClassCastException ex) {
+			throw new ServletException("IO manager class not found or does not extend IOManager.", ex);
+		}
+		try {
+			ioManager = ioClass.newInstance();
+		} catch (InstantiationException | IllegalAccessException ex) {
+			throw new ServletException("Error instanciating IO manager class.", ex);
+		}
+		try {
+			ioManager.init(properties);
+		} catch (Exception ex) {
+			throw new ServletException("Error initialising IO manager.", ex);
+		}
+		context.log("Successfully initialised ChatServer IO manager "+ioManager.getClass().getName());
 	}
 
 	public IOManager getIO() {
 		if (ioManager == null) {
-			ioManager = new JDBCIOManager(DB_URL, DB_USERNAME, DB_PASSWORD);
+			throw new IllegalStateException("IO manager not initialised!");
 		}
 		return ioManager;
 	}
@@ -118,8 +137,7 @@ public final class ChatServer {
 	public void shutdown() throws Exception {// Clean up resources here
 		this.serverTaskScheduler().lock();// Prevents new tasks from being cued
 		// channelManager().shutdown();//Run the final cleanup tasks
-		this.getIO().close();// Shutdown the persistence layer resources (to
-								// prevent exceptions from being thrown).
+		this.getIO().close();// Shutdown the persistence layer resources (to prevent exceptions from being thrown).
 		this.serverTaskScheduler().shutdown();// Runs all pending server tasks
 												// instantly then shuts down the
 												// timer cue

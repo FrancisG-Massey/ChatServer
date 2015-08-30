@@ -18,6 +18,8 @@
  *******************************************************************************/
 package com.sundays.chat.io;
 
+import java.util.Properties;
+
 /**
  * An interface used to centralise all different communication interfaces for the persistence layer.
  * 
@@ -26,6 +28,9 @@ package com.sundays.chat.io;
  * @author Francis
  */
 public interface IOManager extends AutoCloseable {
+	
+	
+	public void init (Properties properties) throws Exception;
 	
 	/**
 	 * Returns the IO interface for loading and saving user data
