@@ -16,11 +16,12 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.server;
+package com.sundays.chat.server.user;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -29,6 +30,8 @@ import org.json.JSONObject;
 
 import com.sundays.chat.io.UserDetails;
 import com.sundays.chat.server.channel.Channel;
+import com.sundays.chat.server.message.MessagePayload;
+import com.sundays.chat.server.message.MessageType;
 
 /**
  * Represents a user within the chat system. 
@@ -42,11 +45,16 @@ public class User {
     private ConcurrentHashMap<Integer, List<JSONObject>> queuedMessages = new ConcurrentHashMap<Integer, List<JSONObject>>();
     public Boolean connected = true;
     private int nextOrderID = 10;
+    
+    private String username;
+    private int defaultChannel;
+    
     private UserDetails details;
 
 	public User (int id, UserDetails details) {
         this.userID = id;
-        this.details = details;
+        this.username = details.getUsername();
+        this.defaultChannel = details.getDefaultChannel();
     }    
     
     private int getOrderID () {
@@ -55,7 +63,7 @@ public class User {
     }  
     
     public String getUsername () {
-        return this.details.getUsername();
+        return this.username;
     }
     
     public int getUserID () {
@@ -90,6 +98,31 @@ public class User {
         }                
     }
     
+    /**
+     * Sends a message to the user. 
+     * Depending on how the user is connected, this message will either be sent immediately to the user or added to their message queue.
+     * @param type The type of message being sent.
+     * @param channelID The ID of the channel the message is from.
+     * @param payload The payload data for the message.
+     */
+    public void sendMessage (MessageType type, int channelID, MessagePayload payload) {
+    	JSONObject message = new JSONObject(payload);
+    	try {
+			message.put("type", type.getID());
+			addQueuedMessage(channelID, message);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+    }
+    
+    /**
+     * Adds a message to the user's message queue.<br />
+     * NOTE: This method is deprecated. {@link #sendMessage(MessageType, int, Map)} should be used instead.
+     * @param channelID The ID of the channel the message is from.
+     * @param message The message object to queue.
+     * @throws JSONException
+     */
+    @Deprecated
     public void addQueuedMessage (int channelID, JSONObject message) throws JSONException {
     	//Places a new message in the user's message cue. Message cue is channel-specific
     	if (message == null) {
@@ -151,12 +184,8 @@ public class User {
     	this.queuedMessages.replace(channelID, new CopyOnWriteArrayList<JSONObject>());
     }
 
-	public UserDetails getDetails() {
-		return details;
-	}
-
 	public int getDefaultChannel() {
-		return details.getDefaultChannel();
+		return defaultChannel;
 	}
 
 	public void setDefaultChannel(int defaultChannel) {

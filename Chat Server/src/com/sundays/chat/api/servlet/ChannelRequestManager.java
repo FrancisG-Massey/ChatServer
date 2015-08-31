@@ -34,8 +34,8 @@ import org.json.JSONObject;
 import com.sundays.chat.server.ChatServer;
 import com.sundays.chat.server.Permission;
 import com.sundays.chat.server.Settings;
-import com.sundays.chat.server.User;
 import com.sundays.chat.server.channel.ChannelAPI;
+import com.sundays.chat.server.user.User;
 import com.sundays.chat.utils.HttpRequestTools;
 
 /**
@@ -53,6 +53,7 @@ public class ChannelRequestManager extends HttpServlet {
 
     @Override
     public void init (ServletConfig config) throws ServletException {
+    	super.init(config);
     	ChatServer server = ChatServer.getInstance();
     	if (!server.initalised) {
     		server.init(config);

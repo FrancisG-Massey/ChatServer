@@ -22,8 +22,10 @@ import java.util.Arrays;
 import java.util.Map;
 
 /**
- * This class is used in conjunction with the {@link ChannelDataSync} in order to pass channel details between the ChatServer module and the specified back-end
- */	
+ * Used to communicate channel details between the persistence layer and the application layer.
+ * 
+ * @author Francis
+ */
 public class ChannelDetails {
 	
 	public static final int VERSION = 4;//The interface version

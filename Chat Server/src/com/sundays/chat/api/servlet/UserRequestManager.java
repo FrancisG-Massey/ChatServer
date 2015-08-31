@@ -30,7 +30,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.sundays.chat.server.ChatServer;
-import com.sundays.chat.server.UserManager;
+import com.sundays.chat.server.user.UserManager;
 import com.sundays.chat.utils.HttpRequestTools;
 
 /**
@@ -48,6 +48,7 @@ public class UserRequestManager extends HttpServlet {
     
     @Override
     public void init (ServletConfig config) throws ServletException {
+    	super.init(config);
     	ChatServer server = ChatServer.getInstance();
     	if (!server.initalised) {
     		server.init(config);

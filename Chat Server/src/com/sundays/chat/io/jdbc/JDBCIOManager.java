@@ -59,22 +59,33 @@ public class JDBCIOManager implements IOManager {
 
 	@Override
 	public UserDataManager getUserIO() {
+		if (userManager == null) {
+			throw new IllegalStateException("User IO is not initialised.");
+		}
 		return userManager;
 	}
 
 	@Override
 	public ChannelIndex getChannelIndex() {
+		if (channelIndex == null) {
+			throw new IllegalStateException("Channel index is not initialised.");
+		}
 		return channelIndex;
 	}
 
 	@Override
 	public ChannelDataManager getChannelIO() {
+		if (channelManager == null) {
+			throw new IllegalStateException("Channel manager is not initialised.");
+		}
 		return channelManager;
 	}
 
 	@Override
 	public void close() throws Exception {
-		dbcon.close();
+		if (dbcon != null) {
+			dbcon.close();
+		}
 	}
 
 }

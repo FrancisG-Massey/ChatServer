@@ -16,27 +16,29 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.server;
+package com.sundays.chat.server.user;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+public class UserNotFoundException extends Exception {
+	private static final long serialVersionUID = -4556702053825085731L;
 
-public class ServerMonitor implements ServletContextListener {
-
-	@Override
-	public void contextDestroyed(ServletContextEvent arg0) {
-		System.out.println("Shutting down ChatServer...");
-		try {
-			ChatServer.getInstance().shutdown();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public UserNotFoundException() {
+		super();
 	}
 
-	@Override
-	public void contextInitialized(ServletContextEvent arg0) {
-		System.out.println("Starting server...");
+	public UserNotFoundException(String message, Throwable cause,
+			boolean enableSuppression, boolean writableStackTrace) {
+		super(message, cause, enableSuppression, writableStackTrace);
 	}
 
+	public UserNotFoundException(String message, Throwable cause) {
+		super(message, cause);
+	}
+
+	public UserNotFoundException(String message) {
+		super(message);
+	}
+
+	public UserNotFoundException(Throwable cause) {
+		super(cause);
+	}
 }

@@ -45,6 +45,14 @@ public interface UserDataManager extends AutoCloseable {
 	 */
 	public void saveUserData (UserDetails user) throws IOException;
 	
+	/**
+	 * Fetches the ID of the user with the specified username.<br />
+	 * Returns -1 if no user exists with the specified name. <br />
+	 * This search should be case-insensitive, so "TEST" should return the same result as "test".
+	 * @param username The username used as the lookup key
+	 * @return The ID of the user who has the specified name, or -1 if no user exists.
+	 * @throws IOException If an error occurs while looking up the user.
+	 */
 	public int lookupByUsername (String username) throws IOException;
 	
 	public UserDetails getUserDetails (int id) throws IOException;

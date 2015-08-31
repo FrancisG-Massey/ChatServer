@@ -86,7 +86,9 @@ public class XmlIOManager implements IOManager {
 
 	@Override
 	public void close() throws Exception {
-		channelIndex.close();
+		if (channelIndex != null) {
+			channelIndex.close();
+		}
 	}
 
 }

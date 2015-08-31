@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.server;
+package com.sundays.chat.server.user;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -41,6 +41,7 @@ import com.google.common.cache.LoadingCache;
 import com.sundays.chat.io.GuestDetails;
 import com.sundays.chat.io.UserDataManager;
 import com.sundays.chat.io.UserDetails;
+import com.sundays.chat.server.ChatServer;
 
 /**
  *
@@ -240,7 +241,11 @@ public final class UserManager {
              * set the user's default channel to the last one they were in (so they will automatically join it when they next connect)
              */
         	try {
-        		userIO.saveUserData(u.getDetails());
+        		UserDetails details = new UserDetails();
+        		details.setUserID(u.getUserID());
+        		details.setUsername(u.getUsername());
+        		details.setDefaultChannel(u.getDefaultChannel());
+        		userIO.saveUserData(details);
         	} catch (IOException ex) {
         		logger.error("Failed to save details for user "+u.getUserID(), ex);
         	}      	
@@ -250,15 +255,15 @@ public final class UserManager {
     public JSONObject managedAccountCreate (String type, JSONObject data, String userIP) throws JSONException {
     	JSONObject response = new JSONObject();
     	if ("standard".equalsIgnoreCase(type)) {
-    		String un = data.getString("username"),
-    				ln = data.getString("loginName"),
-    				password = data.getString("password");
-    		if (getUserID(un) != -1) {
+    		String username = data.getString("username");
+    		String	ln = data.getString("loginName");
+    		String password = digestPassword(data.getString("password"));
+    		if (getUserID(username) != -1) {
     			response.put("status", 409);//Username already registered
-    			response.put("message", "An account already exists with the username: "+un+". Please use a different name.");
+    			response.put("message", "An account already exists with the username: "+username+". Please use a different name.");
     		} else {
 				try {
-					int userID = userIO.createUser(un, password.toCharArray());
+					int userID = userIO.createUser(username, password.toCharArray());
                 	response.put("status", 200);//Account created successfully
                 	response.put("message", "Your account has been created successfully. You can log in from now on using the name: "+ln);
                 	response.put("userid", userID);//Gets the user id
@@ -302,10 +307,10 @@ public final class UserManager {
         return password;
     }*/
     
-    /*private String digestPassword (String password) {
+    private String digestPassword (String password) {
         StandardStringDigester pEncrypt = new StandardStringDigester();
         return pEncrypt.digest(password);
-    }*/
+    }
     
     private boolean passwordCheck (char[] dbPassword, char[] password) {
         StandardStringDigester pwCheck = new StandardStringDigester();

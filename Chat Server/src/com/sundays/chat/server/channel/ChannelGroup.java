@@ -41,9 +41,17 @@ public class ChannelGroup {
 	public int overrides;
 	public GroupType groupType = GroupType.NORM;
 	
+	private byte legacyRank;
+	
 	public ChannelGroup (int channelID, int groupID) {
 		this.groupID = groupID;
 		this.channelID = channelID;
+	}
+	
+	public ChannelGroup (int channelID, int groupID, byte legacyRank) {
+		this.groupID = groupID;
+		this.channelID = channelID;
+		this.legacyRank = legacyRank;
 	}
 	
 	public ChannelGroup (int channelID, int groupID, String name, String url, GroupType type) {
@@ -116,6 +124,10 @@ public class ChannelGroup {
 	
 	protected void setIconUrl (String iconUrl) {
 		this.groupIconUrl = iconUrl;
+	}
+	
+	public byte getLegacyRank () {
+		return legacyRank;
 	}
 	
 	public ChannelGroupData encode () {

@@ -14,6 +14,9 @@
 	<property name="qa.dir" value="${build.dir}/qa-reports" />
 	
 	<path id="build.classpath">
+		<fileset dir="/usr/share/tomcat7/lib">
+			<include name="**/*.jar" />
+		</fileset>
 		<fileset dir="${lib.dir}">
 			<include name="**/*.jar" />
 		</fileset>

@@ -31,10 +31,16 @@ import org.apache.log4j.BasicConfigurator;
 import com.sundays.chat.io.IOManager;
 import com.sundays.chat.server.channel.ChannelAPI;
 import com.sundays.chat.server.channel.ChannelManager;
+import com.sundays.chat.server.user.UserManager;
 
+/**
+ * 
+ * @author Francis
+ */
 public final class ChatServer {
 
-	private static ChatServer server;
+	private static ChatServer instance;
+	
 	private UserManager userManager;
 	private IOManager ioManager;
 	private ChannelManager channelManager;
@@ -43,14 +49,14 @@ public final class ChatServer {
 	public boolean initalised = false;
 
 	public static ChatServer getInstance() {
-		if (server == null) {
-			server = new ChatServer();
+		if (instance == null) {
+			instance = new ChatServer();
 		}
-		return server;
+		return instance;
 	}
 
 	private ChatServer() {
-		server = this;
+		
 	}
 
 	@SuppressWarnings("unchecked")
@@ -60,6 +66,10 @@ public final class ChatServer {
 		}
 		ServletContext context = config.getServletContext();
 		context.log("Java chat server (beta). Version " + Settings.VERSION_NAME);
+		
+		Properties properties = new Properties();
+		BasicConfigurator.configure();
+		
 		String configFile = config.getInitParameter("configFile");
 		if (configFile == null) {
 			context.log("No configuration file specified; Using default configuration located at /WEB-INF/default.properties.");
@@ -69,8 +79,7 @@ public final class ChatServer {
 			context.log("Loading server properties from "+configFile);
 		}
 		InputStream cfgFile = context.getResourceAsStream(configFile);
-		Properties properties = new Properties();
-		BasicConfigurator.configure();
+		
 		try {
 			properties.load(cfgFile);
 		} catch (IOException e) {
@@ -137,7 +146,9 @@ public final class ChatServer {
 	public void shutdown() throws Exception {// Clean up resources here
 		this.serverTaskScheduler().lock();// Prevents new tasks from being cued
 		// channelManager().shutdown();//Run the final cleanup tasks
-		this.getIO().close();// Shutdown the persistence layer resources (to prevent exceptions from being thrown).
+		if (ioManager != null) {
+			ioManager.close();// Shutdown the persistence layer resources (to prevent exceptions from being thrown).
+		}
 		this.serverTaskScheduler().shutdown();// Runs all pending server tasks
 												// instantly then shuts down the
 												// timer cue

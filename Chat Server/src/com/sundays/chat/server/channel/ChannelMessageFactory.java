@@ -31,18 +31,27 @@ import org.json.JSONObject;
 import com.sundays.chat.server.ChatServer;
 import com.sundays.chat.server.Permission;
 import com.sundays.chat.server.Settings;
-import com.sundays.chat.server.User;
-import com.sundays.chat.server.Settings.Message;
+import com.sundays.chat.server.message.MessagePayload;
+import com.sundays.chat.server.user.User;
 
 
 /**
  *
- * @author francis
+ * @author Francis
  */
-public class ChannelDataPreparer {
+public class ChannelMessageFactory {
+	
+	private static ChannelMessageFactory instance;
+	
+	public static ChannelMessageFactory getInstance() {
+		if (instance == null) {
+			instance = new ChannelMessageFactory();
+		}
+		return instance;
+	}
     
     
-    protected static JSONObject prepareChannelPermissions (Channel c) {
+    public JSONObject prepareChannelPermissions (Channel c) {
         /**
          * @param c, the channel object to retrieve permission data from
          * @description prepares a JSON object containing the permission details for the specified channel
@@ -77,7 +86,7 @@ public class ChannelDataPreparer {
      * @param c, the channel object to retrieve permission data from
      * @param p, the permission to send an update notification for
      */
-    protected static JSONObject preparePermissionChange (Channel c, Permission p) {
+    public JSONObject preparePermissionChange (Channel c, Permission p) {
     	
     	JSONObject responseJSON = new JSONObject();
     	if (c == null) {
@@ -100,7 +109,7 @@ public class ChannelDataPreparer {
 		return responseJSON;
     }
     
-    protected static JSONObject prepareChannelDetails (Channel c) {
+    public JSONObject prepareChannelDetails (Channel c) {
         /**
          * @param c, the channel object to retrieve details from
          * @description prepares a JSON object containing the basic details about the specified channel
@@ -125,7 +134,7 @@ public class ChannelDataPreparer {
     }
     
     @Deprecated
-    protected static JSONObject prepareRankNames (Channel c) {
+    public JSONObject prepareRankNames (Channel c) {
         /**
          * @param c, the channel object to retrieve rank names from
          * @description prepares a JSON object containing the rank names for the specified channel
@@ -154,7 +163,7 @@ public class ChannelDataPreparer {
     }
     
     @Deprecated
-    protected static JSONObject prepareRankNameChange (Channel c, int rank) {
+    public JSONObject prepareRankNameChange (Channel c, int rank) {
         /**
          * @param c, the channel object to retrieve rank names from
          * @param pID, the ID of the rank to send an update notification for
@@ -175,41 +184,43 @@ public class ChannelDataPreparer {
         return responseJSON;
     }
     
-    private static JSONObject getBasicGroupDetails (ChannelGroup g) throws JSONException {
-    	/**
-         * @param g, the group to retrieve data from
-         * @description prepares a JSON object containing basic information (name, id, icon, type) about a specified channel group
-         * 				 for use only within other methods in this class 
-         */
-    	JSONObject responseJSON = new JSONObject();
-    	responseJSON.put("id", g.overrides);
-    	responseJSON.put("name", g.getName());
-    	responseJSON.put("icon", g.getIconUrl());
-    	responseJSON.put("type", g.groupType);
-    	return responseJSON;
+    /**
+     * Packs the basic details (name, id, icon, type) of a channel group into a message payload.
+     * @param group The group to pack basic details from
+     * @return A message payload containing the group details
+     */
+    private MessagePayload createBasicGroupDetails (ChannelGroup group) {
+    	MessagePayload message = new MessagePayload();
+    	message.put("id", group.overrides);
+    	message.put("name", group.getName());
+    	message.put("icon", group.getIconUrl());
+    	message.put("type", group.groupType);
+    	return message;
     }
     
-    protected static JSONObject prepareChannelList (Channel c) {
-        /**
-         * @param c, the channel to retrieve data from
-         * @description prepares a JSON object containing data about all the users currently in the channel
-         */
-    	if (c == null) {
+    /**
+     * Packs a {@link MessagePayload} containing data about all the users currently in the channel.
+     * @param channel The channel to retrieve data from
+     * @return
+     */
+    public JSONObject prepareChannelList (Channel channel) {
+    	if (channel == null) {
     		return null;
     	}
     	JSONObject responseJSON = new JSONObject();
         try {
-        	responseJSON.put("id", c.channelID);
-        	responseJSON.put("totalUsers", c.getNoUsers());
-        	if (c.getNoUsers() > 0) {
-        		JSONObject[] members = new JSONObject[c.getNoUsers()];
+        	responseJSON.put("id", channel.channelID);
+        	responseJSON.put("totalUsers", channel.getUserCount());
+        	if (channel.getUserCount() > 0) {
+        		JSONObject[] members = new JSONObject[channel.getUserCount()];
         		int i = 0;
-        		for (User u1 : c.getUsers()) {
+        		for (User u1 : channel.getUsers()) {
         			JSONObject member = new JSONObject();
         			member.put("userID", u1.getUserID());
         			member.put("username", u1.getUsername());
-        			member.put("group", getBasicGroupDetails(c.getUserGroup(u1.getUserID())));
-        			member.put("rank", c.getUserRank(u1));
+        			ChannelGroup group = channel.getUserGroup(u1.getUserID());
+        			member.put("group", createBasicGroupDetails(group));
+        			member.put("rank", group.getLegacyRank());
         			members[i] = member;
         			i++;
         		}
@@ -222,78 +233,67 @@ public class ChannelDataPreparer {
         return responseJSON;
     }
     
-    protected static JSONObject sendUserInChannel (User u, Channel c) {
-        /**
-         * @param u, the user of the person who joined the channel
-         * @param c, the channel to retrieve data from
-         * @description creates a message telling the recipient to add the specified user to the list
-         */
-    	JSONObject messageObject = new JSONObject();
-        try {
-			messageObject.put("id", c.getNextMessageID());
-			messageObject.put("type", Message.CHANNEL_LIST_ADDITION);//Type 6 = channel list addition
-			messageObject.put("username", u.getUsername());//Username of the user joining the channel
-			messageObject.put("userID", u.getUserID());//User ID of the user joining the channel
-			messageObject.put("group", getBasicGroupDetails(c.getUserGroup(u.getUserID())));
-			messageObject.put("rank", c.getUserRank(u));//Rank of the user joining the channel
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return messageObject;            
+    /**
+     * Creates a message notifying the recipient to add the specified user to the list
+     * @param user The user joining the channel
+     * @param channel The channel to retrieve data from
+     * @return The payload of the new message.
+     */
+    public MessagePayload createChannelUserAddition (User user, Channel channel) {
+    	MessagePayload message = new MessagePayload();
+    	
+    	message.put("userID", user.getUserID());//User ID of the user joining the channel
+    	message.put("username", user.getUsername());//Username of the user joining the channel
+    	
+    	ChannelGroup group = channel.getUserGroup(user.getUserID());
+    	message.put("group", createBasicGroupDetails(group));
+    	message.put("rank", group.getLegacyRank());//Rank of the user joining the channel
+		return message;            
     }
     
-    protected static JSONObject removeUserFromChannel (User u, Channel c) {
-    	/**
-         * @param u, the user object of the person who left the channel
-         * @param c, the channel to retrieve data from
-         * @description creates a message telling the recipient to remove the specified user from the list
-         */
-    	JSONObject messageObject = new JSONObject();    	
-		try {
-			messageObject.put("id", c.getNextMessageID());
-			messageObject.put("type", Message.CHANNEL_LIST_REMOVAL);//Type 7 = channel list removal
-			messageObject.put("userID", u.getUserID());//User ID of the user leaving the channel
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return messageObject;
+    /**
+     * Creates a message notifying the recipient to remove the specified user from the list
+     * @param user The user who left the channel
+     * @param channel The channel to retrieve data from
+     * @return The payload of the new message.
+     */
+    public MessagePayload createChannelUserRemoval (User user, Channel channel) {
+    	MessagePayload message = new MessagePayload();
+    	
+    	message.put("userID", user.getUserID());
+		return message;
     }
     
-    protected static JSONObject updateUserInChannel (User u, Channel c) {
-        /**
-         * @param u, the user of the person to update
-         * @param c, the channel to retrieve data from
-         * @description creates a message containing details to update a user already in the channel (including rank and username)
-         */
-    	JSONObject messageObject = new JSONObject();
-    	try {
-			messageObject.put("id", c.getNextMessageID());
-			messageObject.put("type", Message.CHANNEL_LIST_UPDATE);//Type 8 = channel list member update
-			messageObject.put("username", u.getUsername());
-			messageObject.put("userID", u.getUserID());
-			messageObject.put("group", getBasicGroupDetails(c.getUserGroup(u.getUserID())));//New information about the group the user is in
-			messageObject.put("rank", c.getUserRank(u));
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return messageObject;
+    /**
+     * Creates a message notifying the recipient to update a user in the channel.
+     * @param user The user to update
+     * @param channel The channel to retrieve data from
+     * @return The payload of the new message.
+     */
+    public MessagePayload createChannelUserUpdate (User user, Channel channel) {
+    	MessagePayload message = new MessagePayload();
+    	
+		message.put("userID", user.getUserID());
+		message.put("username", user.getUsername());
+		
+		ChannelGroup group = channel.getUserGroup(user.getUserID());
+		message.put("group", createBasicGroupDetails(group));//New information about the group the user is in
+		message.put("rank", group.getLegacyRank());
+		return message;
     }
     
-    protected static JSONObject prepareRankList (Channel c) {
+    public JSONObject prepareRankList (Channel channel) {
         /**
          * @param c, the channel to retrieve data from
          * @description prepares a JSON object containing data about all the users ranked in the channel
          */
-    	if (c == null) {
+    	if (channel == null) {
     		return null;
     	}
     	JSONObject responseJSON = new JSONObject();
-    	Map<Integer, Byte> ranksList = c.getRanks();//Picks up the rank data for the channel
+    	Map<Integer, Byte> ranksList = channel.getRanks();//Picks up the rank data for the channel
         try {
-        	responseJSON.put("id", c.channelID);
+        	responseJSON.put("id", channel.channelID);
         	responseJSON.put("totalUsers", ranksList.size());
         	if (ranksList.size() > 0) {
         		JSONObject[] ranks = new JSONObject[ranksList.size()];
@@ -308,8 +308,9 @@ public class ChannelDataPreparer {
                     }
                     //System.out.println("User: "+un);
         			rank.put("username", un);
-        			rank.put("group", getBasicGroupDetails(c.getUserGroup(userID)));
-        			rank.put("rank", c.getUserRank(userID));
+        			ChannelGroup group = channel.getUserGroup(userID);
+        			rank.put("group", createBasicGroupDetails(group));
+        			rank.put("rank", group.getLegacyRank());
         			ranks[i] = rank;
         			i++;
         		}
@@ -322,75 +323,66 @@ public class ChannelDataPreparer {
         return responseJSON;
     } 
     
-    protected static JSONObject sendRankOnList (int uID, Channel c) {
-        /**
-         * @param uID, the ID of the user to add to the rank list
-         * @param c, the channel to retrieve data from
-         * @description creates a message telling the recipient to add the specified user to the rank list
-         */
-    	JSONObject responseJSON = new JSONObject();
-    	String un = ChatServer.getInstance().userManager().getUsername(uID);//UserID
-        if (un == null) {
-            un = "[user not found]";
+    /**
+     * Creates a message notifying the recipient to add the specified user to the rank list
+     * @param userID The ID of the user to add to the rank list
+     * @param channel The channel to retrieve data from
+     * @return The payload of the new message.
+     */
+    public MessagePayload createRankListAddition (int userID, Channel channel) {
+    	MessagePayload message = new MessagePayload();
+    	String username = ChatServer.getInstance().userManager().getUsername(userID);//UserID
+        if (username == null) {
+        	username = "[user not found]";
         }
-    	try {
-			responseJSON.put("id", c.getNextMessageID());
-	    	responseJSON.put("type", Message.RANK_LIST_ADDITION);//Type 11 = rank list addition
-	    	responseJSON.put("userID", uID);//User ID of the user to add to the list
-            responseJSON.put("username", un);//Username of the user joining the channel
-			responseJSON.put("group", getBasicGroupDetails(c.getUserGroup(uID)));//Information about the group of the user being added to the rank list
-            responseJSON.put("rank", c.getUserRank(uID));//Rank of the user joining the channel
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return responseJSON;            
+    	message.put("userID", userID);//User ID of the user to add to the list
+    	message.put("username", username);//Username of the user joining the channel
+    	
+    	ChannelGroup group = channel.getUserGroup(userID);
+        message.put("group", createBasicGroupDetails(group));//Information about the group of the user being added to the rank list
+		message.put("rank", group.getLegacyRank());//Rank of the user joining the channel
+		
+		return message;            
     }
     
-    protected static JSONObject removeRankFromList (int uID, Channel c) {
-    	/**
-         * @param uID, the ID of the user to remove from the rank list
-         * @param c, the channel to retrieve data from
-         * @description creates a message telling the recipient to remove the specified user from the rank list
-         */
-    	JSONObject responseJSON = new JSONObject();
-    	try {
-			responseJSON.put("id", c.getNextMessageID());
-			responseJSON.put("type", Message.RANK_LIST_REMOVAL);//Type 12 = rank list removal
-	    	responseJSON.put("userID", uID);//User ID of the user to remove from the rank list
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return responseJSON;
+    /**
+     * Creates a message notifying the recipient to remove the specified user from the rank list
+     * @param userID The ID of the user to remove from the rank list
+     * @param channel The channel to retrieve data from
+     * @return The payload of the new message.
+     */
+    public MessagePayload createRankListRemoval (int userID, Channel channel) {
+    	MessagePayload message = new MessagePayload();
+
+		message.put("userID", userID);//User ID of the user to remove from the rank list
+		return message;
     }
     
-    protected static JSONObject updateRankOnList (int uID, Channel c) {
-        /**
-         * @param uID, the ID of the user to update the rank of
-         * @param c, the channel to retrieve data from
-         * @description creates a message telling the recipient to update the details of the specified user on the rank list
-         */
-    	JSONObject responseJSON = new JSONObject();
-    	String un = ChatServer.getInstance().userManager().getUsername(uID);
-    	if (un == null) {
-    		un = "[user not found]";
+    /**
+     * Creates a message notifying the recipient to update the details of the specified user on the rank list
+     * @param userID The ID of the user on the rank list to update
+     * @param channel The channel to retrieve data from
+     * @return The payload of the new message.
+     */
+    public MessagePayload createRankListUpdate (int userID, Channel channel) {
+    	MessagePayload message = new MessagePayload();
+    	
+    	String username = ChatServer.getInstance().userManager().getUsername(userID);
+    	if (username == null) {
+    		username = "[user not found]";
         }
-    	try {
-			responseJSON.put("id", c.getNextMessageID());
-			responseJSON.put("type", Message.RANK_LIST_UPDATE);//Type 13 = rank list update
-			responseJSON.put("userID", uID);//User ID of the user to update on the list
-            responseJSON.put("username", un);//Username to change the user on the list to
-            responseJSON.put("group", getBasicGroupDetails(c.getUserGroup(uID)));//New information about the group the user is in
-            responseJSON.put("rank", c.getUserRank(uID));//Rank to change the user on the list to
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return responseJSON;
+
+		message.put("userID", userID);//User ID of the user to update on the list
+		message.put("username", username);//Username to change the user on the list to
+		
+		ChannelGroup group = channel.getUserGroup(userID);
+		message.put("group", createBasicGroupDetails(group));//New information about the group the user is in
+		message.put("rank", group.getLegacyRank());//Rank to change the user on the list to
+		
+		return message;
     }
     
-    protected static JSONObject prepareBanList (Channel c) {
+    public JSONObject prepareBanList (Channel c) {
         /**
          * @param c, the channel to retrieve data from
          * @description returns a JSONObject containing all the users permanently banned from the channel
@@ -426,49 +418,42 @@ public class ChannelDataPreparer {
 		return responseJSON;
     } 
     
-    protected static JSONObject sendBanOnList (int uID, Channel c) {
-        /**
-         * @param uID, the id of the user being permanently banned
-         * @param c, the channel to retrieve data from
-         * @description creates a message telling the recipient to add the specified user to the ban list
-         */
-    	JSONObject responseJSON = new JSONObject();
-    	String un = ChatServer.getInstance().userManager().getUsername(uID);
-    	if (un == null) {
-    		un = "[user not found]";
+    /**
+     * Creates a message notifying the recipient to add the specified user to the ban list
+     * @param userID The ID of the user to add to the ban list
+     * @param channel The channel to retrieve data from
+     * @return The payload of the new message.
+     */
+    public MessagePayload createBanListAddition (int userID, Channel channel) {
+    	MessagePayload message = new MessagePayload();
+
+    	String username = ChatServer.getInstance().userManager().getUsername(userID);
+    	if (username == null) {
+    		username = "[user not found]";
         }
-    	try {
-			responseJSON.put("id", c.getNextMessageID());
-			responseJSON.put("type", Message.BAN_LIST_ADDITION);//Type 14 = ban list addition
-			responseJSON.put("userID", uID);//User ID of the user to add to the list
-            responseJSON.put("username", un);//Username of the user to add to the list
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return responseJSON;
+    	
+		message.put("userID", userID);//User ID of the user to add to the list
+		message.put("username", username);//Username of the user to add to the list
+		
+		return message;
             
     }
     
-    protected static JSONObject removeBanFromList (int uID, Channel c) {
-    	/**
-         * @param uID, the id of the user to remove the permanent ban from
-         * @param c, the channel to retrieve data from
-         * @description creates a message telling the recipient to remove the specified user from the ban list
-         */
-    	JSONObject responseJSON = new JSONObject();
-    	try {
-			responseJSON.put("id", c.getNextMessageID());
-			responseJSON.put("type", Message.BAN_LIST_REMOVAL);//Type 15 = ban list removal
-			responseJSON.put("userID", uID);//User ID of the user to remove from the list
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return responseJSON;
+    /**
+     * Creates a message notifying the recipient to remove the specified user from the ban list
+     * @param userID The id of the user to remove from the ban list
+     * @param channel The channel to retrieve data from
+     * @return The payload of the new message.
+     */
+    public MessagePayload createBanListRemoval (int userID, Channel channel) {
+    	MessagePayload message = new MessagePayload();
+
+    	message.put("userID", userID);//User ID of the user to remove from the list
+    	
+		return message;
     }
     
-    protected static JSONObject prepareGroupList (Channel c) {
+    public JSONObject prepareGroupList (Channel c) {
     	/**
          * @param c, the channel to retrieve data from
          * @description returns a JSONObject containing all the groups in the channel

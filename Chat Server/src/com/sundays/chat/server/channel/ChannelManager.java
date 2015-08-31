@@ -38,8 +38,8 @@ import com.sundays.chat.server.Permission;
 import com.sundays.chat.server.ServerTaskQueue;
 import com.sundays.chat.server.ServerTaskQueue.TaskPriority;
 import com.sundays.chat.server.Settings;
-import com.sundays.chat.server.Settings.Message;
-import com.sundays.chat.server.User;
+import com.sundays.chat.server.message.MessageType;
+import com.sundays.chat.server.user.User;
 
 /**
  * Java chat server Channel Manager
@@ -133,9 +133,9 @@ public class ChannelManager {
 			public void run() {
 				//Channel-specific tasks
 				for (Channel c : channels.values()) {
-					if (c.getNoUsers() == 0) {
+					if (c.getUserCount() == 0) {
 						//Unloads any empty channels that were not automatically unloaded
-						cueChannelUnload(c.channelID);
+						queueChannelUnload(c.channelID);
 						/*try {
 							unloadChannel(c);
 						} catch (JSONException e) {
@@ -203,9 +203,9 @@ public class ChannelManager {
     		response.put("isLoaded", false);//Channel is not loaded
     	} else {
     		response.put("isLoaded", true);
-    		response.put("memberCount", c.getNoUsers());
+    		response.put("memberCount", c.getUserCount());
     		response.put("guestsCanJoin", (c.getPermissionValue(Permission.JOIN) <= Settings.GUEST_RANK));
-    		response.put("details", ChannelDataPreparer.prepareChannelDetails(c));
+    		response.put("details", ChannelMessageFactory.getInstance().prepareChannelDetails(c));
     	}    	
     	return response;
     }
@@ -218,7 +218,7 @@ public class ChannelManager {
         
     }
     
-    protected boolean cueChannelUnload (int channelID) {
+    protected boolean queueChannelUnload (int channelID) {
     	Channel c = channels.get(channelID);
     	if (c == null) {
     		return false;//Channel not found
@@ -267,6 +267,7 @@ public class ChannelManager {
     protected void sendChannelGlobalMessage (String message, int messageCode, int channelID) throws JSONException {
     	this.sendChannelGlobalMessage(message, messageCode, channelID, Color.BLACK);
     }
+    
     protected void sendChannelGlobalMessage (String message, int messageCode, int channelID, Color msgColour) throws JSONException {
     	//Sends a channel system notification to all members of the channel
     	Channel c = channels.get(channelID);
@@ -275,10 +276,10 @@ public class ChannelManager {
         }    	
     	JSONObject messageObject = new JSONObject();
         messageObject.put("id", c.getNextMessageID());
-        messageObject.put("type", Message.CHANNEL_SYSTEM_GLOBAL);//Type 3 = channel system message (global)
+        messageObject.put("type", MessageType.CHANNEL_SYSTEM_GLOBAL);//Type 3 = channel system message (global)
         messageObject.put("message", message);
         messageObject.put("messageCode", messageCode);
-        messageObject.put("messageColour", msgColour.getRGB());
+        messageObject.put("messageColour", "#"+Integer.toHexString(msgColour.getRGB()));
         c.addToMessageCache(messageObject);
         for (User u1 : c.getUsers()) {
         	u1.addQueuedMessage(channelID, messageObject);
@@ -286,29 +287,39 @@ public class ChannelManager {
     }
     
     /**
-     * Sends a channel system notification to only the specified member of the channel
+     * Sends a channel system notification to only the specified member of the channel.
      * 
-     * @param u		The user to send the desired message to
+     * @param user		The user to send the desired message to
      * @param message	The message string to send to the desired user
      * @param messageCode	The numerical code linked to the message being sent (allows for localisation on the receiving device)
      * @param channelID		The ID for the channel for which this message is related to.
      * @throws JSONException	If an error occurs in attempting to place message data into a JSONObject, throw an exception (this should never occur).
      */ 
-    protected void sendChannelLocalMessage (User u, String message, int messageCode, int channelID) throws JSONException {
-    	this.sendChannelLocalMessage(u, message, messageCode, channelID, Color.BLACK);
+    protected void sendChannelLocalMessage (User user, String message, int messageCode, int channelID) throws JSONException {
+    	this.sendChannelLocalMessage(user, message, messageCode, channelID, Color.BLACK);
     }
-    protected void sendChannelLocalMessage (User u, String message, int messageCode, int channelID, Color msgColour) throws JSONException {
+    
+    /**
+     * 
+     * @param user The user to send the desired message to
+     * @param message The message string to send to the desired user
+     * @param messageCode The numerical code linked to the message being sent (allows for localisation on the receiving device)
+     * @param channelID The ID for the channel for which this message is related to.
+     * @param msgColour The colour for the message
+     * @throws JSONException
+     */
+    protected void sendChannelLocalMessage (User user, String message, int messageCode, int channelID, Color msgColour) throws JSONException {
     	Channel c = channels.get(channelID);
         if (c == null) {
             return;
         }    	
     	JSONObject messageObject = new JSONObject();
         messageObject.put("id", c.getNextMessageID());
-        messageObject.put("type", Message.CHANNEL_SYSTEM_LOCAL);//Type 4 = channel system message (local)
+        messageObject.put("type", MessageType.CHANNEL_SYSTEM_LOCAL);//Type 4 = channel system message (local)
         messageObject.put("message", message);
         messageObject.put("messageCode", messageCode);
-        messageObject.put("messageColour", msgColour.getRGB());
-        u.addQueuedMessage(channelID, messageObject);
+        messageObject.put("messageColour", "#"+Integer.toHexString(msgColour.getRGB()));
+        user.addQueuedMessage(channelID, messageObject);
     }
     
     

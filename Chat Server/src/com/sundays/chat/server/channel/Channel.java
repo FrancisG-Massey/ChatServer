@@ -40,7 +40,7 @@ import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.server.Permission;
 import com.sundays.chat.server.Settings;
-import com.sundays.chat.server.User;
+import com.sundays.chat.server.user.User;
 
 /**
  *
@@ -120,7 +120,7 @@ public final class Channel {
     	return this.channelOwner;
     }
 
-    public int getNoUsers() {
+    public int getUserCount() {
         return this.members.size();
     }
 
@@ -185,14 +185,20 @@ public final class Channel {
         return getUserRank(u.getUserID());
     }
 
+    /**
+     * Returns the rank held by the user within this channel.<br />
+     * NOTE: This method is deprecated. Use {@link #getUserGroup(int)} instead.
+     * @param userID The ID of the user to find the rank of.
+     * @return The rank the user holds in the channel (0 for guest).
+     */
     @Deprecated
-    public byte getUserRank (int uID) {
+    public byte getUserRank (int userID) {
     	byte rank = 0;
-    	if (uID == channelOwner) {
+    	if (userID == channelOwner) {
     		rank = Settings.OWNER_RANK;
-    	} else if (ranks.containsKey(uID)) {
-        	rank = ranks.get(uID);
-        } else if (permBans.contains(uID)) {
+    	} else if (ranks.containsKey(userID)) {
+        	rank = ranks.get(userID);
+        } else if (permBans.contains(userID)) {
         	rank = -3;
         }
         return rank;
@@ -229,7 +235,7 @@ public final class Channel {
     	//Temporary override method:
     	for (Entry<Integer, String> rankName : rankNames.entrySet()) {
     		if (!responseGroups.containsKey(rankName.getKey())) {
-    			ChannelGroup newGroup = new ChannelGroup(channelID, (int) Math.random());
+    			ChannelGroup newGroup = new ChannelGroup(channelID, (int) Math.random(), rankName.getKey().byteValue());
     			newGroup.setName(rankName.getValue());
     			newGroup.overrides = rankName.getKey();
     			newGroup.setIconUrl("images/ranks/rank"+rankName.getKey()+".png");

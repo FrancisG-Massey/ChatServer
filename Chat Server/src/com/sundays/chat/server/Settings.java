@@ -156,40 +156,6 @@ public class Settings {
     	String
     }*/
     
-    public enum Message {
-    	UNUSED0 (0),
-    	UNUSED1 (1),
-    	UNUSED2 (2),
-    	CHANNEL_SYSTEM_LOCAL (3),
-    	CHANNEL_SYSTEM_GLOBAL (4),
-    	CHANNEL_STANDARD (5),
-    	CHANNEL_LIST_ADDITION (6),
-    	CHANNEL_LIST_REMOVAL (7),
-    	CHANNEL_LIST_UPDATE (8),
-    	PERMISSION_UPDATE (9),
-    	CHANNEL_REMOVAL (10),
-    	RANK_LIST_ADDITION (11),
-    	RANK_LIST_REMOVAL (12),
-    	RANK_LIST_UPDATE (13),
-    	BAN_LIST_ADDITION (14),
-    	BAN_LIST_REMOVAL (15),
-    	RANK_NAME_UPDATE (16),
-    	CHANNEL_DETAIL_UPDATE (17),
-    	RANK_UPDATE (18);
-    	
-    	private final int id;
-    	Message (int id) {
-    		this.id = id;
-    	}
-    	
-    	public int id () { return this.id; }
-    	
-    	@Override
-    	public String toString () {
-			return /*"{\"name\":\""+this.name().toLowerCase(Locale.ENGLISH)+"\",\"id\":"+*/""+this.id;//+"}";    		
-    	}
-    }
-    
     public enum ReportTypes {
     	CHANNEL,
     	USER

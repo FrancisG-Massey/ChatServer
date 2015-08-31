@@ -16,14 +16,28 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.server.message;
+package com.sundays.chat.api.servlet;
 
-import java.io.Serializable;
-import java.util.HashMap;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 
-public class MessagePayload extends HashMap<String, Serializable> {
+import com.sundays.chat.server.ChatServer;
 
-	private static final long serialVersionUID = -4369963471374391050L;
-	
-	
+public class ServerMonitor implements ServletContextListener {
+
+	@Override
+	public void contextDestroyed(ServletContextEvent event) {
+		event.getServletContext().log("Shutting down ChatServer...");
+		try {
+			ChatServer.getInstance().shutdown();
+		} catch (Exception ex) {
+			event.getServletContext().log("Error shutting down ChatServer", ex);
+		}
+	}
+
+	@Override
+	public void contextInitialized(ServletContextEvent event) {
+		event.getServletContext().log("Starting server...");
+	}
+
 }

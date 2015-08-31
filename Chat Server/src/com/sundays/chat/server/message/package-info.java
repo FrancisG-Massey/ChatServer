@@ -16,14 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
+/**
+ * 
+ */
 package com.sundays.chat.server.message;
-
-import java.io.Serializable;
-import java.util.HashMap;
-
-public class MessagePayload extends HashMap<String, Serializable> {
-
-	private static final long serialVersionUID = -4369963471374391050L;
-	
-	
-}

@@ -18,7 +18,6 @@
  *******************************************************************************/
 package com.sundays.chat.server.message;
 
-import java.util.Map;
 
 /**
  * Represents a message to be sent to a user.
@@ -28,9 +27,9 @@ import java.util.Map;
 public class MessageWrapper {	
 	
 	private int orderID;
-	private int type;
+	private MessageType type;
 	private long timestamp;
-	private Map<String, String> payload;
+	private MessagePayload payload;
 	private int targetUser;
 	
 	/**
@@ -40,7 +39,7 @@ public class MessageWrapper {
 	 * @param targetUser
 	 * @param payload
 	 */
-	public MessageWrapper(int orderID, int type, long timestamp, int targetUser, Map<String, String> payload) {
+	public MessageWrapper(int orderID, MessageType type, long timestamp, int targetUser, MessagePayload payload) {
 		super();
 		this.orderID = orderID;
 		this.type = type;
@@ -59,7 +58,7 @@ public class MessageWrapper {
 	/**
 	 * @return the type
 	 */
-	public int getType() {
+	public MessageType getType() {
 		return type;
 	}
 
@@ -73,7 +72,7 @@ public class MessageWrapper {
 	/**
 	 * @return the payload
 	 */
-	public Map<String, String> getPayload() {
+	public MessagePayload getPayload() {
 		return payload;
 	}
 
