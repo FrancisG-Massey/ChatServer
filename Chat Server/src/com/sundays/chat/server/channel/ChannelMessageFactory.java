@@ -80,32 +80,29 @@ public class ChannelMessageFactory {
     }
     
     /**
-     * Prepares a JSON object containing the details for the specified permission (usually used to update data on a permission)
+     * Creates a message containing the details for the specified permission (usually used to update data on a permission)
      * 
-     * @param c, the channel object to retrieve permission data from
-     * @param p, the permission to send an update notification for
+     * @param channel The channel to retrieve permission data from
+     * @param permission The permission to send an update notification
      */
-    public JSONObject preparePermissionChange (Channel c, Permission p) {
-    	
-    	JSONObject responseJSON = new JSONObject();
-    	if (c == null) {
-    		return null;
+    public MessagePayload createPermissionUpdate (Channel channel, Permission permission) {
+    	if (channel == null) {
+    		throw new IllegalArgumentException("channel must not be null.");
     	}
-    	int permissionValue = c.getPermissionValue(p);
+    	MessagePayload message = new MessagePayload();
+    	
+    	int permissionValue = channel.getPermissionValue(permission);
     	if (permissionValue == -127) {
     		return null;//Permission does not exist
     	}
-		try {
-			responseJSON.put("permissionID", p.id());
-			responseJSON.put("name", p.toString());
-			responseJSON.put("value", permissionValue);
-			responseJSON.put("minValue", p.minValue());
-			responseJSON.put("maxValue", p.maxValue());
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return responseJSON;
+
+		message.put("id", permission.id());
+		message.put("name", permission.toString());
+		message.put("value", permissionValue);
+		message.put("minValue", permission.minValue());
+		message.put("maxValue", permission.maxValue());
+		
+		return message;
     }
     
     /**
@@ -160,26 +157,26 @@ public class ChannelMessageFactory {
         return responseJSON;
     }
     
+    /**
+     * Creates a message updating the rank name of a specific rank for the specified channel.<br />
+     * NOTE: This method is deprecated. Use {@link #createGroupDetails(ChannelGroup)} instead.
+     * 
+     * @param channel The channel object to retrieve rank names from
+     * @param rank The ID of the rank to send an update notification for
+     * @return A message payload containing the rank name
+     */
     @Deprecated
-    public JSONObject prepareRankNameChange (Channel c, int rank) {
-        /**
-         * @param c, the channel object to retrieve rank names from
-         * @param pID, the ID of the rank to send an update notification for
-         * @description prepares a JSON object updating the rank name of a specific rank for the specified channel
-         */
-    	JSONObject responseJSON = new JSONObject();
-    	if (c == null) {
-    		return null;
+    public MessagePayload createRankNameUpdate (Channel channel, int rank) {
+    	if (channel == null) {
+    		throw new IllegalArgumentException("channel must not be null.");
     	}
-        try {
-        	responseJSON.put("notice", "This API method is deprecated. Please use /channel/[x]/groups instead.");
-        	responseJSON.put("rankID", rank);
-        	responseJSON.put("rankName", c.getRankNames().get(rank));
-        } catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-        return responseJSON;
+    	MessagePayload message = new MessagePayload();
+
+    	message.put("notice", "This API method is deprecated. Please use /channel/[x]/groups instead.");
+    	message.put("rankID", rank);
+    	message.put("rankName", channel.getRankNames().get(rank));
+    	
+        return message;
     }
     
     /**
@@ -187,7 +184,7 @@ public class ChannelMessageFactory {
      * @param group The group to pack basic details from
      * @return A message payload containing the group details
      */
-    private MessagePayload createBasicGroupDetails (ChannelGroup group) {
+    public MessagePayload createGroupDetails (ChannelGroup group) {
     	MessagePayload message = new MessagePayload();
     	message.put("id", group.overrides);
     	message.put("name", group.getName());
@@ -217,7 +214,7 @@ public class ChannelMessageFactory {
         			member.put("userID", u1.getUserID());
         			member.put("username", u1.getUsername());
         			ChannelGroup group = channel.getUserGroup(u1.getUserID());
-        			member.put("group", createBasicGroupDetails(group));
+        			member.put("group", createGroupDetails(group));
         			member.put("rank", group.getLegacyRank());
         			members[i] = member;
         			i++;
@@ -244,7 +241,7 @@ public class ChannelMessageFactory {
     	message.put("username", user.getUsername());//Username of the user joining the channel
     	
     	ChannelGroup group = channel.getUserGroup(user.getUserID());
-    	message.put("group", createBasicGroupDetails(group));
+    	message.put("group", createGroupDetails(group));
     	message.put("rank", group.getLegacyRank());//Rank of the user joining the channel
 		return message;            
     }
@@ -275,7 +272,7 @@ public class ChannelMessageFactory {
 		message.put("username", user.getUsername());
 		
 		ChannelGroup group = channel.getUserGroup(user.getUserID());
-		message.put("group", createBasicGroupDetails(group));//New information about the group the user is in
+		message.put("group", createGroupDetails(group));//New information about the group the user is in
 		message.put("rank", group.getLegacyRank());
 		return message;
     }
@@ -307,7 +304,7 @@ public class ChannelMessageFactory {
                     //System.out.println("User: "+un);
         			rank.put("username", un);
         			ChannelGroup group = channel.getUserGroup(userID);
-        			rank.put("group", createBasicGroupDetails(group));
+        			rank.put("group", createGroupDetails(group));
         			rank.put("rank", group.getLegacyRank());
         			ranks[i] = rank;
         			i++;
@@ -337,7 +334,7 @@ public class ChannelMessageFactory {
     	message.put("username", username);//Username of the user joining the channel
     	
     	ChannelGroup group = channel.getUserGroup(userID);
-        message.put("group", createBasicGroupDetails(group));//Information about the group of the user being added to the rank list
+        message.put("group", createGroupDetails(group));//Information about the group of the user being added to the rank list
 		message.put("rank", group.getLegacyRank());//Rank of the user joining the channel
 		
 		return message;            
@@ -374,7 +371,7 @@ public class ChannelMessageFactory {
 		message.put("username", username);//Username to change the user on the list to
 		
 		ChannelGroup group = channel.getUserGroup(userID);
-		message.put("group", createBasicGroupDetails(group));//New information about the group the user is in
+		message.put("group", createGroupDetails(group));//New information about the group the user is in
 		message.put("rank", group.getLegacyRank());//Rank to change the user on the list to
 		
 		return message;

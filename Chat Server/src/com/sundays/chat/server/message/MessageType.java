@@ -101,6 +101,12 @@ public enum MessageType {
 	 */
 	CHANNEL_LIST_UPDATE(8),
 	PERMISSION_UPDATE(9),
+	
+	/**
+	 * Removes the user from the channel<br /><br />
+	 * 
+	 * Contains no properties.
+	 */
 	CHANNEL_REMOVAL(10),
 	
 	/**

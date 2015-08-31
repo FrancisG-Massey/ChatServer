@@ -427,11 +427,11 @@ var chatClient = {
 							chatClient.channelList.updateOnList(v.userID, v.username, v.group);
 							break;
 						case 9://Permission change
-							chatClient.permissionList.updateOnList(v.permissionID, v.name, v.value);
+							chatClient.permissionList.updateOnList(v.id, v.name, v.value);
 							//alert(JSON.stringify(v));
 							delete chatClient.userPermissions[v.name];
 							chatClient.userPermissions[v.name] = {
-									permissionID : v.permissionID,
+									permissionID : v.id,
 									name : v.name,
 									value : v.value
 							};

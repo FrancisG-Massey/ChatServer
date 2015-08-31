@@ -203,26 +203,24 @@ public class ChannelAPI {
     }
 
     public JSONObject leaveChannel (User user) throws JSONException {
-        Channel c = user.getChannel();
+        Channel channel = user.getChannel();
         JSONObject response = new JSONObject();
-        if (c != null) {
-            c.removeUser(user);
-            if (c.getUsers().isEmpty()) {                
+        if (channel != null) {
+        	channel.removeUser(user);
+            if (channel.getUsers().isEmpty()) {                
                 //channelManager.cueChannelUnload(c.channelID);//If the channel is empty, remove it from the server to save resources
             } else {
             	//Notify other users in the channel of this user's departure
-            	MessagePayload departureNotice = messageFactory.createChannelUserRemoval(user, c);
-            	for (User u1 : c.getUsers()) {
-            		u1.sendMessage(MessageType.CHANNEL_LIST_REMOVAL, c.getID(), departureNotice);
+            	MessagePayload departureNotice = messageFactory.createChannelUserRemoval(user, channel);
+            	for (User u1 : channel.getUsers()) {
+            		u1.sendMessage(MessageType.CHANNEL_LIST_REMOVAL, channel.getID(), departureNotice);
             	}
             }            
         }
         //Notifies the user of their removal
         user.setChannel(null);
-        JSONObject messageObject = new JSONObject();
-    	messageObject.put("id", c.getNextMessageID());
-        messageObject.put("type", MessageType.CHANNEL_REMOVAL);
-        user.addQueuedMessage(c.getID(), messageObject);
+
+        user.sendMessage(MessageType.CHANNEL_REMOVAL, channel.getID(), new MessagePayload());
         
         //Returns successful
         response.put("status", 200);
@@ -441,9 +439,9 @@ public class ChannelAPI {
     /*
      * Channel permanent data updates (Administrative functions)
      */
-    public JSONObject updatePermission (User u, int cID, Permission p, int newV) throws JSONException {
+    public JSONObject updatePermission (User user, int channelID, Permission p, int newV) throws JSONException {
     	JSONObject response = new JSONObject();
-        Channel channel = channelManager.getChannel(cID);        
+        Channel channel = channelManager.getChannel(channelID);        
         if (channel == null) {
         	//If the channel was not found, send an error message
         	response.put("status", 404);
@@ -451,14 +449,14 @@ public class ChannelAPI {
         	response.put("message", "Cannot change permissions: channel not found.");
             return response;
         }
-        if (!channel.userHasPermission(u, Permission.PERMISSIONCHANGE)) {
+        if (!channel.userHasPermission(user, Permission.PERMISSIONCHANGE)) {
         	//Check if user has ability to change permissions (7 = change permissions)
         	response.put("status", 403);
         	response.put("msgCode", 122);
         	response.put("message", "You do not have the ability to change permissions in this channel.");
             return response;
         }
-        if (newV > channel.getUserRank(u)) {
+        if (newV > channel.getUserRank(user)) {
         	//If the permission is set higher than the users rank, return an error
         	response.put("status", 403);
         	response.put("msgCode", 157);
@@ -483,7 +481,7 @@ public class ChannelAPI {
             case JOIN://Join permission
                 for (User u1 : channel.getUsers()) {
                     if (channel.getUserRank(u1) < newV) {//Removes any users which no longer have the ability to be in the channel
-                    	channelManager.sendChannelLocalMessage(u1, "Permissions for this channel have changed; you no longer have the ability to join.", 124, cID);
+                    	channelManager.sendChannelLocalMessage(u1, "Permissions for this channel have changed; you no longer have the ability to join.", 124, channelID);
                         this.leaveChannel(u1);
                     }
                 }
@@ -493,12 +491,11 @@ public class ChannelAPI {
             	break;
         }        
     	//Sends out the permission change notification to all users currently in the channel
-    	JSONObject messageObject = messageFactory.preparePermissionChange(channel, p);
-    	messageObject.put("id", channel.getNextMessageID());
-        messageObject.put("type", MessageType.PERMISSION_UPDATE);//Type 9 = permission update
+        MessagePayload messagePayload = messageFactory.createPermissionUpdate(channel, p);
+
         for (User u1 : channel.getUsers()) {
         	//Loops through all the people currently in the channel, sending the permission change to all of them.
-            u1.addQueuedMessage(channel.getID(), messageObject);
+            u1.sendMessage(MessageType.PERMISSION_UPDATE, channelID, messagePayload);
         }
 
         //Populates the response as successful
@@ -509,10 +506,11 @@ public class ChannelAPI {
         return response;
     }
     
-    public JSONObject changeRankName (User u, int cID, byte rank, String name) throws JSONException {
+    public JSONObject changeRankName (User u, int channelID, byte rank, String name) throws JSONException {
     	JSONObject response = new JSONObject();
+    	response.put("note", "NOTICE: This API method is deprecated, and may be removed in future releases.");
         response.put("id", rank);
-        Channel channel = channelManager.getChannel(cID);
+        Channel channel = channelManager.getChannel(channelID);
         if (channel == null) {
         	response.put("status", 404);
         	response.put("msgCode", 163);
@@ -544,12 +542,12 @@ public class ChannelAPI {
         channel.setRankName(rank, name);//Changes the name in the temporarily loaded version of the channel
         //channel.flushChannelDetails();//Applies the name change to the channel database
         channel.flushRequired = true;
-        JSONObject messageObject = messageFactory.prepareRankNameChange(channel, rank);
-        messageObject.put("id", channel.getNextMessageID());
-        messageObject.put("type", MessageType.RANK_NAME_UPDATE);//Type 16 = rank name update
+        
+        MessagePayload messagePayload = messageFactory.createRankNameUpdate(channel, rank);
+
         for (User u1 : channel.getUsers()) {
         	//Loops through all the people currently in the channel, sending the rank name change to all of them.
-            u1.addQueuedMessage(channel.getID(), messageObject);
+        	u1.sendMessage(MessageType.RANK_NAME_UPDATE, channelID, messagePayload);
         }
         
         //Populates the response as successful

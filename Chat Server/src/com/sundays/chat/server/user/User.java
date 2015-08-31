@@ -123,7 +123,7 @@ public class User {
      * @throws JSONException
      */
     @Deprecated
-    public void addQueuedMessage (int channelID, JSONObject message) throws JSONException {
+    private void addQueuedMessage (int channelID, JSONObject message) throws JSONException {
     	//Places a new message in the user's message cue. Message cue is channel-specific
     	if (message == null) {
     		//Don't bother with null messages; these are caused by a glitch in the system somewhere
