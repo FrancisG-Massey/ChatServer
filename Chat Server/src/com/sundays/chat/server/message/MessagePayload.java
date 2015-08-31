@@ -24,6 +24,13 @@ import java.util.HashMap;
 public class MessagePayload extends HashMap<String, Serializable> {
 
 	private static final long serialVersionUID = -4369963471374391050L;
+		
+	public MessagePayload () {
+		super();
+	}
 	
-	
+	public MessagePayload (int messageID) {
+		super();
+		this.put("id", messageID);
+	}
 }

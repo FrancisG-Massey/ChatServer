@@ -244,7 +244,7 @@ public final class UserManager {
         		UserDetails details = new UserDetails();
         		details.setUserID(u.getUserID());
         		details.setUsername(u.getUsername());
-        		details.setDefaultChannel(u.getDefaultChannel());
+        		details.setDefaultChannel(currentChannel);
         		userIO.saveUserData(details);
         	} catch (IOException ex) {
         		logger.error("Failed to save details for user "+u.getUserID(), ex);

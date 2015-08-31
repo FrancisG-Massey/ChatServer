@@ -167,14 +167,16 @@ var chatClient = {
 						chatClient.signOut(null);
 					});
 					$("#accountcreate_button").remove();
-					if (callback)
+					if (callback) {
 						callback();
+					}						
 				} else {
 					alert(response.message);
 				}
 			});
 		},
 		signOut : function (callback) {
+			chatClient.stopCheckingMessages = true;
 			chatClient.sendJSONRequest("user/logout/", {
 				"session": chatClient.session
 			}, function (response) {
@@ -207,6 +209,7 @@ var chatClient = {
 			});
 		},
 		signOutSync : function () {
+			chatClient.stopCheckingMessages = true;
 			$.ajax({
 				url: "user/logout/",
 				async: false,

@@ -89,8 +89,8 @@ public class UserDetails {
 	@Override
 	public String toString() {
 		return "UserDetails [userID=" + userID + ", username=" + username
-				+ ", defaultChannel=" + defaultChannel + ", hashedPassword="
-				+ Arrays.toString(hashedPassword) + "]";
+				+ ", defaultChannel=" + defaultChannel + ", alias="
+				+ alias + "]";
 	}
 
 }

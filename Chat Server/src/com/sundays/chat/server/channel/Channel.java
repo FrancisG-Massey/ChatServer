@@ -135,7 +135,8 @@ public final class Channel {
      * New grouping system
      */
     public boolean userHasPermission (User user, Permission p) {
-        return getUserGroup(user).permissions.contains(p);
+    	return userHasPermissionOld(user, p);
+        //return getUserGroup(user).permissions.contains(p);
     }
     
     public boolean groupCanActionGroup (ChannelGroup source, ChannelGroup target) {    	

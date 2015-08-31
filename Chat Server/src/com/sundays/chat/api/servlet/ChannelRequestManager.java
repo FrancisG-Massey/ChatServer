@@ -20,6 +20,7 @@ package com.sundays.chat.api.servlet;
 
 import java.awt.Color;
 import java.io.IOException;
+import java.util.List;
 import java.util.Locale;
 
 import javax.servlet.ServletConfig;
@@ -28,6 +29,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -35,6 +37,7 @@ import com.sundays.chat.server.ChatServer;
 import com.sundays.chat.server.Permission;
 import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.channel.ChannelAPI;
+import com.sundays.chat.server.message.MessageWrapper;
 import com.sundays.chat.server.user.User;
 import com.sundays.chat.utils.HttpRequestTools;
 
@@ -261,7 +264,21 @@ public class ChannelRequestManager extends HttpServlet {
 				//Request to collect cued messages (NOTE: This will remove everything currently in the cue)
 				if (u.hasCuedMessages(cID)) {
 					responseJSON.put("status", HttpServletResponse.SC_OK);
-					responseJSON.put("messages", u.getQueuedMessages(cID, true));
+					List<MessageWrapper> messages = u.getQueuedMessages(cID, true);
+					if (messages == null) {
+						responseJSON.put("messages", JSONObject.NULL);
+					} else {
+						JSONArray packedMessages = new JSONArray();
+						JSONObject jsonObject;
+						for (MessageWrapper message : messages) {
+							jsonObject = new JSONObject(message.getPayload());
+							jsonObject.put("orderID", message.getOrderID());
+							jsonObject.put("type", message.getType().getID());
+							jsonObject.put("timestamp", message.getTimestamp());
+							packedMessages.put(jsonObject);
+						}
+						responseJSON.put("messages", packedMessages);
+					}
 				} else {
 					responseJSON.put("status", HttpServletResponse.SC_NO_CONTENT);
 				}

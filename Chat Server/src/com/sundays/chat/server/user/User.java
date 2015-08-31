@@ -19,19 +19,15 @@
 package com.sundays.chat.server.user;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import com.sundays.chat.io.UserDetails;
 import com.sundays.chat.server.channel.Channel;
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.message.MessageType;
+import com.sundays.chat.server.message.MessageWrapper;
 
 /**
  * Represents a user within the chat system. 
@@ -42,14 +38,12 @@ public class User {
     private final int userID;
     private Channel currentChannel;
     private String sessionID;
-    private ConcurrentHashMap<Integer, List<JSONObject>> queuedMessages = new ConcurrentHashMap<Integer, List<JSONObject>>();
+    private ConcurrentHashMap<Integer, List<MessageWrapper>> queuedMessages = new ConcurrentHashMap<>();
     public Boolean connected = true;
     private int nextOrderID = 10;
     
     private String username;
     private int defaultChannel;
-    
-    private UserDetails details;
 
 	public User (int id, UserDetails details) {
         this.userID = id;
@@ -93,7 +87,7 @@ public class User {
         	//Connected to channel
         	if (this.queuedMessages.get(newchannel.getID()) == null) {
         		//If there is no message queue for this channel, create it.
-        		this.queuedMessages.put(newchannel.getID(), new ArrayList<JSONObject>());
+        		this.queuedMessages.put(newchannel.getID(), new ArrayList<MessageWrapper>());
         	}
         }                
     }
@@ -106,55 +100,38 @@ public class User {
      * @param payload The payload data for the message.
      */
     public void sendMessage (MessageType type, int channelID, MessagePayload payload) {
-    	JSONObject message = new JSONObject(payload);
-    	try {
-			message.put("type", type.getID());
-			addQueuedMessage(channelID, message);
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
+    	MessageWrapper wrapper = new MessageWrapper(getOrderID(), type, System.currentTimeMillis(), this.userID, payload);
+    	
+    	List<MessageWrapper> queuedMessages = this.queuedMessages.get(channelID);
+    	if (queuedMessages == null) {
+    		//If the channel queue does not exist for this user, create it.
+    		queuedMessages = new CopyOnWriteArrayList<MessageWrapper>();
+    		this.queuedMessages.put(channelID, queuedMessages);
+    	}
+    	queuedMessages.add(wrapper);
     }
     
     /**
-     * Adds a message to the user's message queue.<br />
-     * NOTE: This method is deprecated. {@link #sendMessage(MessageType, int, Map)} should be used instead.
-     * @param channelID The ID of the channel the message is from.
-     * @param message The message object to queue.
-     * @throws JSONException
+     * Retrieves the queued messages for the user in the specified channel.
+     * @param channelID The ID of the channel which the messages were sent from.
+     * @param remove Whether the messages should be removed from the queue.
+     * @return A list of wrapped messsages, or null if there are no queued messages from the channel
      */
-    @Deprecated
-    private void addQueuedMessage (int channelID, JSONObject message) throws JSONException {
-    	//Places a new message in the user's message cue. Message cue is channel-specific
-    	if (message == null) {
-    		//Don't bother with null messages; these are caused by a glitch in the system somewhere
-    		return;
-    	}
-    	message.put("orderID", getOrderID());
-    	message.put("timestamp", new Date().getTime());
-    	List<JSONObject> cuedMessages = this.queuedMessages.get(channelID);
-    	if (cuedMessages == null) {
-    		//If the channel cue does not exist for this user, create it.
-    		cuedMessages = new CopyOnWriteArrayList<JSONObject>();
-    		this.queuedMessages.put(channelID, cuedMessages);
-    	}
-    	cuedMessages.add(message);
-    }
-    
-    public List<JSONObject> getQueuedMessages (int channelID, boolean remove) {
-    	//Retrieves the cued messages for the specified channel. 'remove' is used to specify if the messages should be removed from the cue.
-    	List<JSONObject> cuedMessages = this.queuedMessages.get(channelID);
-    	if (cuedMessages == null) {
+    public List<MessageWrapper> getQueuedMessages (int channelID, boolean remove) {
+    	// 'remove' is used to specify if the messages should be removed from the cue.
+    	List<MessageWrapper> queuedMessages = this.queuedMessages.get(channelID);
+    	if (queuedMessages == null) {
     		return null;
     	}
     	if (remove){
     		this.clearMessageQueue(channelID);
     	}
-		return cuedMessages;
+		return queuedMessages;
     }
     
-    public List<JSONObject> getQueuedMessages (int channelID, boolean remove, int[] types) {
+    public List<MessageWrapper> getQueuedMessages (int channelID, boolean remove, int[] types) {
     	//Retrieves the cued messages for the specified channel. 'remove' is used to specify if the messages should be removed from the cue.
-    	List<JSONObject> cuedMessages = this.queuedMessages.get(channelID);
+    	List<MessageWrapper> cuedMessages = this.queuedMessages.get(channelID);
     	if (cuedMessages == null) {
     		return null;
     	}
@@ -165,7 +142,7 @@ public class User {
     }
     
     public boolean hasCuedMessages (int channelID) {
-    	List<JSONObject> cuedMessages = this.queuedMessages.get(channelID);
+    	List<MessageWrapper> cuedMessages = this.queuedMessages.get(channelID);
     	if (cuedMessages == null) {
     		return false;
     	}
@@ -181,7 +158,7 @@ public class User {
      * @param channelID The ID for the channel to remove messages related to
      */
     public void clearMessageQueue (int channelID) {
-    	this.queuedMessages.replace(channelID, new CopyOnWriteArrayList<JSONObject>());
+    	this.queuedMessages.replace(channelID, new CopyOnWriteArrayList<MessageWrapper>());
     }
 
 	public int getDefaultChannel() {
@@ -189,6 +166,6 @@ public class User {
 	}
 
 	public void setDefaultChannel(int defaultChannel) {
-		this.details.setDefaultChannel(defaultChannel);
+		this.defaultChannel = defaultChannel;
 	}
 }
