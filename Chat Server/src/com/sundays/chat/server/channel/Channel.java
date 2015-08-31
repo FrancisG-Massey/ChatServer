@@ -19,7 +19,7 @@
 package com.sundays.chat.server.channel;
 
 import java.awt.Color;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -33,13 +33,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.json.JSONObject;
-
 import com.sundays.chat.io.ChannelDataManager;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.server.Permission;
 import com.sundays.chat.server.Settings;
+import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.user.User;
 
 /**
@@ -48,7 +47,7 @@ import com.sundays.chat.server.user.User;
  */
 public final class Channel {
 
-	public final int channelID;
+	private final int channelID;
 	
 	/*Permanent data*/
     private Color openingMessageColour = Color.BLACK;
@@ -65,7 +64,7 @@ public final class Channel {
     /*Instanced data*/
     private transient final Map<Integer, Date> tempBans = new ConcurrentHashMap<Integer, Date>();
     private transient final List<User> members = new CopyOnWriteArrayList<User>();
-    private transient final LinkedList<JSONObject> messageCache = new LinkedList<JSONObject>();
+    private transient final LinkedList<MessagePayload> messageCache = new LinkedList<>();
     //Contains a specified number of recent messages from the channel (global system and normal messages)
     protected boolean unloadInitialised = false,
     		resetLaunched = false,
@@ -92,8 +91,16 @@ public final class Channel {
         ranks = loadRanks();
         System.out.println("Successfully loaded channel: " + this.channelName);
     }
-    
-    /*
+        
+    /**
+     * Gets the ID for this channel
+	 * @return the channel ID
+	 */
+	public int getID() {
+		return channelID;
+	}
+
+	/*
      * Reads basic details (fully public methods, make sure you only return read-only variables which cannot be modified)
      */
     public String getName () {
@@ -127,15 +134,15 @@ public final class Channel {
     /*
      * New grouping system
      */
-    public boolean userHasPermission (User u, Permission p) {
-        return getUserGroup(u).permissions.contains(p);
+    public boolean userHasPermission (User user, Permission p) {
+        return getUserGroup(user).permissions.contains(p);
     }
     
     public boolean groupCanActionGroup (ChannelGroup source, ChannelGroup target) {    	
     	return source.childGroups.contains(target.groupID);
     }
     
-    private ChannelGroup getUserGroup (User u) {
+    protected ChannelGroup getUserGroup (User u) {
     	return getUserGroup(u.getUserID());
     }
     
@@ -160,7 +167,7 @@ public final class Channel {
     	if (rankNames.containsKey(gID)) {
     		return rankNames.get(gID);
     	} else {
-    		throw new IllegalArgumentException("The requested rank does not exist.");
+    		throw new IllegalArgumentException("The requested group does not exist.");
     	}
     }
     
@@ -176,13 +183,19 @@ public final class Channel {
     }
 
     @Deprecated
-    public boolean userHasPermissionOld (User u, Permission p) {
-        return getUserRank(u) >= getPermissionValue(p);
+    public boolean userHasPermissionOld (User user, Permission p) {
+        return getUserRank(user) >= getPermissionValue(p);
     }
 
+    /**
+     * Returns the rank held by the user within this channel.<br />
+     * NOTE: This method is deprecated. Use {@link #getUserGroup(User)} instead.
+     * @param user The user to find the rank of.
+     * @return The rank the user holds in the channel (0 for guest).
+     */
     @Deprecated
-    public byte getUserRank (User u) {
-        return getUserRank(u.getUserID());
+    public byte getUserRank (User user) {
+        return getUserRank(user.getUserID());
     }
 
     /**
@@ -418,7 +431,7 @@ public final class Channel {
      * 
      * @param messageObject the message to add to the cache.
      */
-    protected void addToMessageCache (JSONObject messageObject) {
+    protected void addToMessageCache (MessagePayload messageObject) {
     	synchronized (messageCache) {
 	    	if (messageCache.size() >= Settings.CHANNEL_CACHE_SIZE) {
 	    		messageCache.removeFirst();
@@ -556,7 +569,7 @@ public final class Channel {
      * 
      * @return an ArrayList copy of the current message cache
      */
-    protected List<JSONObject> getCurrentCache () {
-    	return new ArrayList<JSONObject>(this.messageCache);
+    protected List<MessagePayload> getCurrentCache () {
+    	return Collections.unmodifiableList(this.messageCache);
     }
 }

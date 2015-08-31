@@ -227,7 +227,7 @@ public final class UserManager {
         int currentChannel = 0;
         if (u.getChannel() != null) {
         	//If the user is in a channel, make them leave it
-            currentChannel = u.getChannel().channelID;
+            currentChannel = u.getChannel().getID();
             try {
 				ChatServer.getInstance().channelAPI().leaveChannel(u);
 			} catch (JSONException e) {

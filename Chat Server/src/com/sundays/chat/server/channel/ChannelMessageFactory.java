@@ -48,8 +48,7 @@ public class ChannelMessageFactory {
 			instance = new ChannelMessageFactory();
 		}
 		return instance;
-	}
-    
+	}    
     
     public JSONObject prepareChannelPermissions (Channel c) {
         /**
@@ -109,28 +108,27 @@ public class ChannelMessageFactory {
 		return responseJSON;
     }
     
-    public JSONObject prepareChannelDetails (Channel c) {
-        /**
-         * @param c, the channel object to retrieve details from
-         * @description prepares a JSON object containing the basic details about the specified channel
-         */
-    	JSONObject responseJSON = new JSONObject();
-    	if (c == null) {
-    		return null;
+    /**
+     * Packs the basic details (name, openingMessage, owner) of a channel into a message.
+     * @param channel The channel object to retrieve details from
+     * @return A message payload containing the channel details
+     */
+    public MessagePayload createDetailsMessage (Channel channel) {
+    	if (channel == null) {
+    		throw new IllegalArgumentException("channel must not be null.");
     	}
-        try {
-        	responseJSON.put("name", c.getName());
-        	responseJSON.put("openingMessage", c.getOpeningMessage());
-        	responseJSON.put("messageColour", c.getOMColour().getRGB());
-        	JSONObject owner = new JSONObject();
-        	owner.put("id", c.getOwnerID());
-        	owner.put("name", ChatServer.getInstance().userManager().getUsername(c.getOwnerID()));
-        	responseJSON.put("owner", owner);
-        } catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-        return responseJSON;
+    	MessagePayload message = new MessagePayload();
+    	
+    	message.put("name", channel.getName());
+    	message.put("openingMessage", channel.getOpeningMessage());
+    	message.put("messageColour", channel.getOMColour().getRGB());
+    	
+    	MessagePayload owner = new MessagePayload();
+    	owner.put("id", channel.getOwnerID());
+    	owner.put("name", ChatServer.getInstance().userManager().getUsername(channel.getOwnerID()));
+    	message.put("owner", owner);
+    	
+        return message;
     }
     
     @Deprecated
@@ -205,11 +203,11 @@ public class ChannelMessageFactory {
      */
     public JSONObject prepareChannelList (Channel channel) {
     	if (channel == null) {
-    		return null;
+    		throw new IllegalArgumentException("channel must not be null.");
     	}
     	JSONObject responseJSON = new JSONObject();
         try {
-        	responseJSON.put("id", channel.channelID);
+        	responseJSON.put("id", channel.getID());
         	responseJSON.put("totalUsers", channel.getUserCount());
         	if (channel.getUserCount() > 0) {
         		JSONObject[] members = new JSONObject[channel.getUserCount()];
@@ -293,7 +291,7 @@ public class ChannelMessageFactory {
     	JSONObject responseJSON = new JSONObject();
     	Map<Integer, Byte> ranksList = channel.getRanks();//Picks up the rank data for the channel
         try {
-        	responseJSON.put("id", channel.channelID);
+        	responseJSON.put("id", channel.getID());
         	responseJSON.put("totalUsers", ranksList.size());
         	if (ranksList.size() > 0) {
         		JSONObject[] ranks = new JSONObject[ranksList.size()];
@@ -393,7 +391,7 @@ public class ChannelMessageFactory {
     	JSONObject responseJSON = new JSONObject();
     	List<Integer> bans = c.getBans();
         try {
-			responseJSON.put("id", c.channelID);
+			responseJSON.put("id", c.getID());
 			responseJSON.put("totalBans", bans.size());
 			if (bans.size() > 0) {
 				JSONObject[] banList = new JSONObject[bans.size()];
@@ -464,7 +462,7 @@ public class ChannelMessageFactory {
     	JSONObject responseJSON = new JSONObject();
     	Map<Integer, ChannelGroup> channelGroups = c.getGroups();//Picks up the rank data for the channel
         try {
-        	responseJSON.put("channelID", c.channelID);
+        	responseJSON.put("channelID", c.getID());
         	responseJSON.put("totalGroups", channelGroups.size());
         	if (channelGroups.size() > 0) {
         		List<JSONObject> groups = new ArrayList<JSONObject>(channelGroups.size());

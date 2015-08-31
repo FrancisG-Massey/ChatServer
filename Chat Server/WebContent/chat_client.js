@@ -400,19 +400,19 @@ var chatClient = {
 						switch (parseInt(v.type)) {
 						case 3://Local channel system message
 							$("<div class='message_text' />").html(v.message)
-							.css("color", javaColourToCss(v.messageColour))
+							.css("color", v.colour)
 							.appendTo("#messages");
 							break;
 						case 4://Global channel system message
 							$("<div class='message_text b' />").html(v.message)
-							.css("color", javaColourToCss(v.messageColour))
+							.css("color", v.colour)
 							.appendTo("#messages");
 							break;
 						case 5://General channel user message
 							$("<div class='message_text' />").appendTo("#messages")
 							.data("userID", v.userID)
-							.append("<img src='images/ranks/rank"+v.senderRank+".png' alt='' title='Rank: "+
-							chatClient.channelRankDetails[v.senderRank].rankName+"' />")
+							.append("<img src='images/ranks/rank"+v.senderGroup+".png' alt='' title='Rank: "+
+							chatClient.channelRankDetails[v.senderGroup].rankName+"' />")
 							.append("<span>"+v.senderName+": </span>")
 							.append($("<span />").text(v.message));
 							break;

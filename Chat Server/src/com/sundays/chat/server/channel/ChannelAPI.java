@@ -45,15 +45,16 @@ public class ChannelAPI {
     /*
      * Channel information requests
      */
-    public JSONObject getChannelDetails (int cID) {
-        Channel channel = channelManager.getChannel(cID);
-        JSONObject channelData = new JSONObject();
+    public MessagePayload getChannelDetails (int channelID) {
+        Channel channel = channelManager.getChannel(channelID);
         if (channel == null) {
-        	channelManager.loadChannel(cID);
-        	channel = channelManager.getChannel(cID);
+        	channelManager.loadChannel(channelID);
+        	channel = channelManager.getChannel(channelID);
+        	if (channel == null) {
+        		return null;
+        	}
         }
-        channelData = messageFactory.prepareChannelDetails(channel);
-        return channelData;
+        return messageFactory.createDetailsMessage(channel);
     }
     
     public JSONObject getChannelList (int cID) throws JSONException {
@@ -154,7 +155,7 @@ public class ChannelAPI {
         	response.put("msgCode", 102);
         	response.put("message", "You are permanently banned from this channel.");
             if (channel.getUsers().isEmpty()) {                
-                channelManager.queueChannelUnload(channel.channelID);
+                channelManager.queueChannelUnload(channel.getID());
             }
             return response;
         }
@@ -196,32 +197,32 @@ public class ChannelAPI {
         user.clearMessageQueue(cID);
         response.put("status", 200);
         response.put("rank", channel.getUserRank(user));
-        response.put("details", messageFactory.prepareChannelDetails(channel));
+        response.put("details", messageFactory.createDetailsMessage(channel));
         channelManager.sendChannelLocalMessage(user, channel.getOpeningMessage(), 40, cID);//Sends the opening message to the user
         return response;
     }
 
-    public JSONObject leaveChannel (User u) throws JSONException {
-        Channel c = u.getChannel();
+    public JSONObject leaveChannel (User user) throws JSONException {
+        Channel c = user.getChannel();
         JSONObject response = new JSONObject();
         if (c != null) {
-            c.removeUser(u);
+            c.removeUser(user);
             if (c.getUsers().isEmpty()) {                
                 //channelManager.cueChannelUnload(c.channelID);//If the channel is empty, remove it from the server to save resources
             } else {
             	//Notify other users in the channel of this user's departure
-            	MessagePayload departureNotice = messageFactory.createChannelUserRemoval(u, c);
+            	MessagePayload departureNotice = messageFactory.createChannelUserRemoval(user, c);
             	for (User u1 : c.getUsers()) {
-            		u1.sendMessage(MessageType.CHANNEL_LIST_REMOVAL, c.channelID, departureNotice);
+            		u1.sendMessage(MessageType.CHANNEL_LIST_REMOVAL, c.getID(), departureNotice);
             	}
             }            
         }
         //Notifies the user of their removal
-        u.setChannel(null);
+        user.setChannel(null);
         JSONObject messageObject = new JSONObject();
     	messageObject.put("id", c.getNextMessageID());
         messageObject.put("type", MessageType.CHANNEL_REMOVAL);
-        u.addQueuedMessage(c.channelID, messageObject);
+        user.addQueuedMessage(c.getID(), messageObject);
         
         //Returns successful
         response.put("status", 200);
@@ -230,33 +231,35 @@ public class ChannelAPI {
         return response;
     }
     
-    public JSONObject sendMessage (User u, String message) throws JSONException {
+    public JSONObject sendMessage (User user, String message) throws JSONException {
     	JSONObject response = new JSONObject();
-        Channel c = u.getChannel();
-        if (c == null) {
+        Channel channel = user.getChannel();
+        if (channel == null) {
         	response.put("status", 404);
         	response.put("msgCode", 105);
         	response.put("message", "Cannot send message: not currently in a channel.");
             return response;
         }
-        if (!c.userHasPermissionOld(u, Permission.TALK)) {
+        if (!channel.userHasPermission(user, Permission.TALK)) {
         	//Checks if user has permission to talk in channel (1 = talk permission)
         	response.put("status", 403);
         	response.put("msgCode", 106);
         	response.put("message", "You do not have the appropriate permissions to send messages in this channel.");
             return response;
         }
-        JSONObject messageObject = new JSONObject();
-        messageObject.put("id", c.getNextMessageID());
-        messageObject.put("type", MessageType.CHANNEL_STANDARD);//Type 5 = normal channel message
-        messageObject.put("message", message);
-        messageObject.put("senderName", u.getUsername());
-        messageObject.put("senderRank", c.getUserRank(u));
-        messageObject.put("senderID", u.getUserID()); 
-        c.addToMessageCache(messageObject);
-        for (User u1 : c.getUsers()) {
+        
+        MessagePayload messagePayload = new MessagePayload();
+        
+        messagePayload.put("message", message);
+        messagePayload.put("senderName", user.getUsername());
+        messagePayload.put("senderGroup", channel.getUserGroup(user).getLegacyRank());
+        messagePayload.put("senderID", user.getUserID()); 
+        
+        channel.addToMessageCache(messagePayload);
+        
+        for (User u1 : channel.getUsers()) {
         	//Loops through all the people currently in the channel, sending the message to each of them.
-            u1.addQueuedMessage(c.channelID, messageObject);
+            u1.sendMessage(MessageType.CHANNEL_STANDARD, channel.getID(), messagePayload);
         }
         response.put("status", 200);
         return response;
@@ -275,7 +278,7 @@ public class ChannelAPI {
         	response.put("message", "The channel you have attempted to reset is not loaded.\nResetting will have no effect.");
             return response;
         }
-        if (!c.userHasPermissionOld(u, Permission.RESET)) {
+        if (!c.userHasPermission(u, Permission.RESET)) {
         	//Check if user has ability to reset the channel (5 = reset permission)
         	response.put("status", 403);
         	response.put("msgCode", 108);
@@ -283,7 +286,7 @@ public class ChannelAPI {
             return response;
         }
         channelManager.sendChannelGlobalMessage("This channel will be reset within the next "+Settings.channelCleanupThreadFrequency+" seconds.\n"
-        		+ "All members will be removed.\nYou may join again after the reset.", 109, c.channelID, Color.BLUE);
+        		+ "All members will be removed.\nYou may join again after the reset.", 109, c.getID(), Color.BLUE);
         channelManager.queueChannelUnload(channelID);
         c.resetLaunched = true;
         //Unloads the channel, then loads it again
@@ -305,7 +308,7 @@ public class ChannelAPI {
         	response.put("message", "The channel you have attempted to kick this user from is not loaded.");
             return response;
         }
-        if (!c.userHasPermissionOld(u, Permission.KICK)) {
+        if (!c.userHasPermission(u, Permission.KICK)) {
         	//Check if user has ability to kick users (2 = kick permission)
         	response.put("status", 403);
         	response.put("msgCode", 112);
@@ -353,7 +356,7 @@ public class ChannelAPI {
     		bannedName = "[user not found]";
         }
     	response.put("bannedName", bannedName);
-        if (!c.userHasPermissionOld(u, Permission.TEMPBAN)) {
+        if (!c.userHasPermission(u, Permission.TEMPBAN)) {
         	//Check if user has ability to temp-ban users (3 = temp-ban permission)
         	response.put("status", 403);
         	response.put("msgCode", 118);
@@ -393,7 +396,7 @@ public class ChannelAPI {
         	response.put("message", "The channel you have attempted to lock is not currently loaded on this server.");
             return response;
         }
-    	if (!c.userHasPermissionOld(u, Permission.LOCKCHANNEL)) {
+    	if (!c.userHasPermission(u, Permission.LOCKCHANNEL)) {
         	//Check if user has ability to lock the channel (9 = lock permission)
         	response.put("status", 403);
         	response.put("msgCode", 169);
@@ -448,7 +451,7 @@ public class ChannelAPI {
         	response.put("message", "Cannot change permissions: channel not found.");
             return response;
         }
-        if (!channel.userHasPermissionOld(u, Permission.PERMISSIONCHANGE)) {
+        if (!channel.userHasPermission(u, Permission.PERMISSIONCHANGE)) {
         	//Check if user has ability to change permissions (7 = change permissions)
         	response.put("status", 403);
         	response.put("msgCode", 122);
@@ -495,7 +498,7 @@ public class ChannelAPI {
         messageObject.put("type", MessageType.PERMISSION_UPDATE);//Type 9 = permission update
         for (User u1 : channel.getUsers()) {
         	//Loops through all the people currently in the channel, sending the permission change to all of them.
-            u1.addQueuedMessage(channel.channelID, messageObject);
+            u1.addQueuedMessage(channel.getID(), messageObject);
         }
 
         //Populates the response as successful
@@ -516,7 +519,7 @@ public class ChannelAPI {
         	response.put("message", "Cannot change rank names: channel not found.");
             return response;
         }
-        if (!channel.userHasPermissionOld(u, Permission.DETAILCHANGE)) {
+        if (!channel.userHasPermission(u, Permission.DETAILCHANGE)) {
         	//Check if user has ability to change details (8 = change channel details)
         	response.put("status", 403);
         	response.put("msgCode", 125);
@@ -546,7 +549,7 @@ public class ChannelAPI {
         messageObject.put("type", MessageType.RANK_NAME_UPDATE);//Type 16 = rank name update
         for (User u1 : channel.getUsers()) {
         	//Loops through all the people currently in the channel, sending the rank name change to all of them.
-            u1.addQueuedMessage(channel.channelID, messageObject);
+            u1.addQueuedMessage(channel.getID(), messageObject);
         }
         
         //Populates the response as successful
@@ -556,16 +559,16 @@ public class ChannelAPI {
         return response;
     }
     
-    public JSONObject chageOpeningMessage (User u, int cID, String message, Color newColour) throws JSONException {
+    public JSONObject chageOpeningMessage (User user, int channelID, String message, Color newColour) throws JSONException {
     	JSONObject response = new JSONObject();
-        Channel c = channelManager.getChannel(cID);
-        if (c == null) {
+        Channel channel = channelManager.getChannel(channelID);
+        if (channel == null) {
         	response.put("status", 404);
         	response.put("msgCode", 165);
         	response.put("message", "Cannot change channel details: channel not found.");
             return response;
         }
-        if (!c.userHasPermissionOld(u, Permission.DETAILCHANGE)) {
+        if (!channel.userHasPermission(user, Permission.DETAILCHANGE)) {
         	//Check if user has ability to change details (8 = change channel details)
         	response.put("status", 403);
         	response.put("msgCode", 125);
@@ -580,15 +583,13 @@ public class ChannelAPI {
             return response;
         }
         //Add additional checks (such as removing/encoding special characters, filtering bad language, etc) here
-        c.setOpeningMessage(message, Color.BLACK);//Changes the opening message in the temporarily loaded version of the channel, sets the colour to black (default)
-        c.flushRequired = true;
+        channel.setOpeningMessage(message, Color.BLACK);//Changes the opening message in the temporarily loaded version of the channel, sets the colour to black (default)
+        channel.flushRequired = true;
         //c.flushChannelDetails();//Applies the message change to the channel database
-        JSONObject messageObject = messageFactory.prepareChannelDetails(c);
-        messageObject.put("id", c.getNextMessageID());
-        messageObject.put("type", MessageType.CHANNEL_DETAIL_UPDATE);//Type 17 = channel details update
-        for (User u1 : c.getUsers()) {
+        MessagePayload messagePayload = messageFactory.createDetailsMessage(channel);
+        for (User u1 : channel.getUsers()) {
         	//Loops through all the people currently in the channel, sending the details change to all of them.
-            u1.addQueuedMessage(c.channelID, messageObject);
+            u1.sendMessage(MessageType.CHANNEL_DETAIL_UPDATE, channelID, messagePayload);
         }
         
         //Populates the response as successful
@@ -613,7 +614,7 @@ public class ChannelAPI {
     		rankedName = "[user not found]";
         }
     	response.put("rankedName", rankedName);
-        if (!channel.userHasPermissionOld(user, Permission.RANKCHANGE)) {
+        if (!channel.userHasPermission(user, Permission.RANKCHANGE)) {
         	//Check if user has ability to change ranks (6 = change ranks)
         	response.put("status", 403);
         	response.put("msgCode", 130);
@@ -647,7 +648,6 @@ public class ChannelAPI {
         for (User u1 : channel.getUsers()) {//Sends the updated rank to everyone in the channel
         	u1.sendMessage(MessageType.RANK_LIST_ADDITION, channelID, messagePayload);
         }
-        JSONObject jsonMessageObject;
         if (ChatServer.getInstance().userManager().getUser(uID) != null) {
         	User newRank = ChatServer.getInstance().userManager().getUser(uID);
         	if (channel.getUsers().contains(newRank)) {
@@ -656,10 +656,12 @@ public class ChannelAPI {
         			u1.sendMessage(MessageType.CHANNEL_LIST_UPDATE, channelID, messagePayload);
                 }
         		//Sends a packet to the user, informing them of the rank change
-        		jsonMessageObject = new JSONObject().put("id", channel.getNextMessageID()).put("type", MessageType.RANK_UPDATE);//Rank update type
-        		jsonMessageObject.put("userID", newRank.getUserID());
-        		jsonMessageObject.put("rank", channel.getUserRank(newRank));
-        		newRank.addQueuedMessage(channelID, jsonMessageObject);
+        		messagePayload = new MessagePayload();        		
+        		messagePayload.put("userID", newRank.getUserID());
+        		messagePayload.put("rank", channel.getUserGroup(newRank).getLegacyRank());
+        		messagePayload.put("notice", "This message type is deprecated and will be removed in future versions. Clients should use channel list updates to identify changes to their own rank.");
+        		
+        		newRank.sendMessage(MessageType.RANK_UPDATE, channelID, messagePayload);
         	}
         }
         response.put("status", 200);
@@ -679,7 +681,7 @@ public class ChannelAPI {
         	response.put("message", "The channel must be loaded before you can modify rank data.\nTry joining the channel first.");
             return response;
         }
-        if (!channel.userHasPermissionOld(u, Permission.RANKCHANGE)) {
+        if (!channel.userHasPermission(u, Permission.RANKCHANGE)) {
         	//Check if user has ability to change ranks (6 = change ranks)
         	response.put("status", 403);
         	response.put("msgCode", 135);
@@ -712,7 +714,7 @@ public class ChannelAPI {
         for (User u1 : channel.getUsers()) {//Sends the rank removal to everyone in the channel
         	u1.sendMessage(MessageType.RANK_LIST_REMOVAL, channelID, messagePayload);
         }
-        JSONObject jsonMessageObject;
+        
         if (ChatServer.getInstance().userManager().getUser(uID) != null) {//Checks if the user is online
         	User newRank = ChatServer.getInstance().userManager().getUser(uID);
         	if (channel.getUsers().contains(newRank)) {//Checks if the user is in the channel
@@ -721,10 +723,12 @@ public class ChannelAPI {
         			u1.sendMessage(MessageType.CHANNEL_LIST_UPDATE, channelID, messagePayload);
                 }
         		//Sends a packet to the user, informing them of the rank change
-        		jsonMessageObject = new JSONObject().put("id", channel.getNextMessageID()).put("type", MessageType.RANK_UPDATE);//Rank update type
-        		jsonMessageObject.put("userID", newRank.getUserID());
-        		jsonMessageObject.put("rank", channel.getUserRank(newRank));
-        		newRank.addQueuedMessage(channelID, jsonMessageObject);
+        		messagePayload = new MessagePayload();        		
+        		messagePayload.put("userID", newRank.getUserID());
+        		messagePayload.put("rank", channel.getUserGroup(newRank).getLegacyRank());
+        		messagePayload.put("notice", "This message type is deprecated and will be removed in future versions. Clients should use channel list updates to identify changes to their own rank.");
+        		
+        		newRank.sendMessage(MessageType.RANK_UPDATE, channelID, messagePayload);
         	}
         }
         response.put("status", 200);
@@ -743,7 +747,7 @@ public class ChannelAPI {
         	response.put("message", "The channel must be loaded before you can modify rank data.\nTry joining the channel first.");
             return response;
         }
-        if (!channel.userHasPermissionOld(u, Permission.RANKCHANGE)) {
+        if (!channel.userHasPermission(u, Permission.RANKCHANGE)) {
         	//Check if user has ability to change ranks (6 = change ranks)
         	response.put("status", 403);
         	response.put("msgCode", 141);
@@ -783,7 +787,6 @@ public class ChannelAPI {
         for (User u1 : channel.getUsers()) {//Sends the rank update to everyone in the channel
         	u1.sendMessage(MessageType.RANK_LIST_UPDATE, channelID, messagePayload);
         }
-        JSONObject messageObject;
         if (ChatServer.getInstance().userManager().getUser(uID) != null) {//Checks if the user is online
         	User newRank = ChatServer.getInstance().userManager().getUser(uID);
         	if (channel.getUsers().contains(newRank)) {//Checks if the user is in the channel
@@ -792,10 +795,12 @@ public class ChannelAPI {
         			u1.sendMessage(MessageType.CHANNEL_LIST_UPDATE, channelID, messagePayload);
                 }
         		//Sends a packet to the user, informing them of the rank change
-        		messageObject = new JSONObject().put("id", channel.getNextMessageID()).put("type", MessageType.RANK_UPDATE);
-        		messageObject.put("userID", newRank.getUserID());
-        		messageObject.put("rank", channel.getUserRank(newRank));
-        		newRank.addQueuedMessage(channelID, messageObject);
+        		messagePayload = new MessagePayload();        		
+        		messagePayload.put("userID", newRank.getUserID());
+        		messagePayload.put("rank", channel.getUserGroup(newRank).getLegacyRank());
+        		messagePayload.put("notice", "This message type is deprecated and will be removed in future versions. Clients should use channel list updates to identify changes to their own rank.");
+        		
+        		newRank.sendMessage(MessageType.RANK_UPDATE, channelID, messagePayload);
         	}
         }
         response.put("status", 200);
@@ -818,7 +823,7 @@ public class ChannelAPI {
     		bannedName = "[user not found]";
         }
     	response.put("bannedName", bannedName);
-        if (!channel.userHasPermissionOld(user, Permission.PERMBAN)) {
+        if (!channel.userHasPermission(user, Permission.PERMBAN)) {
         	//Check if user has ability to permanently ban (4 = modify bans)
         	response.put("status", 403);
         	response.put("msgCode", 146);        	
@@ -870,7 +875,7 @@ public class ChannelAPI {
     		bannedName = "[user not found]";
         }
     	response.put("bannedName", bannedName);
-        if (!channel.userHasPermissionOld(user, Permission.PERMBAN)) {
+        if (!channel.userHasPermission(user, Permission.PERMBAN)) {
         	//Check if user has ability to remove users from the permanent ban list (4 = modify bans)
         	response.put("status", 403);
         	response.put("msgCode", 151); 

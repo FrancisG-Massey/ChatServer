@@ -91,9 +91,9 @@ public class User {
         	//Disconnect from channel. Now handled in the ChannelManager.leaveChannel() method 
         } else {
         	//Connected to channel
-        	if (this.queuedMessages.get(newchannel.channelID) == null) {
+        	if (this.queuedMessages.get(newchannel.getID()) == null) {
         		//If there is no message queue for this channel, create it.
-        		this.queuedMessages.put(newchannel.channelID, new ArrayList<JSONObject>());
+        		this.queuedMessages.put(newchannel.getID(), new ArrayList<JSONObject>());
         	}
         }                
     }

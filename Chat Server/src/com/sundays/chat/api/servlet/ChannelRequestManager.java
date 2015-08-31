@@ -215,7 +215,7 @@ public class ChannelRequestManager extends HttpServlet {
 		JSONObject responseJSON = new JSONObject();
 		if (requestInfo.length == 1) {
 			//Request for channel details
-			responseJSON = api.getChannelDetails(cID);			
+			responseJSON = new JSONObject(api.getChannelDetails(cID));			
 		} else if ("userlist".equalsIgnoreCase(requestInfo[1])) {
 			//Request for channel list
 			responseJSON = api.getChannelList(cID);	

@@ -27,8 +27,42 @@ public enum MessageType {
 	UNUSED0(0),
 	UNUSED1(1),
 	UNUSED2(2),
+	
+	/**
+	 * Sends a system message which is sent only to the user.
+	 * 
+	 * Contains the following properties:
+	 * <ul>
+	 * <li>message - The message body.</li>
+	 * <li>code - The code for the system message.</li>
+	 * <li>colour - The desired colour for the message.</li>
+	 * </ul>
+	 */
 	CHANNEL_SYSTEM_LOCAL(3),
+	
+	/**
+	 * Sends a system message to the user which is sent to all users in the channel.
+	 * 
+	 * Contains the following properties:
+	 * <ul>
+	 * <li>message - The message body.</li>
+	 * <li>code - The code for the system message.</li>
+	 * <li>colour - The desired colour for the message.</li>
+	 * </ul>
+	 */
 	CHANNEL_SYSTEM_GLOBAL(4),
+	
+	/**
+	 * Sends a standard message to the user, which was sent by a user of the channel.
+	 * 
+	 * Contains the following properties:
+	 * <ul>
+	 * <li>message - The message body.</li>
+	 * <li>senderName - The name of the user sending the message.</li>
+	 * <li>senderGroup - The group of the user sending the message.</li>
+	 * <li>senderID - The ID of the user sending the message.</li>
+	 * </ul>
+	 */
 	CHANNEL_STANDARD(5),
 	
 	/**
@@ -127,6 +161,18 @@ public enum MessageType {
 	BAN_LIST_REMOVAL(15),
 	RANK_NAME_UPDATE(16),
 	CHANNEL_DETAIL_UPDATE(17),
+	
+	/**
+	 * Updates the rank of the user within the channel.<br />
+	 * NOTE: This message type is deprecated. <br /><br />
+	 * 
+	 * Contains the following properties:
+	 * <ul>
+	 * <li>userID - The ID of the user to change the rank of.</li>
+	 * <li>rank - The rank to change to.</li>
+	 * </ul>
+	 */
+	@Deprecated
 	RANK_UPDATE(18);
 	
 	private final int id;
