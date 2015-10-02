@@ -144,18 +144,12 @@ public class Settings {
     	@Override
     	public String toString () { return id+""; }
     }
-    public static final int DEFAULT_RANK = 1,//The rank that all users will be automatically assigned when they are added to the channel's rank data
-    		GUEST_RANK = 0,//The rank that any users who are not in the channel's rank data will receive
-    		MOD_RANK = 5,//A system rank for the position of 'channel moderator'. This holds moderative permissions by default, but can be changed in each channel
-    		ADMIN_RANK = 9,//A system rank for the position of 'channel administrator'. Holds administrative permissions by default, but this can be changed in each channel
-    		OWNER_RANK = 11;//The highest channel-specific rank available. Can only be held by a single person at a time, and holds all available permissions.
+    public static final int DEFAULT_RANK = 1;//The rank that all users will be automatically assigned when they are added to the channel's rank data
+    public static final int GUEST_RANK = 0;//The rank that any users who are not in the channel's rank data will receive
+    public static final int MOD_RANK = 5;//A system rank for the position of 'channel moderator'. This holds moderative permissions by default, but can be changed in each channel
+    public static final int ADMIN_RANK = 9;//A system rank for the position of 'channel administrator'. Holds administrative permissions by default, but this can be changed in each channel
+    public static final int OWNER_RANK = 11;//The highest channel-specific rank available. Can only be held by a single person at a time, and holds all available permissions.
 
-    
-    /*private enum ValidTypes {
-    	Integer,
-    	String
-    }*/
-    
     public enum ReportTypes {
     	CHANNEL,
     	USER

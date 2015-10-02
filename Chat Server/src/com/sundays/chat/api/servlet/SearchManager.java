@@ -34,7 +34,6 @@ import org.json.JSONObject;
 
 import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.io.ChannelIndex.SearchType;
-import com.sundays.chat.server.ChatServer;
 import com.sundays.chat.server.channel.ChannelManager;
 import com.sundays.chat.utils.HttpRequestTools;
 
@@ -43,6 +42,8 @@ import com.sundays.chat.utils.HttpRequestTools;
  */
 public class SearchManager extends HttpServlet {
 	private static final long serialVersionUID = 1L;
+	
+	private ServletChatServer server;
        
     /**
      * @see HttpServlet#HttpServlet()
@@ -54,7 +55,7 @@ public class SearchManager extends HttpServlet {
     @Override
     public void init (ServletConfig config) throws ServletException {
     	super.init(config);
-    	ChatServer server = ChatServer.getInstance();
+    	server = ServletChatServer.getInstance();
     	if (!server.initalised) {
     		server.init(config);
     	}
@@ -103,7 +104,7 @@ public class SearchManager extends HttpServlet {
 		JSONObject responseJSON = new JSONObject();
 		if (requestInfo[0].equalsIgnoreCase("channel")) {
 			Map<String, String[]> parameters = request.getParameterMap();
-			ChannelManager cm = ChatServer.getInstance().channelManager();
+			ChannelManager cm = server.getChannelManager();
 			
 			if (parameters.containsKey("name")) {
 				String channelName = request.getParameter("name");
@@ -152,7 +153,7 @@ public class SearchManager extends HttpServlet {
 	}
 	
 	private ChannelIndex getChannelIndex () {
-		return ChatServer.getInstance().getIO().getChannelIndex();
+		return server.getIO().getChannelIndex();
 	}
 
 }

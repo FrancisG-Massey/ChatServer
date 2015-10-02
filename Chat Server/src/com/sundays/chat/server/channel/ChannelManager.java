@@ -31,8 +31,8 @@ import java.util.logging.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.io.ChannelDataManager;
+import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.server.ChatServer;
 import com.sundays.chat.server.Permission;
 import com.sundays.chat.server.ServerTaskQueue;
@@ -56,6 +56,8 @@ public class ChannelManager {
     //A map which contains all valid channel IDs and names. It is used for resolving channel names into IDs
     private final ChannelIndex channelResolver;
     
+    private final ChatServer server;
+    
     //A joinLock can be applied to prevent users from joining new channels.
     protected boolean joinLock = false;
     
@@ -70,13 +72,14 @@ public class ChannelManager {
     /**
      * Manager and channel initialisation section
      */
-    public ChannelManager (ChannelDataManager dataUpdater, ChannelIndex channelResolver) {
-    	this.permDataUpdater = dataUpdater;
-    	this.channelResolver = channelResolver;
+    public ChannelManager (ChatServer server) {
+    	this.permDataUpdater = server.getIO().getChannelIO();
+    	this.channelResolver = server.getIO().getChannelIndex();
+    	this.server = server;
         //loadChannelIndex();//Initialise the channel index
-        ChatServer.getInstance().serverTaskScheduler().scheduleStandardTask(getDefaultCleanups(),//Adds the default tasks to the cleanup thread.
+    	server.serverTaskScheduler().scheduleStandardTask(getDefaultCleanups(),//Adds the default tasks to the cleanup thread.
         		5, Settings.channelCleanupThreadFrequency, TimeUnit.SECONDS, true);//Schedule the channel cleanup thread, which removes any obsolete information on a regular basis and saves the channel permanent data.
-        setShutdownTasks(ChatServer.getInstance().serverTaskScheduler());//Sets the tasks which need to be run when the server is shut down.
+        setShutdownTasks(server.serverTaskScheduler());//Sets the tasks which need to be run when the server is shut down.
     }
     
     /*protected void loadChannelIndex () {
@@ -199,14 +202,14 @@ public class ChannelManager {
     
     public JSONObject getChannelInformation (int cID) throws JSONException {
     	JSONObject response = new JSONObject();
-    	Channel c = channels.get(cID);
-    	if (c == null) {
+    	Channel channel = channels.get(cID);
+    	if (channel == null) {
     		response.put("isLoaded", false);//Channel is not loaded
     	} else {
     		response.put("isLoaded", true);
-    		response.put("memberCount", c.getUserCount());
-    		response.put("guestsCanJoin", (c.getPermissionValue(Permission.JOIN) <= Settings.GUEST_RANK));
-    		response.put("details", ChannelMessageFactory.getInstance().createDetailsMessage(c));
+    		response.put("memberCount", channel.getUserCount());
+    		response.put("guestsCanJoin", (channel.getPermissionValue(Permission.JOIN) <= Settings.GUEST_RANK));
+    		response.put("details", ChannelMessageFactory.getInstance().createDetailsMessage(channel, server.getUserManager()));
     	}    	
     	return response;
     }
@@ -251,7 +254,7 @@ public class ChannelManager {
 	    	c.unloadInitialised = true;
             for (User u : c.getUsers()) {
             	this.sendChannelLocalMessage(u, "You have been removed from the channel.", 155, c.getID(), Color.RED);
-                ChatServer.getInstance().channelAPI().leaveChannel(u);
+            	server.getChannelAPI().leaveChannel(u);
             }            
             channels.remove(c.getID());
             System.out.println("Channel '"+c.getName()+"' has been unloaded from the server.");

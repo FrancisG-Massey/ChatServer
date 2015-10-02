@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
-import com.sundays.chat.server.ChatServer;
+import com.sundays.chat.api.servlet.ServletChatServer;
 
 public class ConnectionManager implements AutoCloseable {
 	
@@ -42,11 +42,11 @@ public class ConnectionManager implements AutoCloseable {
     	this.username = username;
     	this.password = password;
         connect();
-        ChatServer.getInstance().serverTaskScheduler().scheduleStandardTask(new Runnable () {
+        ServletChatServer.getInstance().serverTaskScheduler().scheduleStandardTask(new Runnable () {
 			@Override
 			public void run() {
 				if (con != null) {
-					if (lastUsed < System.currentTimeMillis()+(5*60*1000)) {
+					if (lastUsed < System.currentTimeMillis()+(5*60*1000) && con != null) {
 			    		//If the database connection was last used more than 5 minutes ago, close it
 						logger.info("Database connection closed due to 5 minutes of inactivity.");
 			    		try {

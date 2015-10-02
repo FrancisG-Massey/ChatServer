@@ -29,7 +29,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.sundays.chat.server.ChatServer;
 import com.sundays.chat.server.user.UserManager;
 import com.sundays.chat.utils.HttpRequestTools;
 
@@ -38,6 +37,8 @@ import com.sundays.chat.utils.HttpRequestTools;
  */
 public class UserRequestManager extends HttpServlet {
 	private static final long serialVersionUID = 1L;
+	
+	ServletChatServer server;
        
     /**
      * @see HttpServlet#HttpServlet()
@@ -49,7 +50,7 @@ public class UserRequestManager extends HttpServlet {
     @Override
     public void init (ServletConfig config) throws ServletException {
     	super.init(config);
-    	ChatServer server = ChatServer.getInstance();
+    	server = ServletChatServer.getInstance();
     	if (!server.initalised) {
     		server.init(config);
     	}
@@ -90,7 +91,7 @@ public class UserRequestManager extends HttpServlet {
 		JSONObject requestJSON,
 		responseJSON = new JSONObject();
 		int status = 0;
-		UserManager um = ChatServer.getInstance().userManager();
+		UserManager um = server.getUserManager();
 		try {
 			requestJSON = HttpRequestTools.getRequestJSON(request);			
 		} catch (Exception e) {

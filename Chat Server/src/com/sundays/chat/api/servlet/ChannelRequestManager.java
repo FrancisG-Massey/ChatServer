@@ -33,7 +33,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.sundays.chat.server.ChatServer;
 import com.sundays.chat.server.Permission;
 import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.channel.ChannelAPI;
@@ -46,6 +45,8 @@ import com.sundays.chat.utils.HttpRequestTools;
  */
 public class ChannelRequestManager extends HttpServlet {
 	private static final long serialVersionUID = 1L;
+	
+	private ServletChatServer server;
        
     /**
      * @see HttpServlet#HttpServlet()
@@ -57,7 +58,7 @@ public class ChannelRequestManager extends HttpServlet {
     @Override
     public void init (ServletConfig config) throws ServletException {
     	super.init(config);
-    	ChatServer server = ChatServer.getInstance();
+    	server = ServletChatServer.getInstance();
     	if (!server.initalised) {
     		server.init(config);
     	}
@@ -96,8 +97,8 @@ public class ChannelRequestManager extends HttpServlet {
 			return;
 		}
 		JSONObject responseJSON = new JSONObject();
-		ChannelAPI cm = ChatServer.getInstance().channelAPI();
-		if (!ChatServer.getInstance().channelManager().channelExists(channelID)) {
+		ChannelAPI cm = server.getChannelAPI();
+		if (!server.getChannelManager().channelExists(channelID)) {
 			try {
 				responseJSON.put("status", HttpServletResponse.SC_BAD_REQUEST);
 				responseJSON.put("message", "Channel not found.");		
@@ -161,7 +162,7 @@ public class ChannelRequestManager extends HttpServlet {
 			return;
 		}
 		JSONObject responseJSON = new JSONObject();
-		if (!ChatServer.getInstance().channelManager().channelExists(channelID)) {
+		if (!server.getChannelManager().channelExists(channelID)) {
 			try {
 				responseJSON.put("status", HttpServletResponse.SC_BAD_REQUEST);
 				responseJSON.put("message", "Channel not found.");		
@@ -186,7 +187,7 @@ public class ChannelRequestManager extends HttpServlet {
 				response.sendError(HttpServletResponse.SC_BAD_REQUEST);
 			}
 			try {				
-				User u = ChatServer.getInstance().userManager().getUserSession(requestJSON.optString("session", null));
+				User u = server.getUserManager().getUserSession(requestJSON.optString("session", null));
 				if (u == null) {
 					//User string does not match a valid, currently logged in user
 					responseJSON.put("status", HttpServletResponse.SC_FORBIDDEN);
@@ -246,7 +247,7 @@ public class ChannelRequestManager extends HttpServlet {
 	
 	private JSONObject processPostRequest (String[] requestInfo, int cID, User u, JSONObject requestJSON, HttpServletResponse response) throws ServletException, JSONException, IOException {
 		JSONObject responseJSON = new JSONObject();
-		ChannelAPI api = ChatServer.getInstance().channelAPI();
+		ChannelAPI api = server.getChannelAPI();
 		
 		if (requestInfo.length > 2) {//Process any double-parameter requests first
 			if ("messages".equalsIgnoreCase(requestInfo[1]) && "send".equalsIgnoreCase(requestInfo[2])) {
@@ -346,7 +347,7 @@ public class ChannelRequestManager extends HttpServlet {
 					String un = requestJSON.optString("username", null);
 					if (un != null) {
 						//If a username was specified, attempt to resolve it to an ID
-						uID = ChatServer.getInstance().userManager().getUserID(un);
+						uID = server.getUserManager().getUserID(un);
 						if (uID != 0) {
 							//If a userID was found, use the specified ID
 							responseJSON = api.addRank(u, cID, uID);
@@ -402,7 +403,7 @@ public class ChannelRequestManager extends HttpServlet {
 					String un = requestJSON.optString("username", null);
 					if (un != null) {
 						//If a username was specified, attempt to resolve it to an ID
-						uID = ChatServer.getInstance().userManager().getUserID(un);
+						uID = server.getUserManager().getUserID(un);
 						if (uID != 0) {
 							//If a userID was found, use the specified ID
 							responseJSON = api.addBan(u, cID, uID);
@@ -465,7 +466,7 @@ public class ChannelRequestManager extends HttpServlet {
 					String un = requestJSON.optString("username", null);
 					if (un != null) {
 						//If a username was specified, attempt to resolve it to an ID
-						uID = ChatServer.getInstance().userManager().getUserID(un);
+						uID = server.getUserManager().getUserID(un);
 						if (uID != 0) {
 							//If a userID was found, use the specified ID
 							responseJSON = api.tempBanUser(u, cID, uID, duration);

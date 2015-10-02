@@ -41,7 +41,7 @@ public class ServerTaskQueue {
 	//Specifies whether or not new tasks can be scheduled
 	private boolean newTaskLock = false;
 	
-	protected ServerTaskQueue () {
+	public ServerTaskQueue () {
 		timerPool = new ScheduledThreadPoolExecutor(1);
 	}
 	
@@ -193,7 +193,7 @@ public class ServerTaskQueue {
 	/**
 	 * Initiates the shutdown procedure of the task cue, running each repeating task one more time while immediately running any cued tasks, then preventing any new tasks from running.
 	 */
-	protected void shutdown () {
+	public void shutdown () {
 		lock();
 		for (Runnable task : shutdownTasks) {
 			task.run();

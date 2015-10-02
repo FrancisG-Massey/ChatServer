@@ -31,7 +31,7 @@
     <description></description>
     <display-name>ChatServer</display-name>
     <servlet-name>ChatServer</servlet-name>
-    <servlet-class>com.sundays.chat.server.ChatServer</servlet-class>
+    <servlet-class>com.sundays.chat.api.servlet.ServletChatServer</servlet-class>
   </servlet>
   <servlet-mapping>
     <servlet-name>ChatServer</servlet-name>

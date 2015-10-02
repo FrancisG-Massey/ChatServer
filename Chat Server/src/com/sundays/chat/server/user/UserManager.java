@@ -74,10 +74,12 @@ public final class UserManager {
     private PrivateKey decryptKey = null;
     private int nextGuestID = -100;//Decrementing integer for guest user ID (all guest IDs are less than -100)
     private final UserDataManager userIO;
+    private final ChatServer server;
     
-    public UserManager (UserDataManager userIO) {
+    public UserManager (ChatServer server) {
     	logger.info("Starting user manager...");
-        this.userIO = userIO;
+        this.userIO = server.getIO().getUserIO();
+        this.server = server;
     	/*
     	 * Use this space for preparing the user management system, such as loading a cache of usernames
     	 */
@@ -229,7 +231,7 @@ public final class UserManager {
         	//If the user is in a channel, make them leave it
             currentChannel = u.getChannel().getID();
             try {
-				ChatServer.getInstance().channelAPI().leaveChannel(u);
+            	server.getChannelAPI().leaveChannel(u);
 			} catch (JSONException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

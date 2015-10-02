@@ -28,11 +28,11 @@ import java.util.Map.Entry;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.sundays.chat.server.ChatServer;
 import com.sundays.chat.server.Permission;
 import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.user.User;
+import com.sundays.chat.server.user.UserManager;
 
 
 /**
@@ -108,9 +108,10 @@ public class ChannelMessageFactory {
     /**
      * Packs the basic details (name, openingMessage, owner) of a channel into a message.
      * @param channel The channel object to retrieve details from
+     * @param userManager The user manager for the server
      * @return A message payload containing the channel details
      */
-    public MessagePayload createDetailsMessage (Channel channel) {
+    public MessagePayload createDetailsMessage (Channel channel, UserManager userManager) {
     	if (channel == null) {
     		throw new IllegalArgumentException("channel must not be null.");
     	}
@@ -122,7 +123,7 @@ public class ChannelMessageFactory {
     	
     	MessagePayload owner = new MessagePayload();
     	owner.put("id", channel.getOwnerID());
-    	owner.put("name", ChatServer.getInstance().userManager().getUsername(channel.getOwnerID()));
+    	owner.put("name", userManager.getUsername(channel.getOwnerID()));
     	message.put("owner", owner);
     	
         return message;
@@ -277,7 +278,7 @@ public class ChannelMessageFactory {
 		return message;
     }
     
-    public JSONObject prepareRankList (Channel channel) {
+    public JSONObject prepareRankList (Channel channel, UserManager userManager) {
         /**
          * @param c, the channel to retrieve data from
          * @description prepares a JSON object containing data about all the users ranked in the channel
@@ -297,7 +298,7 @@ public class ChannelMessageFactory {
         		for (Integer userID : ranksList.keySet()) {
         			JSONObject rank = new JSONObject();
         			rank.put("userID", userID);
-        			String un = ChatServer.getInstance().userManager().getUsername(userID);//UserID
+        			String un = userManager.getUsername(userID);//UserID
                     if (un == null) {
                         un = "[user not found]";//If there was no username, apply '[user not found]' as username
                     }
@@ -322,11 +323,12 @@ public class ChannelMessageFactory {
      * Creates a message notifying the recipient to add the specified user to the rank list
      * @param userID The ID of the user to add to the rank list
      * @param channel The channel to retrieve data from
+     * @param userManager The user manager for the server
      * @return The payload of the new message.
      */
-    public MessagePayload createRankListAddition (int userID, Channel channel) {
+    public MessagePayload createRankListAddition (int userID, Channel channel, UserManager userManager) {
     	MessagePayload message = new MessagePayload();
-    	String username = ChatServer.getInstance().userManager().getUsername(userID);//UserID
+    	String username = userManager.getUsername(userID);//UserID
         if (username == null) {
         	username = "[user not found]";
         }
@@ -357,12 +359,13 @@ public class ChannelMessageFactory {
      * Creates a message notifying the recipient to update the details of the specified user on the rank list
      * @param userID The ID of the user on the rank list to update
      * @param channel The channel to retrieve data from
+     * @param userManager The user manager for the server
      * @return The payload of the new message.
      */
-    public MessagePayload createRankListUpdate (int userID, Channel channel) {
+    public MessagePayload createRankListUpdate (int userID, Channel channel, UserManager userManager) {
     	MessagePayload message = new MessagePayload();
     	
-    	String username = ChatServer.getInstance().userManager().getUsername(userID);
+    	String username = userManager.getUsername(userID);
     	if (username == null) {
     		username = "[user not found]";
         }
@@ -377,18 +380,18 @@ public class ChannelMessageFactory {
 		return message;
     }
     
-    public JSONObject prepareBanList (Channel c) {
+    public JSONObject prepareBanList (Channel channel, UserManager userManager) {
         /**
          * @param c, the channel to retrieve data from
          * @description returns a JSONObject containing all the users permanently banned from the channel
          */
-    	if (c == null) {
+    	if (channel == null) {
     		return null;
     	}
     	JSONObject responseJSON = new JSONObject();
-    	List<Integer> bans = c.getBans();
+    	List<Integer> bans = channel.getBans();
         try {
-			responseJSON.put("id", c.getID());
+			responseJSON.put("id", channel.getID());
 			responseJSON.put("totalBans", bans.size());
 			if (bans.size() > 0) {
 				JSONObject[] banList = new JSONObject[bans.size()];
@@ -396,7 +399,7 @@ public class ChannelMessageFactory {
 				for (int ban : bans) {
 					JSONObject banObject = new JSONObject();
 					banObject.put("userID", ban);
-					String un = ChatServer.getInstance().userManager().getUsername(ban);
+					String un = userManager.getUsername(ban);
 					if (un == null) {
 	                    un = "[user not found]";
 	                }
@@ -417,12 +420,13 @@ public class ChannelMessageFactory {
      * Creates a message notifying the recipient to add the specified user to the ban list
      * @param userID The ID of the user to add to the ban list
      * @param channel The channel to retrieve data from
+     * @param userManager The user manager for the server
      * @return The payload of the new message.
      */
-    public MessagePayload createBanListAddition (int userID, Channel channel) {
+    public MessagePayload createBanListAddition (int userID, Channel channel, UserManager userManager) {
     	MessagePayload message = new MessagePayload();
 
-    	String username = ChatServer.getInstance().userManager().getUsername(userID);
+    	String username = userManager.getUsername(userID);
     	if (username == null) {
     		username = "[user not found]";
         }

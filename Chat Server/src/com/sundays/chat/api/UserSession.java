@@ -16,27 +16,26 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.api.servlet;
+package com.sundays.chat.api;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import com.sundays.chat.server.message.MessageWrapper;
 
-public class ServerMonitor implements ServletContextListener {
-
-	@Override
-	public void contextDestroyed(ServletContextEvent event) {
-		event.getServletContext().log("Shutting down ChatServer...");
-		try {
-			ServletChatServer.getInstance().shutdown();
-		} catch (Exception ex) {
-			event.getServletContext().log("Error shutting down ChatServer", ex);
-		}
-	}
-
-	@Override
-	public void contextInitialized(ServletContextEvent event) {
-		event.getServletContext().log("Starting server...");
-		ServletChatServer.getInstance();
-	}
+/**
+ * 
+ * @author Francis
+ */
+public interface UserSession {
+	
+	/**
+     * Sends a message to the user. Implementations may either send the message directly to the user, or add it to a queue.
+     * @param channelID The ID of the channel the message is from.
+     * @param message The message to send to the user
+     */
+	public void sendMessage (int channelID, MessageWrapper message);
+	
+	/**
+	 * Forcefully disconnect the user from the server.
+	 */
+	public void disconnectUser();
 
 }

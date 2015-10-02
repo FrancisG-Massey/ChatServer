@@ -44,7 +44,7 @@
 		<delete dir="${build.docs.api}" />
 		<mkdir dir="${build.docs.api}" />
 		<javadoc packagenames="com.sundays.chat.*" sourcepath="${src.dir}" destdir="${build.docs.api}" public="true" author="true" version="true" use="false" windowtitle="${name} ${version}" classpathref="build.classpath">
-			<!-- Attach links to library documentation -->
+			<!-- Attatch links to library documentation -->
 			<link href="http://docs.oracle.com/javase/7/docs/api/" />
 			<link href="http://docs.guava-libraries.googlecode.com/git/javadoc/" />
 		</javadoc>
