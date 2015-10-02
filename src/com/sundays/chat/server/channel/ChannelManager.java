@@ -32,6 +32,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.sundays.chat.io.ChannelDataManager;
+import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.server.ChatServer;
 import com.sundays.chat.server.Permission;
@@ -216,7 +217,8 @@ public class ChannelManager {
 
     protected void loadChannel (int channelID) {
         if (!channels.containsKey(channelID)) {
-            channels.put(channelID, new Channel(channelID, permDataUpdater));
+            ChannelDetails details = permDataUpdater.getChannelDetails(channelID);
+            channels.put(channelID, new Channel(channelID, details, permDataUpdater));
             //System.out.println("Channel '"+channels.get(channelID).getName() +"' has been loaded onto the server.");
         }
         

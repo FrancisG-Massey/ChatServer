@@ -54,7 +54,7 @@ public class ServerTaskQueue {
 	 * @param delay           the period of time before the first command will be sent (in units specified by the 'unit' parameter)
 	 * @param rate            the period of time between executions of this task.
 	 * @param unit            the units of time in which the 'delay' and 'rate' parameters are given
-	 * @return                a ScheduledFuture<?> object with which the task can be cancelled or checked.
+	 * @return                a ScheduledFuture object with which the task can be cancelled or checked.
 	 */
 	public ScheduledFuture<?> scheduleStandardTask (Runnable task, long delay, long rate, TimeUnit unit) {
 		return this.scheduleEssentialTask(task, delay, rate, unit, false);
@@ -69,7 +69,7 @@ public class ServerTaskQueue {
 	 * @param rate            the period of time between executions of this task.
 	 * @param unit            the units of time in which the 'delay' and 'rate' parameters are given
 	 * @param runBeforeCancel whether or not the task should be run before it is cancelled.
-	 * @return                a ScheduledFuture<?> object with which the task can be cancelled or checked.
+	 * @return                a ScheduledFuture object with which the task can be cancelled or checked.
 	 */
 	public ScheduledFuture<?> scheduleStandardTask (Runnable task, long delay, long rate, TimeUnit unit, boolean runBeforeCancel) {
 		if (newTaskLock) {
@@ -92,7 +92,7 @@ public class ServerTaskQueue {
 	 * @param delay           the period of time before the first command will be sent (in units specified by the 'unit' parameter)
 	 * @param rate            the period of time between executions of this task.
 	 * @param unit            the units of time in which the 'delay' and 'rate' parameters are given
-	 * @return                a ScheduledFuture<?> object with which the task can be cancelled or checked.
+	 * @return                a ScheduledFuture object with which the task can be cancelled or checked.
 	 */
 	public ScheduledFuture<?> scheduleEssentialTask (Runnable task, long delay, long rate, TimeUnit unit) {
 		return this.scheduleEssentialTask(task, delay, rate, unit, false);
@@ -107,7 +107,7 @@ public class ServerTaskQueue {
 	 * @param rate            the period of time between executions of this task.
 	 * @param unit            the units of time in which the 'delay' and 'rate' parameters are given
 	 * @param runBeforeCancel whether or not the task should be run before it is cancelled.
-	 * @return                a ScheduledFuture<?> object with which the task can be cancelled or checked.
+	 * @return                a ScheduledFuture object with which the task can be cancelled or checked.
 	 */
 	public ScheduledFuture<?> scheduleEssentialTask (Runnable task, long delay, long rate, TimeUnit unit, boolean runBeforeCancel) {
 		if (newTaskLock) {
@@ -141,7 +141,7 @@ public class ServerTaskQueue {
 	 * @param delay				the delay before the task is run
 	 * @param unit				the unit of time used to specify the delay
 	 * @param runBeforeCancel	whether the task should run immediately if the server is shutdown
-	 * @return                 a ScheduledFuture<?> object with which the task can be cancelled or checked.
+	 * @return                 a ScheduledFuture object with which the task can be cancelled or checked.
 	 */
 	public ScheduledFuture<?> setTimeoutTask (Runnable task, long delay, TimeUnit unit, boolean runBeforeCancel) {
 		if (newTaskLock) {

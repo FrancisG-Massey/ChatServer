@@ -33,11 +33,15 @@ public class ChannelDetails {
 	
 	//Basic string details
 	public String name, openingMessage, abbreviation;
-	public final int id;//Channel ID	
+	public int id;//Channel ID	
 	public Integer[] permissions;//Channel permissions
 	public Map<Integer, String> rankNames;//Channel rank names (these replace the default "Rank One", "Rank Two", etc)
 	public boolean trackMessages;
 	public int owner;
+	
+	public ChannelDetails () {
+		
+	}
 	
 	public ChannelDetails (int id, String name, String openingMessage, 
 			String abbreviation, Integer[] permissions, Map<Integer, String> rankNames, 

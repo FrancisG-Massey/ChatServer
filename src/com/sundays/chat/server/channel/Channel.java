@@ -30,8 +30,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.apache.log4j.Logger;
 
 import com.sundays.chat.io.ChannelDataManager;
 import com.sundays.chat.io.ChannelDetails;
@@ -42,17 +42,20 @@ import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.user.User;
 
 /**
+ * Represents a chat channel on the server.
  *
  * @author Francis
  */
 public final class Channel {
+	
+	private static final Logger logger = Logger.getLogger(Channel.class);
 
-	private final int channelID;
+	private final int id;
 	
 	/*Permanent data*/
     private Color openingMessageColour = Color.BLACK;
-    private String channelName = "Not in Channel",
-    		channelAbbr = "undefined";
+    private String name = "Not in Channel";
+    private String channelAbbr = "undefined";
     private String openingMessage = "Not in Channel";
     private final Map<Integer, Byte> ranks;
     private final List<Integer> permBans;
@@ -66,30 +69,47 @@ public final class Channel {
     private transient final List<User> members = new CopyOnWriteArrayList<User>();
     private transient final LinkedList<MessagePayload> messageCache = new LinkedList<>();
     //Contains a specified number of recent messages from the channel (global system and normal messages)
-    protected boolean unloadInitialised = false,
-    		resetLaunched = false,
-            flushRequired = false;
+    protected boolean unloadInitialised = false;
+    protected boolean resetLaunched = false;
+    protected boolean flushRequired = false;
     private int nextMessageID = 1;
     private int lockRank = -100;
     private int channelOwner;
     private Date lockDuration = null;
-    private ChannelDataManager channelBackEnd;
+    private transient final ChannelDataManager io;
+    
+    /**
+     * 
+     * @param id The ID for the new channel
+     * @param io The IO manager for saving channel data.
+     */
+    protected Channel (int id, ChannelDataManager io) {
+    	this.id = id;
+        this.io = io;
+    	this.permissions = new EnumMap<Permission, Integer>(Permission.class);
+    	for (Permission p : Permission.values()) {
+    		this.permissions.put(p, p.defaultValue());
+    	}
+    	this.rankNames = new LinkedHashMap<>(Settings.defaultRanks);
+    	this.groups = new ConcurrentHashMap<>();
+    	this.permBans = new CopyOnWriteArrayList<>();
+    	this.ranks = new ConcurrentHashMap<>();
+    }
 
-    protected Channel(int id, ChannelDataManager backEnd) {
-        this.channelID = id;
-        this.channelBackEnd = backEnd;
-        ChannelDetails details = channelBackEnd.getChannelDetails(channelID);
-        this.channelName = details.name;
+    protected Channel(int id, ChannelDetails details, ChannelDataManager io) {
+        this.id = id;
+        this.io = io;
+        this.name = details.name;
         this.channelOwner = details.owner;
         this.openingMessage = details.openingMessage;
         this.channelAbbr = details.abbreviation;
         this.permissions = validatePermissions(details.permissions);
         this.rankNames = validateRankNames(details.rankNames);
         this.trackMessages = details.trackMessages;
-        groups = loadGroups();
-        permBans = loadBanList();//Bans MUST be loaded before ranks. This ensures that people on the ban list take priority over people on the rank list
-        ranks = loadRanks();
-        System.out.println("Successfully loaded channel: " + this.channelName);
+        this.groups = loadGroups();
+        this.permBans = loadBanList();//Bans MUST be loaded before ranks. This ensures that people on the ban list take priority over people on the rank list
+        this.ranks = loadRanks();
+        logger.info("Successfully loaded channel: " + this.name);
     }
         
     /**
@@ -97,19 +117,33 @@ public final class Channel {
 	 * @return the channel ID
 	 */
 	public int getID() {
-		return channelID;
+		return id;
 	}
 
 	/*
      * Reads basic details (fully public methods, make sure you only return read-only variables which cannot be modified)
      */
     public String getName () {
-    	return this.channelName;
+    	return this.name;
     }
 
-    public String getOpeningMessage() {
+    /**
+	 * @param name the name to set
+	 */
+	protected void setName(String name) {
+		this.name = name;
+	}
+
+	public String getOpeningMessage() {
         return this.openingMessage;
     }
+
+	/**
+	 * @param openingMessage the openingMessage to set
+	 */
+	protected void setOpeningMessage(String openingMessage) {
+		this.openingMessage = openingMessage;
+	}
     
     public Color getOMColour () {
         return this.openingMessageColour;
@@ -205,7 +239,6 @@ public final class Channel {
      * @param userID The ID of the user to find the rank of.
      * @return The rank the user holds in the channel (0 for guest).
      */
-    @Deprecated
     public byte getUserRank (int userID) {
     	byte rank = 0;
     	if (userID == channelOwner) {
@@ -233,7 +266,7 @@ public final class Channel {
     //Loading stages
     private Map<Integer, ChannelGroup> loadGroups () {
     	//Pull the group data from the database
-    	List<ChannelGroupData> groupData = channelBackEnd.getChannelGroups(channelID);
+    	List<ChannelGroupData> groupData = io.getChannelGroups(id);
     	
     	Map<Integer, ChannelGroup> responseGroups = new ConcurrentHashMap<Integer, ChannelGroup>();
     	//ChannelGroup unknGroup = new ChannelGroup(50, 53);
@@ -249,7 +282,7 @@ public final class Channel {
     	//Temporary override method:
     	for (Entry<Integer, String> rankName : rankNames.entrySet()) {
     		if (!responseGroups.containsKey(rankName.getKey())) {
-    			ChannelGroup newGroup = new ChannelGroup(channelID, (int) Math.random(), rankName.getKey().byteValue());
+    			ChannelGroup newGroup = new ChannelGroup(id, (int) Math.random(), rankName.getKey().byteValue());
     			newGroup.setName(rankName.getValue());
     			newGroup.overrides = rankName.getKey();
     			newGroup.setIconUrl("images/ranks/rank"+rankName.getKey()+".png");
@@ -261,24 +294,24 @@ public final class Channel {
     }
 
     private Map<Integer, Byte> loadRanks() {
-    	Map<Integer, Byte> ranks = channelBackEnd.getChannelRanks(channelID);
+    	Map<Integer, Byte> ranks = io.getChannelRanks(id);
         for (Entry<Integer, Byte> r : ranks.entrySet()) {
         	//Run through the ranks, removing any invalid sets
         	if (permBans.contains(r.getKey())) {
-        		Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "User "+r.getKey()+" from channel "+channelID+" is on the ban list. Removing from rank list.");
+        		logger.warn("User "+r.getKey()+" from channel "+id+" is on the ban list. Removing from rank list.");
         		ranks.remove(r);
-        		channelBackEnd.removeRank(channelID, r.getKey());
+        		io.removeRank(id, r.getKey());
         	} else if (r.getValue() < 1 || r.getValue() > Settings.TOTAL_RANKS) {
         		//Rank was found to contain an invalid value. Convert to the default rank.
-        		Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "User "+r.getKey()+" from channel "+channelID+" holds an invalid rank of:"+r.getValue()+"." +
+        		logger.warn("User "+r.getKey()+" from channel "+id+" holds an invalid rank of:"+r.getValue()+"." +
         				" Swapping to the default rank of: "+Settings.DEFAULT_RANK+".");
         		r.setValue((byte) Settings.DEFAULT_RANK);
-        		channelBackEnd.changeRank(channelID, r.getKey(), Settings.DEFAULT_RANK);
+        		io.changeRank(id, r.getKey(), Settings.DEFAULT_RANK);
         	} else if (r.getValue() == Settings.OWNER_RANK && r.getKey() != channelOwner) {
-        		Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "User "+r.getKey()+" from channel "+channelID+" holds a rank of owner(11), but is not specified as the channel owner." +
+        		logger.warn("User "+r.getKey()+" from channel "+id+" holds a rank of owner(11), but is not specified as the channel owner." +
         				" Swapping to the default rank of: "+Settings.DEFAULT_RANK+".");
         		r.setValue((byte) Settings.DEFAULT_RANK);
-        		channelBackEnd.changeRank(channelID, r.getKey(), Settings.DEFAULT_RANK);
+        		io.changeRank(id, r.getKey(), Settings.DEFAULT_RANK);
         	}
         }
     	System.out.println(ranks.size() + " rank(s) found for this channel.");
@@ -286,14 +319,14 @@ public final class Channel {
     }
     
     private List<Integer> loadBanList () {
-    	List<Integer> bans = channelBackEnd.getChannelBans(channelID);//Load the bans from the back-end
+    	List<Integer> bans = io.getChannelBans(id);//Load the bans from the back-end
     	/*for (int ban : bans) {
     		//Validates all entries, removing any names which are on the rank list
     		if (ranks.containsKey(ban)) {
     			bans.remove((Object) ban);
     		}
     	}*/
-    	System.out.println(bans.size() + " permanent ban(s) found for this channel.");
+    	logger.info(bans.size() + " permanent ban(s) found for this channel.");
     	return new CopyOnWriteArrayList<Integer>(bans);//Make a concurrent version
     }
 
@@ -302,7 +335,7 @@ public final class Channel {
     	Map<Integer, String> rankNamesArray = new LinkedHashMap<Integer, String>(Settings.defaultRanks);
     	if (names == null || names.size() == 0) {
     		//If no names were sent, log a message and use defaults.
-    		Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Invalid rank names sent for channel "+channelID+"; using defaults.");
+    		logger.warn("Invalid rank names sent for channel "+id+"; using defaults.");
     	} else {
     		/*if (names.size() < rankNamesArray.size()) {
     			//If the sent names are less than the total number of ranks, log a warning that missing names will use defaults
@@ -315,11 +348,11 @@ public final class Channel {
     			int rID = nameMapping.getKey();
     			if (rID > Settings.OWNER_RANK || rID < Settings.GUEST_RANK) {
     				//Custom rank names cannot override the names for global ranks (ranks above owner). Also, any ranks below 'guest' will not be able to enter the channel, and thus are irrelevant.
-    				Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Name for rank id="+rID+" in the retrieved rank names specifies a name for a system rank, which is not allowed. Using default name.");
+    				logger.warn("Name for rank id="+rID+" in the retrieved rank names specifies a name for a system rank, which is not allowed. Using default name.");
     				continue;
     			} else if (name == null || name.length() < Settings.rankNameMin || name.length() > Settings.rankNameMax) {
     				//Names cannot be null, nor can they be shorter than the minimum or longer than the maximum length specified
-    				Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Name for rank id="+rID+" in the retrieved rank names is invalid or missing. Using default name.");
+    				logger.warn("Name for rank id="+rID+" in the retrieved rank names is invalid or missing. Using default name.");
     				continue;
     			} else {
     				//If all the checks pass, put the name into the rank name table (overriding the default if applicable).
@@ -343,22 +376,22 @@ public final class Channel {
     		if (permissions.length > p.id()) {
     			if (permissions[p.id()] == null) {
     				//If the specified permission does not exist, log a warning then use the default value
-    				Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "The "+p.toString()+" permission in the retrieved permissions " +
+    				logger.warn("The "+p.toString()+" permission in the retrieved permissions " +
     						"is not available. Defaulting to: "+value);
     			} else if (permissions[p.id()] > p.maxValue()) {
     				//If the permission is above the maximum value allowed, log a warning then use the default value
-    				Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "The "+p.toString()+" permission in the retrieved permissions " +
+    				logger.warn("The "+p.toString()+" permission in the retrieved permissions " +
     						"(of value "+permissions[p.id()]+") is above the maximum allowed value. Defaulting to: "+value);
     			} else if (permissions[p.id()] < p.minValue()) {
     				//If the permission is below the minimum value allowed, log a warning then use the default value
-    				Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "The "+p.toString()+" permission in the retrieved permissions " +
+    				logger.warn("The "+p.toString()+" permission in the retrieved permissions " +
     						"(of value "+permissions[p.id()]+") is below the minimum allowed value. Defaulting to: "+value);
     			} else {
     				value = permissions[p.id()];
     			}    			
     		} else {
     			//If the permission is not in the array, log a warning about the permission missing and use the default value.
-    			Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "The "+p.toString()+
+    			logger.warn("The "+p.toString()+
     					" permission was not found in the retrieved permissions. Defaulting to: "+value);
     		}
     		permissionArray.put(p, value);//Place the permission in the final map
@@ -374,7 +407,7 @@ public final class Channel {
     	/*String[] rankNamesArray = new String[rankNames.size()];
     	rankNamesArray = rankNames.values().toArray(rankNamesArray);*/
     	
-    	return new ChannelDetails(channelID, channelName, openingMessage,
+    	return new ChannelDetails(id, name, openingMessage,
     			channelAbbr, permissionsArray, rankNames, trackMessages, channelOwner);
     }
     
@@ -480,8 +513,8 @@ public final class Channel {
 	        if (permBans.contains(uID)) {
 	            return false;
 	        }
-	        channelBackEnd.addRank(channelID, uID);
-	        ranks.put(uID, (byte) 1);
+	        io.addRank(id, uID);
+	        ranks.put(uID, (byte) Settings.DEFAULT_RANK);
     	}
         return true;
     }
@@ -494,7 +527,7 @@ public final class Channel {
 	        if (permBans.contains(uID)) {
 	            return false;
 	        }
-	        channelBackEnd.changeRank(channelID, uID, rank);
+	        io.changeRank(id, uID, rank);
 	        ranks.put(uID, (byte) rank);
     	}
         return true;
@@ -505,7 +538,7 @@ public final class Channel {
 	        if (!ranks.containsKey(uID)) {
 	            return false;
 	        }
-	        channelBackEnd.removeRank(channelID, uID);
+	        io.removeRank(id, uID);
 	        ranks.remove(uID);
     	}
         return true;
@@ -516,7 +549,7 @@ public final class Channel {
 	        if (permBans.contains(uID)) {
 	            return false;
 	        }        
-	        channelBackEnd.addBan(channelID, uID);
+	        io.addBan(id, uID);
 	        permBans.add(uID);
     	}
         return true;
@@ -527,7 +560,7 @@ public final class Channel {
 		    if (!permBans.contains(uID)) {
 		        return false;
 		    }
-		    channelBackEnd.removeBan(channelID, uID);
+		    io.removeBan(id, uID);
 		    permBans.remove(uID);
     	}
         return true;
