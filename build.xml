@@ -12,6 +12,8 @@
 	<property name="build.docs.api" value="${build.docs}/api" />
 	<property name="lib.dir" value="WebContent/WEB-INF/lib" />
 	<property name="qa.dir" value="${build.dir}/qa-reports" />
+	<property name="test.result.dir" value="${qa.dir}/tests" />
+	<property name="test.dir" value="test" />
 	
 	<path id="build.classpath">
 		<fileset dir="/usr/share/tomcat7/lib">
@@ -27,6 +29,8 @@
 		<mkdir dir="${build.classes}" />
 		<mkdir dir="${build.lib}" />
 		<mkdir dir="${qa.dir}" />
+		<delete dir="${test.result.dir}"/>
+		<mkdir dir="${test.result.dir}" />
 	</target>
 	
 	<target name="compile" depends="prepare" description="Compile the whole project">
@@ -72,16 +76,19 @@
 		  	    <pathelement path="${java.class.path}" />
 				<fileset dir="${lib.dir}">
 					<include name="**/*.jar" />
-				</fileset>
-  			</classpath>
+				</fileset>	
+  			</classpath>			
   			<formatter type="xml"/>
-  			<test name="com.sundays.chat.server.channel.ChannelTest" outfile="${qa.dir}/channeltestresult"/>
-  			<test name="com.sundays.chat.server.channel.ChannelSyncTest" outfile="${qa.dir}/channelsynctestresult"/>
+  			<batchtest todir="${test.result.dir}">
+			    <fileset dir="${build.classes}">
+         			<include name="**/*Test.class"/>
+         			<exclude name="**/package-info.class"/>
+      			</fileset>
+   			</batchtest>
 		</junit>
 	   	<junitreport todir="${qa.dir}">
-	   	    <fileset dir="${qa.dir}">
-	   	        <include name="channeltestresult.xml"/>
-	   	        <include name="channelsynctestresult.xml"/>
+	   	    <fileset dir="${test.result.dir}">
+	   	        <include name="*.xml"/>
 	   	    </fileset>
 	   	    <report todir="${qa.dir}" styledir="junitreport" format="noframes">
 	   	    </report>
