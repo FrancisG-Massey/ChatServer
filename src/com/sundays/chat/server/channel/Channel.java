@@ -516,7 +516,7 @@ public final class Channel {
         return true;
     }
 
-    protected boolean setRank(int uID, int rank) {
+    protected boolean setRank(int uID, byte rank) {
     	synchronized (ranks) {//Make sure only one thread is trying to modify rank data at a time
 	        if (!ranks.containsKey(uID)) {
 	            return false;

@@ -42,7 +42,7 @@ public interface ChannelDataManager {
 	 * @param userID The ID of the user to change
 	 * @param rankID The ID of the rank to change to
 	 */
-	public void changeRank (int channelID, int userID, int rankID);
+	public void changeRank (int channelID, int userID, byte rankID);
 	
 	/**
 	 * Requests that the rank is removed from the specified user within the specified channel.<br />

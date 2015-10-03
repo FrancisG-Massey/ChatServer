@@ -33,7 +33,7 @@ import com.sundays.chat.server.Permission;
 import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.user.User;
-import com.sundays.chat.server.user.UserManager;
+import com.sundays.chat.server.user.UserLookup;
 
 
 /**
@@ -112,7 +112,7 @@ public class ChannelMessageFactory {
      * @param userManager The user manager for the server
      * @return A message payload containing the channel details
      */
-    public MessagePayload createDetailsMessage (Channel channel, UserManager userManager) {
+    public MessagePayload createDetailsMessage (Channel channel, UserLookup userManager) {
     	if (channel == null) {
     		throw new IllegalArgumentException("channel must not be null.");
     	}
@@ -279,7 +279,7 @@ public class ChannelMessageFactory {
 		return message;
     }
     
-    public JSONObject prepareRankList (Channel channel, UserManager userManager) {
+    public JSONObject prepareRankList (Channel channel, UserLookup userManager) {
         /**
          * @param c, the channel to retrieve data from
          * @description prepares a JSON object containing data about all the users ranked in the channel
@@ -327,7 +327,7 @@ public class ChannelMessageFactory {
      * @param userManager The user manager for the server
      * @return The payload of the new message.
      */
-    public MessagePayload createRankListAddition (int userID, Channel channel, UserManager userManager) {
+    public MessagePayload createRankListAddition (int userID, Channel channel, UserLookup userManager) {
     	MessagePayload message = new MessagePayload();
     	String username = userManager.getUsername(userID);//UserID
         if (username == null) {
@@ -363,7 +363,7 @@ public class ChannelMessageFactory {
      * @param userManager The user manager for the server
      * @return The payload of the new message.
      */
-    public MessagePayload createRankListUpdate (int userID, Channel channel, UserManager userManager) {
+    public MessagePayload createRankListUpdate (int userID, Channel channel, UserLookup userManager) {
     	MessagePayload message = new MessagePayload();
     	
     	String username = userManager.getUsername(userID);
@@ -381,7 +381,7 @@ public class ChannelMessageFactory {
 		return message;
     }
     
-    public JSONObject prepareBanList (Channel channel, UserManager userManager) {
+    public JSONObject prepareBanList (Channel channel, UserLookup userManager) {
         /**
          * @param c, the channel to retrieve data from
          * @description returns a JSONObject containing all the users permanently banned from the channel
@@ -424,7 +424,7 @@ public class ChannelMessageFactory {
      * @param userManager The user manager for the server
      * @return The payload of the new message.
      */
-    public MessagePayload createBanListAddition (int userID, Channel channel, UserManager userManager) {
+    public MessagePayload createBanListAddition (int userID, Channel channel, UserLookup userManager) {
     	MessagePayload message = new MessagePayload();
 
     	String username = userManager.getUsername(userID);

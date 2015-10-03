@@ -60,7 +60,7 @@ public class JDBCChannelManager implements ChannelDataManager {
 	}
 
 	@Override
-	public void changeRank(int channelID, int userID, int rankID) {
+	public void changeRank(int channelID, int userID, byte rankID) {
 		rankBanUpdater.changeRank(channelID, userID, rankID);
 	}
 

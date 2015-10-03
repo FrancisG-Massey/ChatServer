@@ -29,13 +29,14 @@ import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.message.MessageType;
 import com.sundays.chat.server.user.User;
+import com.sundays.chat.server.user.UserLookup;
 import com.sundays.chat.server.user.UserManager;
 
 public class ChannelAPI {
 	
 	private final ChannelManager channelManager;
 	
-	private final UserManager userManager;
+	private final UserLookup userManager;
 	
 	private final ChannelMessageFactory messageFactory;
 	
@@ -751,7 +752,7 @@ public class ChannelAPI {
 		return response;
     }
     
-    public JSONObject updateRank (User u, int channelID, int uID, int rank) throws JSONException {
+    public JSONObject updateRank (User u, int channelID, int uID, byte rank) throws JSONException {
     	JSONObject response = new JSONObject();
         Channel channel = channelManager.getChannel(channelID);
         String targetUsername = userManager.getUsername(uID);

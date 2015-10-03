@@ -47,7 +47,7 @@ import com.sundays.chat.server.ChatServer;
  *
  * @author Francis
  */
-public final class UserManager {    
+public final class UserManager implements UserLookup {    
 	
 	private static final Logger logger = Logger.getLogger(UserManager.class);
 
@@ -91,8 +91,9 @@ public final class UserManager {
         }*/
     }
     
-    public User getUser (int uID) {
-    	return connectedUsers.get(uID);
+    @Override
+    public User getUser (int userID) {
+    	return connectedUsers.get(userID);
     }
     
     public User getUserSession (String sessionID) {
@@ -103,6 +104,7 @@ public final class UserManager {
     	return userSessions.get(sessionID);
     }
     
+    @Override
     public String getUsername (int userID) {
         String un = cachedUsernames.get(userID);
         if (un == null) {
@@ -120,9 +122,9 @@ public final class UserManager {
             }
         }
         return un;
-    }
-    
+    }    
 
+    @Override
 	public int getUserID (String username) { 
         int userID = -1;
 		if (lookupByUsername.containsKey(username.toLowerCase())) {

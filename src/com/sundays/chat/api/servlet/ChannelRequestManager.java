@@ -379,8 +379,8 @@ public class ChannelRequestManager extends HttpServlet {
 				}					
 			} else if ("ranks".equalsIgnoreCase(requestInfo[1]) && "update".equalsIgnoreCase(requestInfo[2])) {
 				//Request to add a rank to the rank list
-				int uID = requestJSON.optInt("userID", 0),
-					rankID = requestJSON.optInt("rankID", Integer.MAX_VALUE);
+				int uID = requestJSON.optInt("userID", 0);
+				int rankID = requestJSON.optInt("rankID", Integer.MAX_VALUE);
 				if (uID == 0) {
 					responseJSON.put("status", HttpServletResponse.SC_BAD_REQUEST);
 					responseJSON.put("msgArgs", "arg=userID,expected=Integer,found=null");
@@ -392,7 +392,7 @@ public class ChannelRequestManager extends HttpServlet {
 					responseJSON.put("msgCode", 177);
 					responseJSON.put("message", "Invalid or missing parameter for rankID; expected: byte, found: null."); 
 				} else {
-					responseJSON = api.updateRank(u, cID, uID, rankID);
+					responseJSON = api.updateRank(u, cID, uID, (byte) rankID);
 				}
 				
 			} else if ("bans".equalsIgnoreCase(requestInfo[1]) && "add".equalsIgnoreCase(requestInfo[2])) {

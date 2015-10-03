@@ -129,7 +129,7 @@ public class XmlChannelManager implements ChannelDataManager {
 	}
 
 	@Override
-	public void changeRank(int channelID, int userID, int rankID) {
+	public void changeRank(int channelID, int userID, byte rankID) {
 		// TODO Auto-generated method stub
 
 	}
