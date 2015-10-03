@@ -14,7 +14,7 @@ import com.sundays.chat.server.user.User;
 
 public class ChannelTest {
 	
-	private ChannelDataManager channelIO = new DummyChannelDataManager();
+	private ChannelDataManager channelIO = new DummyChannelDataIO();
 	private Channel channel;
 
 	@Before
@@ -30,13 +30,13 @@ public class ChannelTest {
 	@Test
 	public void testName() {
 		channel.setName("Test Name");
-		assertEquals(channel.getName(), "Test Name");
+		assertEquals("Test Name", channel.getName());
 	}
 
 	@Test
 	public void testMessage() {
 		channel.setOpeningMessage("Test Opening Message");
-		assertEquals(channel.getOpeningMessage(), "Test Opening Message");
+		assertEquals("Test Opening Message", channel.getOpeningMessage());
 	}
 
 	@Test
@@ -50,7 +50,7 @@ public class ChannelTest {
 		channel.addRank(100);
 		assumeTrue(channel.getUserRank(100) == Settings.DEFAULT_RANK);
 		channel.removeRank(100);
-		assertEquals(channel.getUserRank(100), Settings.GUEST_RANK);
+		assertEquals(Settings.GUEST_RANK, channel.getUserRank(100));
 	}
 
 	@Test
@@ -58,7 +58,7 @@ public class ChannelTest {
 		channel.addRank(100);
 		assumeTrue(channel.getUserRank(100) == Settings.DEFAULT_RANK);
 		channel.setRank(100, Settings.ADMIN_RANK);
-		assertEquals(channel.getUserRank(100), Settings.ADMIN_RANK);
+		assertEquals(Settings.ADMIN_RANK, channel.getUserRank(100));
 	}
 
 	@Test
@@ -94,7 +94,7 @@ public class ChannelTest {
 	@Test
 	public void testTempBan () {
 		channel.setTempBan(102, 20_000);
-		assertNotEquals(channel.getBanExpireTime(102), 0L);
+		assertNotEquals(0L, channel.getBanExpireTime(102));
 	}
 	
 	@Test
@@ -102,13 +102,13 @@ public class ChannelTest {
 		channel.setTempBan(102, 20_000);
 		assumeTrue(channel.getBanExpireTime(102) != 0L);
 		channel.removeTempBan(102);
-		assertEquals(channel.getBanExpireTime(102), 0L);
+		assertEquals(0L, channel.getBanExpireTime(102));
 	}
 	
 	@Test
 	public void testMessageCounter () {
 		int lastMessageID = channel.getNextMessageID();
-		assertEquals(channel.getNextMessageID(), lastMessageID+1);
+		assertEquals(lastMessageID+1, channel.getNextMessageID());
 	}
 
 }

@@ -76,10 +76,12 @@
   			</classpath>
   			<formatter type="xml"/>
   			<test name="com.sundays.chat.server.channel.ChannelTest" outfile="${qa.dir}/channeltestresult"/>
+  			<test name="com.sundays.chat.server.channel.ChannelSyncTest" outfile="${qa.dir}/channelsynctestresult"/>
 		</junit>
 	   	<junitreport todir="${qa.dir}">
 	   	    <fileset dir="${qa.dir}">
 	   	        <include name="channeltestresult.xml"/>
+	   	        <include name="channelsynctestresult.xml"/>
 	   	    </fileset>
 	   	    <report todir="${qa.dir}" styledir="junitreport" format="noframes">
 	   	    </report>
