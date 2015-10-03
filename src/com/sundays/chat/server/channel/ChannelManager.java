@@ -21,7 +21,6 @@ package com.sundays.chat.server.channel;
 import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;

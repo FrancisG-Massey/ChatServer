@@ -1,8 +1,25 @@
-package com.sundays.chat.server.channel;
+/*******************************************************************************
+ * Copyright (c) 2015 Francis G.
+ *
+ * This file is part of ChatServer.
+ *
+ * ChatServer is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * ChatServer is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
+ *******************************************************************************/
+package com.sundays.chat.server.channel.dummy;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,17 +28,14 @@ import com.sundays.chat.io.ChannelDataManager;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
 
+/**
+ * A dummy channel IO class. Used in test packages to ensure classes which use the channel IO manager are working correctly.
+ * 
+ * 
+ * 
+ * @author Francis
+ */
 public class DummyChannelDataIO implements ChannelDataManager {
-	
-	public static class CallEvent {
-		public String method;
-		public List<Object> args;
-		
-		private CallEvent(String method, Object... args) {
-			this.method = method;
-			this.args = Arrays.asList(args);
-		}
-	}
 	
 	public List<CallEvent> calls = new ArrayList<>();
 
@@ -100,8 +114,7 @@ public class DummyChannelDataIO implements ChannelDataManager {
 
 	@Override
 	public void commitChanges() throws IOException {
-		calls.add(new CallEvent("commitChanges"));
-		
+		calls.add(new CallEvent("commitChanges"));		
 	}
 
 }

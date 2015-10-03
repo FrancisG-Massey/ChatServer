@@ -31,15 +31,18 @@ import org.json.JSONObject;
 import com.sundays.chat.server.Settings.PresetRanks;
 
 
+/**
+ * This enumeration defines information about permissions within channels
+ * The first value represents the permissionID
+ * The second value represents the default rank for that permission
+ * The third value represents the minimum rank that may hold that permission
+ * The fourth value represents the maximum rank that the permission may be set to (this means that ranks above and including this will ALWAYS hold the permission)
+ * If any of the values are going to be set to system ranks, you should use their variables (defined above) rather than manually entering the rank ID
+ * WARNING: the permission ID (first value) MUST be the same as the permission's position in the enumeration. If required, use dummy fields to fill in gaps.
+ * 
+ * @author Francis
+ */
 public enum Permission {
-    	/* This enumeration defines information about permissions within channels
-    	 * The first value represents the permissionID
-    	 * The second value represents the default rank for that permission
-    	 * The third value represents the minimum rank that may hold that permission
-    	 * The fourth value represents the maximum rank that the permission may be set to (this means that ranks above and including this will ALWAYS hold the permission)
-    	 * If any of the values are going to be set to system ranks, you should use their variables (defined above) rather than manually entering the rank ID
-    	 * WARNING: the permission ID (first value) MUST be the same as the permission's position in the enumeration. If required, use dummy fields to fill in gaps.
-    	 */
     	JOIN (0, DEFAULT_RANK, GUEST_RANK, OWNER_RANK),
     	TALK (1, DEFAULT_RANK, GUEST_RANK, OWNER_RANK),
     	KICK (2, MOD_RANK, 3, OWNER_RANK),
@@ -60,10 +63,18 @@ public enum Permission {
     		this.defaultValue = defaultV;
     	}
     	
-    	public int id () { return this.id; }
-    	public int maxValue () { return this.maxValue; }
-    	public int minValue () { return this.minValue; }
-    	public int defaultValue () { return this.defaultValue; }
+    	public int id () { 
+    		return this.id; 
+    	}
+    	public int maxValue () { 
+    		return this.maxValue; 
+    	}
+    	public int minValue () { 
+    		return this.minValue; 
+    	}
+    	public int defaultValue () { 
+    		return this.defaultValue; 
+    	}
     	
     	private static byte validateRankFromString (String rankN) throws IllegalArgumentException {
     		byte rank;
@@ -103,36 +114,9 @@ public enum Permission {
     				throw new IllegalArgumentException("Invalid value for permission "+i+". Expected integer between "+PresetRanks.GUEST_RANK.value()+" and "+PresetRanks.OWNER_RANK.value());
     			}
     		}
-    		
-    		/*String[] permission = permissionString.split(Pattern.quote(";"));//Splits the string into separate values for each permission
-    		
-    		for (int i=0;i<permission.length;i++) {//Loops through each permission provided
-    			String[] pData = permission[i].split(Pattern.quote(","));//Splits each permission into 4 values, separated by commas
-    			if (pData.length != 4) {//If there are not 4 parameters, thrown any exception.
-    				throw new IllegalArgumentException("Invalid number of paramaters for permission "+i+". Expected: 4");
-    			}
-    			byte[] pValues = new byte[3];
-    			for (int v=1;v<4;v++) {//Loops over the last three parameters and attempts to decode them into ranks
-    				try {
-    					pValues[v-1] = (byte) Integer.parseInt(pData[v]);//First, try to change the value directly into an integer.
-    				} catch (NumberFormatException ex) {
-    					try {
-    						pValues[v-1] = PresetRanks.valueOf(pData[v]).value();//If that isn't possible, try decoding it into one of the preset ranks.
-    					} catch (IllegalArgumentException e) {//If neither options work, thrown an exception
-    						throw new IllegalArgumentException("Invalid value for permission "+i+", paramater "+v+". Expected integer between "+GUEST_RANK+" and "+OWNER_RANK);
-    					}    					
-    				}
-    				if (pValues[v-1] > PresetRanks.OWNER_RANK.value() || pValues[v-1] < PresetRanks.GUEST_RANK.value()) {//If the value is not within an aceptable range, throw an exception.
-    					throw new IllegalArgumentException("Invalid value for permission "+i+", paramater "+v+". Expected integer between "+PresetRanks.GUEST_RANK.value()+" and "+PresetRanks.OWNER_RANK.value());
-    				}
-    			}
-    			Permission.valueOf(pData[0]).defaultValue = pValues[0];
-    			Permission.valueOf(pData[0]).maxValue = pValues[1];
-    			Permission.valueOf(pData[0]).minValue = pValues[2];
-    		}*/
     	}
         
-        public static Permission getPermissionFromID (int id) {
+        public static Permission getByID (int id) {
         	Permission p = null;
         	for (Permission p1 : Permission.values()) {
         		if (p1.id() == id) {
