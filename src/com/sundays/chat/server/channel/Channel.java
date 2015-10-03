@@ -27,6 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -57,7 +58,7 @@ public final class Channel {
     private String channelAbbr = "undefined";
     private String openingMessage = "Not in Channel";
     private final Map<Integer, Byte> ranks;
-    private final List<Integer> permBans;
+    private final Set<Integer> permBans;
     private final Map<Integer, String> rankNames;
     private final EnumMap<Permission, Integer> permissions;
     private boolean trackMessages = false;
@@ -65,7 +66,7 @@ public final class Channel {
     
     /*Instanced data*/
     private transient final Map<Integer, Long> tempBans = new ConcurrentHashMap<Integer, Long>();
-    private transient final List<User> members = new CopyOnWriteArrayList<User>();
+    private transient final Set<User> members = Collections.newSetFromMap(new ConcurrentHashMap<User, Boolean>());
     private transient final LinkedList<MessagePayload> messageCache = new LinkedList<>();
     //Contains a specified number of recent messages from the channel (global system and normal messages)
     protected boolean unloadInitialised = false;
@@ -91,7 +92,7 @@ public final class Channel {
     	}
     	this.rankNames = new LinkedHashMap<>(Settings.defaultRanks);
     	this.groups = new ConcurrentHashMap<>();
-    	this.permBans = new CopyOnWriteArrayList<>();
+    	this.permBans = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
     	this.ranks = new ConcurrentHashMap<>();
     }
 
@@ -316,7 +317,7 @@ public final class Channel {
     	return new ConcurrentHashMap<Integer, Byte>(ranks);
     }
     
-    private List<Integer> loadBanList () {
+    private Set<Integer> loadBanList () {
     	List<Integer> bans = io.getChannelBans(id);//Load the bans from the back-end
     	/*for (int ban : bans) {
     		//Validates all entries, removing any names which are on the rank list
@@ -325,7 +326,9 @@ public final class Channel {
     		}
     	}*/
     	logger.info(bans.size() + " permanent ban(s) found for this channel.");
-    	return new CopyOnWriteArrayList<Integer>(bans);//Make a concurrent version
+    	Set<Integer> banSet = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
+    	banSet.addAll(bans);
+    	return banSet;//Make a concurrent version
     }
 
     private Map<Integer, String> validateRankNames (Map<Integer, String> names) {
@@ -563,7 +566,7 @@ public final class Channel {
 
     
     //Retrieve channel data
-    protected List<User> getUsers() {
+    protected Set<User> getUsers() {
         return this.members;
     }
 
@@ -575,7 +578,7 @@ public final class Channel {
         return this.ranks;
     }
     
-    protected List<Integer> getBans() {
+    protected Set<Integer> getBans() {
     	return this.permBans;
     }
     

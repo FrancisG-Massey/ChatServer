@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -389,7 +390,7 @@ public class ChannelMessageFactory {
     		return null;
     	}
     	JSONObject responseJSON = new JSONObject();
-    	List<Integer> bans = channel.getBans();
+    	Set<Integer> bans = channel.getBans();
         try {
 			responseJSON.put("id", channel.getID());
 			responseJSON.put("totalBans", bans.size());

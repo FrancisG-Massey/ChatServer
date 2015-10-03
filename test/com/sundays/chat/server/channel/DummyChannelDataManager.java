@@ -94,8 +94,7 @@ public class DummyChannelDataManager implements ChannelDataManager {
 
 	@Override
 	public void commitChanges() throws IOException {
-		// TODO Auto-generated method stub
-
+		
 	}
 
 }

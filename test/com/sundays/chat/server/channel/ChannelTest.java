@@ -102,7 +102,13 @@ public class ChannelTest {
 		channel.setTempBan(102, 20_000);
 		assumeTrue(channel.getBanExpireTime(102) != 0L);
 		channel.removeTempBan(102);
-		assertNull(channel.getBanExpireTime(102));
+		assertEquals(channel.getBanExpireTime(102), 0L);
+	}
+	
+	@Test
+	public void testMessageCounter () {
+		int lastMessageID = channel.getNextMessageID();
+		assertEquals(channel.getNextMessageID(), lastMessageID+1);
 	}
 
 }
