@@ -19,7 +19,6 @@
 package com.sundays.chat.server.channel;
 
 import java.awt.Color;
-import java.util.Date;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -186,16 +185,16 @@ public class ChannelAPI {
             }*/
             return response;
         }
-        if (channel.getLockExpireDate() != null && channel.getLockExpireDate().after(new Date()) && channel.getUserRank(user) <= channel.getLockRank()) {
+        if (channel.getLockExpireTime() > System.currentTimeMillis() && channel.getUserRank(user) <= channel.getLockRank()) {
         	//Checks if the channel is locked to new users.
         	response.put("status", 403);
         	response.put("msgCode", 174);
         	response.put("message", "This channel has been locked for anyone holding the rank of "+channel.getRankNames().get(channel.getLockRank())+" or below.");
         	return response;
         }
-        if (channel.getBanExpireDate(user.getUserID()) != null && channel.getBanExpireDate(user.getUserID()).after(new Date())) {
+        if (channel.getBanExpireTime(user.getUserID()) > System.currentTimeMillis()) {
             //Check if user is temporarily banned from the channel
-            long timeRemaining = channel.getBanExpireDate(user.getUserID()).getTime() - new Date().getTime();
+            long timeRemaining = channel.getBanExpireTime(user.getUserID()) - System.currentTimeMillis();
             response.put("status", 403);
         	response.put("msgCode", 104);
         	response.put("message", "You are temporarily banned from the channel ("+(timeRemaining/(60*1000)+1)+" minute(s) remaining).");
@@ -348,7 +347,7 @@ public class ChannelAPI {
         }
         leaveChannel(kickedUser);
         channelManager.sendChannelLocalMessage(kickedUser, "You have been kicked from the channel.", 115, cID, Color.RED);
-        c.setTempBan(kUID, 60*1000);//Sets a 60 second temporary ban (gives the user performing the kick a chance to choose whether or not to temporarily ban)
+        c.setTempBan(kUID, 60_000);//Sets a 60 second temporary ban (gives the user performing the kick a chance to choose whether or not to temporarily ban)
         
         response.put("status", 200);
     	response.put("msgCode", 116);
@@ -393,7 +392,7 @@ public class ChannelAPI {
         	//6 hour maximum ban
             durationMins = 60*6;
         }
-        c.setTempBan(bannedUser, durationMins*60*1000);//Sets a temporary ban as specified by durationMins
+        c.setTempBan(bannedUser, durationMins*60_000);//Sets a temporary ban as specified by durationMins
     	response.put("status", 200);
     	response.put("msgCode", 120);
     	response.put("message", "You have successfully temporarily banned "+bannedName+" from the channel for "+durationMins+" minutes.\n"
@@ -440,7 +439,7 @@ public class ChannelAPI {
         	//1 hour maximum lock
             durationMins = 60;
         }
-        c.setChannelLock(highestRank, durationMins);
+        c.setChannelLock(highestRank, durationMins*60_000);
         channelManager.sendChannelGlobalMessage("This channel has been locked for all members with a rank of "
         +c.getRankNames().get(highestRank)+" and below.\nAnyone holding these ranks cannot rejoin the channel if they leave, until the lock is removed.", 173, cID);
         

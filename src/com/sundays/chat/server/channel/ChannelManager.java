@@ -149,10 +149,9 @@ public class ChannelManager {
 						}*/
 					} else {
 						//Runs through other cleanup tasks
-						Date currentTime = new Date();
-						for (Entry<Integer, Date> ban : c.getTempBans().entrySet()) {
+						for (Entry<Integer, Long> ban : c.getTempBans().entrySet()) {
 							//Removes all expired temporary bans
-							if (ban.getValue().before(currentTime)) {
+							if (ban.getValue() < System.currentTimeMillis()) {
 								c.getTempBans().remove(ban.getKey());
 							}
 						}
@@ -163,7 +162,7 @@ public class ChannelManager {
 							c.flushRequired = false;
 						}
 						
-						if (c.getLockExpireDate() != null && c.getLockExpireDate().before(new Date())) {
+						if (c.getLockExpireTime() < System.currentTimeMillis()) {
 							//If the existing channel lock has expired, remove it.
 							c.removeLock();
 						}

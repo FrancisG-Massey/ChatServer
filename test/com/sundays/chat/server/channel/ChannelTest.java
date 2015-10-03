@@ -93,16 +93,16 @@ public class ChannelTest {
 	
 	@Test
 	public void testTempBan () {
-		channel.setTempBan(102, 20);
-		assertNotNull(channel.getBanExpireDate(102));
+		channel.setTempBan(102, 20_000);
+		assertNotEquals(channel.getBanExpireTime(102), 0L);
 	}
 	
 	@Test
 	public void testTempBanRemove () {
-		channel.setTempBan(102, 20);
-		assumeTrue(channel.getBanExpireDate(102) != null);
+		channel.setTempBan(102, 20_000);
+		assumeTrue(channel.getBanExpireTime(102) != 0L);
 		channel.removeTempBan(102);
-		assertNull(channel.getBanExpireDate(102));
+		assertNull(channel.getBanExpireTime(102));
 	}
 
 }

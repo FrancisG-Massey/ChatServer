@@ -20,7 +20,6 @@ package com.sundays.chat.server.channel;
 
 import java.awt.Color;
 import java.util.Collections;
-import java.util.Date;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -65,7 +64,7 @@ public final class Channel {
     private final Map<Integer, ChannelGroup> groups;
     
     /*Instanced data*/
-    private transient final Map<Integer, Date> tempBans = new ConcurrentHashMap<Integer, Date>();
+    private transient final Map<Integer, Long> tempBans = new ConcurrentHashMap<Integer, Long>();
     private transient final List<User> members = new CopyOnWriteArrayList<User>();
     private transient final LinkedList<MessagePayload> messageCache = new LinkedList<>();
     //Contains a specified number of recent messages from the channel (global system and normal messages)
@@ -75,7 +74,7 @@ public final class Channel {
     private int nextMessageID = 1;
     private int lockRank = -100;
     private int channelOwner;
-    private Date lockDuration = null;
+    private long lockExpires = 0L;
     private transient final ChannelDataManager io;
     
     /**
@@ -153,8 +152,8 @@ public final class Channel {
     	return this.lockRank;
     }
     
-    public Date getLockExpireDate () {
-    	return this.lockDuration;
+    public long getLockExpireTime () {
+    	return this.lockExpires;
     }
     
     public int getOwnerID () {
@@ -228,7 +227,6 @@ public final class Channel {
      * @param user The user to find the rank of.
      * @return The rank the user holds in the channel (0 for guest).
      */
-    @Deprecated
     public byte getUserRank (User user) {
         return getUserRank(user.getUserID());
     }
@@ -412,18 +410,17 @@ public final class Channel {
     }
     
     //Alter temporary data
-    protected void setTempBan(int userID, int timeM) {
+    protected void setTempBan(int userID, long timeMillis) {
         if (tempBans.containsKey(userID)) {
             tempBans.remove(userID);
         }
-        Date expires = new Date();
-        expires.setTime(expires.getTime() + timeM);//Sets the expires time to current time plus offset given
-        tempBans.put(userID, expires);//Places the ban in the tempBans map
+        //Sets the expires time to current time plus offset given
+        tempBans.put(userID, System.currentTimeMillis()+timeMillis);//Places the ban in the tempBans map
     }
 
-    protected Date getBanExpireDate(int userID) {
+    protected long getBanExpireTime(int userID) {
         if (!tempBans.containsKey(userID)) {
-            return null;
+            return 0L;
         }
         return tempBans.get(userID);
     }
@@ -435,16 +432,14 @@ public final class Channel {
         tempBans.remove(userID);
     }
     
-    protected void setChannelLock (int rank, int timeM) {
+    protected void setChannelLock (int rank, long timeMillis) {
     	this.lockRank = rank;
-    	Date expires = new Date();
-    	expires.setTime(expires.getTime() + timeM);
-    	this.lockDuration = expires;
+    	this.lockExpires = System.currentTimeMillis() + timeMillis;
     }
     
     protected void removeLock () {
-    	this.lockDuration = null;
-    	this.lockRank = -100;
+    	this.lockExpires = 0L;
+    	this.lockRank = -100;    	
     }
 
     protected void addUser(User u) {
@@ -584,7 +579,7 @@ public final class Channel {
     	return this.permBans;
     }
     
-    protected Map<Integer, Date> getTempBans () {
+    protected Map<Integer, Long> getTempBans () {
     	return this.tempBans;
     }
     
