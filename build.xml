@@ -36,8 +36,8 @@
 		</copy>
 	</target>
 
-	<target name="all" description="Main target - compile, jar, docs and test" depends="dependencyanalysis,javadocs">
-		<echo>Build finished !</echo>
+	<target name="all" description="Main target - compile, jar, docs and test" depends="tests,dependencyanalysis,javadocs">
+		<echo>Build finished!</echo>
 	</target>
 	
 	<target name="javadocs" depends="prepare" description="Creates the API documentation">
@@ -64,4 +64,25 @@
 		</jdepend>
 		<xslt basedir="${qa.dir}" destdir="${qa.dir}" includes="jdepend-report.xml" style="${ant.home}/etc/jdepend.xsl" />
 	</target>
+	
+	<target name="tests" depends="compile" description="Tests the project">
+		<junit printsummary="yes" haltonfailure="no">
+		  	<classpath>
+		  	    <pathelement location="${build.classes}"/>
+		  	    <pathelement path="${java.class.path}" />
+				<fileset dir="${lib.dir}">
+					<include name="**/*.jar" />
+				</fileset>
+  			</classpath>
+  			<formatter type="xml"/>
+  			<test name="com.sundays.chat.server.channel.ChannelTest" outfile="${qa.dir}/channeltestresult"/>
+		</junit>
+	   	<junitreport todir="${qa.dir}">
+	   	    <fileset dir="${qa.dir}">
+	   	        <include name="channeltestresult.xml"/>
+	   	    </fileset>
+	   	    <report todir="${qa.dir}" styledir="junitreport" format="noframes">
+	   	    </report>
+	   	</junitreport>
+   </target>
 </project>
