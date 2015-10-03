@@ -35,7 +35,7 @@ public class ChannelDetails {
 	public String name, openingMessage, abbreviation;
 	public int id;//Channel ID	
 	public Integer[] permissions;//Channel permissions
-	public Map<Integer, String> rankNames;//Channel rank names (these replace the default "Rank One", "Rank Two", etc)
+	public Map<Byte, String> rankNames;//Channel rank names (these replace the default "Rank One", "Rank Two", etc)
 	public boolean trackMessages;
 	public int owner;
 	
@@ -44,7 +44,7 @@ public class ChannelDetails {
 	}
 	
 	public ChannelDetails (int id, String name, String openingMessage, 
-			String abbreviation, Integer[] permissions, Map<Integer, String> rankNames, 
+			String abbreviation, Integer[] permissions, Map<Byte, String> rankNames, 
 			boolean trackMessages, int owner) {
 		//Full constructor used when data can be added all at once
 		this.id = id;

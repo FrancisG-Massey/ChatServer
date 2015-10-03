@@ -31,7 +31,7 @@ import com.sundays.chat.utils.GeneralTools;
 
 public class Settings {	
 	   
-    public static final Map<Integer, String> defaultRanks = new HashMap<Integer, String>(12);
+    public static final Map<Byte, String> defaultRanks = new HashMap<>(12);
     public static final Map<Integer, ChannelGroup> systemGroups = new HashMap<Integer, ChannelGroup>();
     public static final int rankNameMax = 25, rankNameMin = 2;
     public static final short TOTAL_RANKS, PERMISSION_VERSION = 2, RANK_NAME_VERSION = 2;
@@ -144,11 +144,11 @@ public class Settings {
     	@Override
     	public String toString () { return id+""; }
     }
-    public static final int DEFAULT_RANK = 1;//The rank that all users will be automatically assigned when they are added to the channel's rank data
-    public static final int GUEST_RANK = 0;//The rank that any users who are not in the channel's rank data will receive
-    public static final int MOD_RANK = 5;//A system rank for the position of 'channel moderator'. This holds moderative permissions by default, but can be changed in each channel
-    public static final int ADMIN_RANK = 9;//A system rank for the position of 'channel administrator'. Holds administrative permissions by default, but this can be changed in each channel
-    public static final int OWNER_RANK = 11;//The highest channel-specific rank available. Can only be held by a single person at a time, and holds all available permissions.
+    public static final byte DEFAULT_RANK = 1;//The rank that all users will be automatically assigned when they are added to the channel's rank data
+    public static final byte GUEST_RANK = 0;//The rank that any users who are not in the channel's rank data will receive
+    public static final byte MOD_RANK = 5;//A system rank for the position of 'channel moderator'. This holds moderative permissions by default, but can be changed in each channel
+    public static final byte ADMIN_RANK = 9;//A system rank for the position of 'channel administrator'. Holds administrative permissions by default, but this can be changed in each channel
+    public static final byte OWNER_RANK = 11;//The highest channel-specific rank available. Can only be held by a single person at a time, and holds all available permissions.
 
     public enum ReportTypes {
     	CHANNEL,
@@ -159,15 +159,15 @@ public class Settings {
     	defaultRanks.clear();
         defaultRanks.put(GUEST_RANK, "Guest");
         defaultRanks.put(DEFAULT_RANK, "Rank one");
-        defaultRanks.put(2, "Rank two");
-        defaultRanks.put(3, "Rank three");
-        defaultRanks.put(4, "Rank four");
+        defaultRanks.put((byte) 2, "Rank two");
+        defaultRanks.put((byte) 3, "Rank three");
+        defaultRanks.put((byte) 4, "Rank four");
         defaultRanks.put(MOD_RANK, "Moderator");
-        defaultRanks.put(6, "Rank six");
-        defaultRanks.put(7, "Rank seven");
-        defaultRanks.put(8, "Rank eight");
+        defaultRanks.put((byte) 6, "Rank six");
+        defaultRanks.put((byte) 7, "Rank seven");
+        defaultRanks.put((byte) 8, "Rank eight");
         defaultRanks.put(ADMIN_RANK, "Administrator");
-        defaultRanks.put(10, "Rank ten");
+        defaultRanks.put((byte) 10, "Rank ten");
         defaultRanks.put(OWNER_RANK, "Owner");
 		TOTAL_RANKS = (short) defaultRanks.size();
     }

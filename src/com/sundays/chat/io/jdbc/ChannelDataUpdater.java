@@ -65,14 +65,14 @@ public class ChannelDataUpdater {
 		return permissionArray;		
 	}
 	
-	public static Map<Integer, String> decompressRankNamesV1 (byte[] rankNames) {
-		Map<Integer, String> nameArray = new HashMap<Integer, String>();
+	public static Map<Byte, String> decompressRankNamesV1 (byte[] rankNames) {
+		Map<Byte, String> nameArray = new HashMap<>();
 		try {
 			ByteArrayExtractor extractor = new ByteArrayExtractor(rankNames);//Converts the names list into a byte array
             if (extractor.getByte() != 12) {//The first value in v1 compressions was the number of ranks. This used to be fixed at 12.
             	throw new IllegalArgumentException("Invalid rank names data submitted to ChannelDataUpdate.decompressRankNames()");
             }
-            int i=0;
+            byte i=0;
             while (true) {
             	String name;
                 try {
@@ -90,8 +90,8 @@ public class ChannelDataUpdater {
 		return nameArray;
 	}
 	
-	public static Map<Integer, String> decompressRankNamesV2 (byte[] rankNames) {
-		Map<Integer, String> nameArray = new HashMap<Integer, String>();
+	public static Map<Byte, String> decompressRankNamesV2 (byte[] rankNames) {
+		Map<Byte, String> nameArray = new HashMap<>();
 		try {
 			ByteArrayExtractor extractor = new ByteArrayExtractor(rankNames);//Converts the names list into a byte array
             if (extractor.getShort() != 2) {//Reads the rank name archive version
@@ -108,7 +108,7 @@ public class ChannelDataUpdater {
                 	//Permission data stream ended prematurely. A later loop should handle this problem
                     break;
                 }
-            	nameArray.put((int) rank, name);
+            	nameArray.put(rank, name);
             }
         } catch (IOException ex) {
         	logger.warn("Could not decode rank names for this channel. Using defaults.", ex);
@@ -136,11 +136,11 @@ public class ChannelDataUpdater {
 		return bldr.getByteArray();
 	}
 	
-	private byte[] compressRankNamesV2 (Map<Integer, String> rankNames) throws IOException {
+	private byte[] compressRankNamesV2 (Map<Byte, String> rankNames) throws IOException {
 		ByteArrayBuilder bldr = new ByteArrayBuilder();
 		bldr.writeShort(Settings.RANK_NAME_VERSION);//Rank names version
-		for (Entry<Integer, String> name : rankNames.entrySet()) {
-			bldr.writeByte(name.getKey().byteValue());
+		for (Entry<Byte, String> name : rankNames.entrySet()) {
+			bldr.writeByte(name.getKey());
         	bldr.writeUTFString(name.getValue());
         }
 		return bldr.getByteArray();
