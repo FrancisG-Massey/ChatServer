@@ -304,33 +304,6 @@ public class ChannelMessageFactory {
 			memberData.add(member);
 		}
     	message.put("ranks", (Serializable) memberData);
-    	
-        /*try {
-        	if (ranksList.size() > 0) {
-        		JSONObject[] ranks = new JSONObject[ranksList.size()];
-        		//System.out.println("Ranks: "+ranksList.size());
-        		int i = 0;
-        		for (Integer userID : ranksList.keySet()) {
-        			JSONObject rank = new JSONObject();
-        			rank.put("userID", userID);
-        			String un = userLookup.getUsername(userID);//UserID
-                    if (un == null) {
-                        un = "[user not found]";//If there was no username, apply '[user not found]' as username
-                    }
-                    //System.out.println("User: "+un);
-        			rank.put("username", un);
-        			ChannelGroup group = channel.getUserGroup(userID);
-        			rank.put("group", createGroupDetails(group));
-        			rank.put("rank", group.getLegacyRank());
-        			ranks[i] = rank;
-        			i++;
-        		}
-        		message.put("ranks", ranks);
-        	}
-        } catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
         return message;
     } 
     

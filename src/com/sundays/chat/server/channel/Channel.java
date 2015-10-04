@@ -74,7 +74,7 @@ public final class Channel {
     protected boolean flushRequired = false;
     private int nextMessageID = 1;
     private int lockRank = -100;
-    private int channelOwner;
+    private int ownerID;
     private long lockExpires = 0L;
     private transient final ChannelDataManager io;
     
@@ -100,7 +100,7 @@ public final class Channel {
         this.id = id;
         this.io = io;
         this.name = details.name;
-        this.channelOwner = details.owner;
+        this.ownerID = details.owner;
         this.openingMessage = details.openingMessage;
         this.channelAbbr = details.abbreviation;
         this.permissions = validatePermissions(details.permissions);
@@ -123,26 +123,37 @@ public final class Channel {
 	/*
      * Reads basic details (fully public methods, make sure you only return read-only variables which cannot be modified)
      */
+	
+	/**
+	 * Gets the name of the channel
+	 * @return The channel name
+	 */
     public String getName () {
     	return this.name;
     }
 
     /**
-	 * @param name the name to set
+     * Sets the channel name to the provided string
+	 * @param name The new name for the channel
 	 */
 	protected void setName(String name) {
 		this.name = name;
 	}
 
+	/**
+	 * Gets the message presented to users when joining the channel
+	 * @return The welcome message
+	 */
 	public String getOpeningMessage() {
         return this.openingMessage;
     }
 
 	/**
-	 * @param openingMessage the openingMessage to set
+	 * Sets the message presented to users when joining the channel to the provided string
+	 * @param openingMessage The new opening message for the channel.
 	 */
-	protected void setOpeningMessage(String openingMessage) {
-		this.openingMessage = openingMessage;
+	protected void setOpeningMessage(String message) {
+		this.openingMessage = message;
 	}
     
     public Color getOMColour () {
@@ -157,11 +168,23 @@ public final class Channel {
     	return this.lockExpires;
     }
     
+    /**
+     * Gets the user ID of the channel owner
+     * @return The owner ID
+     */
     public int getOwnerID () {
-    	return this.channelOwner;
+    	return this.ownerID;
     }
 
-    public int getUserCount() {
+    /**
+     * Sets the owner of the channel to the user with the provided ID
+	 * @param ownerID The user ID of the new channel owner
+	 */
+	protected void setOwnerID(int ownerID) {
+		this.ownerID = ownerID;
+	}
+
+	public int getUserCount() {
         return this.members.size();
     }
 
@@ -183,7 +206,7 @@ public final class Channel {
     
     protected ChannelGroup getUserGroup (int uID) {
     	ChannelGroup group = groups.get(Settings.GUEST_RANK);//Guest
-    	if (uID == channelOwner) {
+    	if (uID == ownerID) {
     		group = groups.get(Settings.OWNER_RANK);
     	} else if (ranks.containsKey(uID)) {
         	group = groups.get(ranks.get(uID).intValue());//Manually selected group
@@ -240,7 +263,7 @@ public final class Channel {
      */
     public byte getUserRank (int userID) {
     	byte rank = 0;
-    	if (userID == channelOwner) {
+    	if (userID == ownerID) {
     		rank = Settings.OWNER_RANK;
     	} else if (ranks.containsKey(userID)) {
         	rank = ranks.get(userID);
@@ -304,7 +327,7 @@ public final class Channel {
         				" Swapping to the default rank of: "+Settings.DEFAULT_RANK+".");
         		r.setValue((byte) Settings.DEFAULT_RANK);
         		io.changeRank(id, r.getKey(), Settings.DEFAULT_RANK);
-        	} else if (r.getValue() == Settings.OWNER_RANK && r.getKey() != channelOwner) {
+        	} else if (r.getValue() == Settings.OWNER_RANK && r.getKey() != ownerID) {
         		logger.warn("User "+r.getKey()+" from channel "+id+" holds a rank of owner(11), but is not specified as the channel owner." +
         				" Swapping to the default rank of: "+Settings.DEFAULT_RANK+".");
         		r.setValue((byte) Settings.DEFAULT_RANK);
@@ -407,7 +430,7 @@ public final class Channel {
     	rankNamesArray = rankNames.values().toArray(rankNamesArray);*/
     	
     	return new ChannelDetails(id, name, openingMessage,
-    			channelAbbr, permissionsArray, rankNames, trackMessages, channelOwner);
+    			channelAbbr, permissionsArray, rankNames, trackMessages, ownerID);
     }
     
     //Alter temporary data

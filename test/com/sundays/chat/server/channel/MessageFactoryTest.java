@@ -58,6 +58,27 @@ public class MessageFactoryTest {
 	}
 	
 	@Test
+	public void testDetailMessage () {
+		dummyChannel.setName("Test Channel");
+		dummyChannel.setOpeningMessage("Test Message");
+		dummyChannel.setOwnerID(102);
+		userLookup.nameLookup.put(102, "Test");
+		
+		assumeTrue("Test Channel".equals(dummyChannel.getName()));		
+		assumeTrue("Test Message".equals(dummyChannel.getOpeningMessage()));
+		assumeTrue(102 == dummyChannel.getOwnerID());
+		
+		MessagePayload message = factory.createDetailsMessage(dummyChannel, userLookup);
+		
+		assertEquals("Test Channel", message.get("name"));
+		assertEquals("Test Message", message.get("openingMessage"));
+		
+		MessagePayload owner = (MessagePayload) message.get("owner");
+		assertEquals(102, owner.get("id"));
+		assertEquals("Test", owner.get("name"));
+	}
+	
+	@Test
 	public void testGroupMessage () {
 		ChannelGroup group = new ChannelGroup(100, 1, "Member", "http://example.com/icon.png", GroupType.NORMAL);
 		MessagePayload message = factory.createGroupDetails(group);
