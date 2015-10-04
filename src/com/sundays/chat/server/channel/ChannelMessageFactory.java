@@ -18,6 +18,7 @@
  *******************************************************************************/
 package com.sundays.chat.server.channel;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,7 +35,6 @@ import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.user.User;
 import com.sundays.chat.server.user.UserLookup;
-
 
 /**
  *
@@ -198,16 +198,28 @@ public class ChannelMessageFactory {
     /**
      * Packs a {@link MessagePayload} containing data about all the users currently in the channel.
      * @param channel The channel to retrieve data from
-     * @return
+     * @return The payload of the new message.
      */
-    public JSONObject prepareChannelList (Channel channel) {
+    public MessagePayload createChannelUserList (Channel channel) {
     	if (channel == null) {
-    		throw new IllegalArgumentException("channel must not be null.");
+    		throw new IllegalArgumentException("'channel' must not be null.");
     	}
-    	JSONObject responseJSON = new JSONObject();
-        try {
-        	responseJSON.put("id", channel.getID());
-        	responseJSON.put("totalUsers", channel.getUserCount());
+    	MessagePayload message = new MessagePayload();
+    	message.put("id", channel.getID());
+    	message.put("totalUsers", channel.getUserCount());
+    	
+    	List<MessagePayload> memberData = new ArrayList<>();
+    	for (User u1 : channel.getUsers()) {
+    		MessagePayload member = new MessagePayload();
+			member.put("userID", u1.getUserID());
+			member.put("username", u1.getUsername());
+			ChannelGroup group = channel.getUserGroup(u1.getUserID());
+			member.put("group", createGroupDetails(group));
+			member.put("rank", group.getLegacyRank());
+			memberData.add(member);
+		}
+    	message.put("users", (Serializable) memberData);
+        /*try {
         	if (channel.getUserCount() > 0) {
         		JSONObject[] members = new JSONObject[channel.getUserCount()];
         		int i = 0;
@@ -221,13 +233,13 @@ public class ChannelMessageFactory {
         			members[i] = member;
         			i++;
         		}
-        		responseJSON.put("users", members);
+        		message.put("users", members);
         	}
         } catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-        return responseJSON;
+		}*/
+        return message;
     }
     
     /**

@@ -3,6 +3,8 @@ package com.sundays.chat.server.channel;
 import static org.junit.Assert.*;
 import static org.junit.Assume.*;
 
+import java.util.List;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,11 +47,28 @@ public class MessageFactoryTest {
 		assertEquals("http://example.com/icon.png", message.get("icon"));
 		assertEquals(GroupType.NORMAL, message.get("type"));
 	}
-
+	
 	@Test
-	public void testUserRemoval() {
-		MessagePayload message = factory.createChannelUserRemoval(testUser, dummyChannel);
-		assertEquals(102, message.get("userID"));
+	public void testUserList () {
+		for (int i=0;i<10;i++) {
+			UserDetails details = new UserDetails(110+i, "Test"+i, 0);
+			dummyChannel.addUser(new User(110+i, details));
+		}
+		assumeTrue(dummyChannel.getUsers().size() == 10);//Assume all users were added properly.
+		
+		MessagePayload message = factory.createChannelUserList(dummyChannel);
+		assertEquals(100, message.get("id"));
+		assertEquals(10, message.get("totalUsers"));
+		
+		@SuppressWarnings("unchecked")
+		List<MessagePayload> userList = (List<MessagePayload>) message.get("users");
+		
+		for (MessagePayload userMessage : userList) {
+			//Get the user ID, since the order of the user list is not guaranteed
+			int i = ((Integer) userMessage.get("userID"))-110;
+			assertEquals("Test"+i, userMessage.get("username"));
+			assertEquals(Settings.GUEST_RANK, userMessage.get("rank"));
+		}
 	}
 
 	@Test
@@ -76,6 +95,12 @@ public class MessageFactoryTest {
 		assertEquals(102, message.get("userID"));
 		assertEquals("Test", message.get("username"));
 		assertEquals(Settings.GUEST_RANK, message.get("rank"));
+	}
+
+	@Test
+	public void testUserRemoval() {
+		MessagePayload message = factory.createChannelUserRemoval(testUser, dummyChannel);
+		assertEquals(102, message.get("userID"));
 	}
 
 	@Test

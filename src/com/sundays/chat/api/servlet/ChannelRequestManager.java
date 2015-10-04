@@ -222,7 +222,7 @@ public class ChannelRequestManager extends HttpServlet {
 			responseJSON = new JSONObject(api.getChannelDetails(cID));			
 		} else if ("userlist".equalsIgnoreCase(requestInfo[1])) {
 			//Request for channel list
-			responseJSON = api.getChannelList(cID);	
+			responseJSON = new JSONObject(api.getChannelList(cID));	
 		} else if ("rankdetails".equalsIgnoreCase(requestInfo[1])) {
 			//Request for channel rank details
 			responseJSON = api.getRankNames(cID);

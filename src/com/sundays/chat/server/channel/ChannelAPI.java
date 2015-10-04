@@ -30,7 +30,6 @@ import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.message.MessageType;
 import com.sundays.chat.server.user.User;
 import com.sundays.chat.server.user.UserLookup;
-import com.sundays.chat.server.user.UserManager;
 
 public class ChannelAPI {
 	
@@ -61,14 +60,15 @@ public class ChannelAPI {
         return messageFactory.createDetailsMessage(channel, userManager);
     }
     
-    public JSONObject getChannelList (int channelID) throws JSONException {
+    public MessagePayload getChannelList (int channelID) throws JSONException {
     	Channel channel = channelManager.getChannel(channelID);
-        JSONObject channelList = new JSONObject();
+        MessagePayload channelList;
         if (channel == null) {
+        	channelList = new MessagePayload();
         	channelList.put("id", channelID);
 			channelList.put("totalUsers", 0);	
         } else {
-        	channelList = messageFactory.prepareChannelList(channel);
+        	channelList = messageFactory.createChannelUserList(channel);
         }
         return channelList;
     }
