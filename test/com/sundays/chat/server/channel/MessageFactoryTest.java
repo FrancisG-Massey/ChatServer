@@ -120,6 +120,31 @@ public class MessageFactoryTest {
 		MessagePayload message = factory.createChannelUserRemoval(testUser, dummyChannel);
 		assertEquals(102, message.get("userID"));
 	}
+	
+	@Test
+	public void testMemberList () {
+		for (int i=0;i<10;i++) {
+			//UserDetails details = new UserDetails(110+i, "Test"+i, 0);
+			//dummyChannel.addUser(new User(110+i, details));
+			dummyChannel.addRank(110+i);
+			userLookup.nameLookup.put(110+i, "Test"+i);
+		}
+		assumeTrue(dummyChannel.getRanks().size() == 10);//Assume all members were added properly.
+		
+		MessagePayload message = factory.createMemberList(dummyChannel, userLookup);
+		assertEquals(100, message.get("id"));
+		assertEquals(10, message.get("totalUsers"));
+		
+		@SuppressWarnings("unchecked")
+		List<MessagePayload> memberList = (List<MessagePayload>) message.get("ranks");
+		
+		for (MessagePayload memberMessage : memberList) {
+			//Get the user ID, since the order of the user list is not guaranteed
+			int i = ((Integer) memberMessage.get("userID"))-110;
+			assertEquals("Test"+i, memberMessage.get("username"));
+			assertEquals(Settings.DEFAULT_RANK, memberMessage.get("rank"));
+		}
+	}
 
 	@Test
 	public void testMemberAddition() {

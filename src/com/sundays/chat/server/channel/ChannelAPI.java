@@ -100,7 +100,7 @@ public class ChannelAPI {
 		return messageFactory.prepareChannelPermissions(channel);
     }
     
-    public JSONObject getRankList (int cID) {
+    public MessagePayload getRankList (int cID) {
         Channel channel = channelManager.getChannel(cID);
         if (channel == null) {
         	channelManager.loadChannel(cID);
@@ -109,7 +109,7 @@ public class ChannelAPI {
         		return null;
         	}
         }
-        return messageFactory.prepareRankList(channel, userManager);
+        return messageFactory.createMemberList(channel, userManager);
     }
     
     public JSONObject getBanList (int cID) {

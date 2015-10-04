@@ -208,7 +208,7 @@ public class ChannelMessageFactory {
     	message.put("id", channel.getID());
     	message.put("totalUsers", channel.getUserCount());
     	
-    	List<MessagePayload> memberData = new ArrayList<>();
+    	List<MessagePayload> userData = new ArrayList<>();
     	for (User u1 : channel.getUsers()) {
     		MessagePayload member = new MessagePayload();
 			member.put("userID", u1.getUserID());
@@ -216,29 +216,9 @@ public class ChannelMessageFactory {
 			ChannelGroup group = channel.getUserGroup(u1.getUserID());
 			member.put("group", createGroupDetails(group));
 			member.put("rank", group.getLegacyRank());
-			memberData.add(member);
+			userData.add(member);
 		}
-    	message.put("users", (Serializable) memberData);
-        /*try {
-        	if (channel.getUserCount() > 0) {
-        		JSONObject[] members = new JSONObject[channel.getUserCount()];
-        		int i = 0;
-        		for (User u1 : channel.getUsers()) {
-        			JSONObject member = new JSONObject();
-        			member.put("userID", u1.getUserID());
-        			member.put("username", u1.getUsername());
-        			ChannelGroup group = channel.getUserGroup(u1.getUserID());
-        			member.put("group", createGroupDetails(group));
-        			member.put("rank", group.getLegacyRank());
-        			members[i] = member;
-        			i++;
-        		}
-        		message.put("users", members);
-        	}
-        } catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
+    	message.put("users", (Serializable) userData);
         return message;
     }
     
@@ -291,19 +271,41 @@ public class ChannelMessageFactory {
 		return message;
     }
     
-    public JSONObject prepareRankList (Channel channel, UserLookup userManager) {
-        /**
-         * @param c, the channel to retrieve data from
-         * @description prepares a JSON object containing data about all the users ranked in the channel
-         */
+    /**
+     * Packs a {@link MessagePayload} containing data about all the users ranked in the channel
+     * @param channel The channel to retrieve data from
+     * @param userLookup The user lookup service for the server
+     * @return The payload of the new message.
+     */
+    public MessagePayload createMemberList (Channel channel, UserLookup userLookup) {
     	if (channel == null) {
     		return null;
     	}
-    	JSONObject responseJSON = new JSONObject();
+    	MessagePayload message = new MessagePayload();
+    	
     	Map<Integer, Byte> ranksList = channel.getRanks();//Picks up the rank data for the channel
-        try {
-        	responseJSON.put("id", channel.getID());
-        	responseJSON.put("totalUsers", ranksList.size());
+    	
+    	message.put("id", channel.getID());
+    	message.put("totalUsers", ranksList.size());
+    	
+    	List<MessagePayload> memberData = new ArrayList<>();
+    	for (Integer userID : ranksList.keySet()) {
+    		MessagePayload member = new MessagePayload();
+    		member.put("userID", userID);
+			String username = userLookup.getUsername(userID);
+            if (username == null) {
+            	username = "[user not found]";//If there was no username, apply '[user not found]' as username
+            }
+
+            member.put("username", username);
+			ChannelGroup group = channel.getUserGroup(userID);
+			member.put("group", createGroupDetails(group));
+			member.put("rank", group.getLegacyRank());
+			memberData.add(member);
+		}
+    	message.put("ranks", (Serializable) memberData);
+    	
+        /*try {
         	if (ranksList.size() > 0) {
         		JSONObject[] ranks = new JSONObject[ranksList.size()];
         		//System.out.println("Ranks: "+ranksList.size());
@@ -311,7 +313,7 @@ public class ChannelMessageFactory {
         		for (Integer userID : ranksList.keySet()) {
         			JSONObject rank = new JSONObject();
         			rank.put("userID", userID);
-        			String un = userManager.getUsername(userID);//UserID
+        			String un = userLookup.getUsername(userID);//UserID
                     if (un == null) {
                         un = "[user not found]";//If there was no username, apply '[user not found]' as username
                     }
@@ -323,25 +325,25 @@ public class ChannelMessageFactory {
         			ranks[i] = rank;
         			i++;
         		}
-        		responseJSON.put("ranks", ranks);
+        		message.put("ranks", ranks);
         	}
         } catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-        return responseJSON;
+		}*/
+        return message;
     } 
     
     /**
      * Creates a message notifying the recipient to add the specified user to the rank list
      * @param userID The ID of the user to add to the rank list
      * @param channel The channel to retrieve data from
-     * @param userManager The user manager for the server
+     * @param userLookup The user lookup service for the server
      * @return The payload of the new message.
      */
-    public MessagePayload createRankListAddition (int userID, Channel channel, UserLookup userManager) {
+    public MessagePayload createRankListAddition (int userID, Channel channel, UserLookup userLookup) {
     	MessagePayload message = new MessagePayload();
-    	String username = userManager.getUsername(userID);//UserID
+    	String username = userLookup.getUsername(userID);//UserID
         if (username == null) {
         	username = "[user not found]";
         }
