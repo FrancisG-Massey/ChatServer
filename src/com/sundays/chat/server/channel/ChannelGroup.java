@@ -29,7 +29,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.sundays.chat.io.ChannelGroupData;
-import com.sundays.chat.server.Settings.GroupType;
+import com.sundays.chat.server.GroupType;
 
 public class ChannelGroup {
 	
@@ -39,7 +39,7 @@ public class ChannelGroup {
 	private String groupName, groupIconUrl;
 	public final int groupID, channelID;
 	public int overrides;
-	public GroupType groupType = GroupType.NORM;
+	public GroupType groupType = GroupType.NORMAL;
 	
 	private byte legacyRank;
 	

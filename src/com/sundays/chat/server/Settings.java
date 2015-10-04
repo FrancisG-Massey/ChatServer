@@ -40,9 +40,7 @@ public class Settings {
     public static final int channelCleanupThreadFrequency = 60;//Runs channel management tasks once every minute
     public static final int CHANNEL_CACHE_SIZE = 100;
 	
-	public static enum GroupType {NORM,MOD,ADMIN,OWN,SYS};
-    
-    private static Settings settings;
+	private static Settings settings;
     
     public static Settings initSettings (Properties p) {
     	if (settings == null) {
@@ -174,6 +172,6 @@ public class Settings {
     
     static {       
     	systemGroups.clear();
-    	systemGroups.put(53, new ChannelGroup(50, 53, "Unknown", null, GroupType.NORM).overrides(-2));
+    	systemGroups.put(53, new ChannelGroup(50, 53, "Unknown", null, GroupType.NORMAL).overrides(-2));
     }
 }

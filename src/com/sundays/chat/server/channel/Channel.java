@@ -19,6 +19,7 @@
 package com.sundays.chat.server.channel;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -90,7 +91,7 @@ public final class Channel {
     		this.permissions.put(p, p.defaultValue());
     	}
     	this.rankNames = new LinkedHashMap<>(Settings.defaultRanks);
-    	this.groups = new ConcurrentHashMap<>();
+    	this.groups = loadGroups(new ArrayList<ChannelGroupData>());
     	this.permBans = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
     	this.ranks = new ConcurrentHashMap<>();
     }
@@ -105,7 +106,7 @@ public final class Channel {
         this.permissions = validatePermissions(details.permissions);
         this.rankNames = validateRankNames(details.rankNames);
         this.trackMessages = details.trackMessages;
-        this.groups = loadGroups();
+        this.groups = loadGroups(io.getChannelGroups(id));
         this.permBans = loadBanList();//Bans MUST be loaded before ranks. This ensures that people on the ban list take priority over people on the rank list
         this.ranks = loadRanks();
         logger.info("Successfully loaded channel: " + this.name);
@@ -262,9 +263,7 @@ public final class Channel {
     }    
     
     //Loading stages
-    private Map<Integer, ChannelGroup> loadGroups () {
-    	//Pull the group data from the database
-    	List<ChannelGroupData> groupData = io.getChannelGroups(id);
+    private Map<Integer, ChannelGroup> loadGroups (List<ChannelGroupData> groupData) {
     	
     	Map<Integer, ChannelGroup> responseGroups = new ConcurrentHashMap<Integer, ChannelGroup>();
     	//ChannelGroup unknGroup = new ChannelGroup(50, 53);
