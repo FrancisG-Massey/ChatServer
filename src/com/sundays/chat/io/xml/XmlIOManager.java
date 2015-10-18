@@ -57,7 +57,13 @@ public class XmlIOManager implements IOManager {
 		if (!properties.containsKey("channels.dir")) {
 			throw new ConfigurationException("No channels directory specified.");
 		}
-		channelManager = new XmlChannelManager(new File((String) properties.get("channels.dir")));
+		File channelDirectory = new File((String) properties.get("channels.dir"));
+		
+		File channelSchema = null;
+		if (properties.containsKey("channels.schema")) {
+			channelSchema = new File((String) properties.get("channels.schema"));
+		}
+		channelManager = new XmlChannelManager(channelDirectory, channelSchema);
 	}
 
 	@Override

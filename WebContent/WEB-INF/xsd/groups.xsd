@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  Copyright (c) 2013, 2015 Francis G.
+  
+  This file is part of ChatServer.
+  
+  ChatServer is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 2 of the License, or
+  (at your option) any later version.
+  
+  ChatServer is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+  
+  You should have received a copy of the GNU General Public License
+  along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="http://www.example.org/chatserver/groups" 
+	xmlns="http://www.example.org/chatserver/groups"
+    xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
+	elementFormDefault="qualified">
+
+	<!-- Imports the XML MIME namespace, to be used in the "resource" group -->
+    <xs:import namespace="http://www.w3.org/2005/05/xmlmime"
+                schemaLocation="http://www.w3.org/2005/05/xmlmime"/>
+
+	<!-- Defines the root namespace ("groups") -->
+	<xs:element name="groups">
+		<xs:complexType>
+			<xs:sequence>
+				<!-- Allow for any number of child "group" elements -->
+				<xs:element name="group" type="groupData" minOccurs="0"
+					maxOccurs="unbounded" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:complexType name="groupData">
+		<xs:group ref="groupInfo" />
+		
+		<!-- Declares the ID for the group. This should be an integer which is not already used by another group in the "groups" list -->
+		<xs:attribute name="id" type="xs:integer" use="required" />
+		
+		<!-- Declares whether this group overrides a system group. If true, the groups ID should be identical to the ID of the system group. 
+		If false, and the ID is the same as one belonging to a system group, the definition for the system group will be used instead. -->
+		<xs:attribute name="overridesDefault" type="xs:boolean" default="true" />
+	</xs:complexType>
+
+	<xs:group name="groupInfo">
+		<xs:sequence>
+			<!-- The name of the group, as a string containing no outside whitespace and multiple white spaces compressed. -->
+			<xs:element name="name" type="xs:token" />
+			
+			<!-- The group type. Used to automatically assign users, declare default permissions, and restrict the use of some features. -->
+			<xs:element name="type" type="groupType" />
+			
+			<!-- The group description, declared as a string which can contain any number of characters and whitespace. -->
+			<xs:element name="description" type="xs:string" />
+			
+			<!-- The icon used to identify the group. -->
+			<xs:element name="icon" type="iconUrlType" />
+			
+			<!-- A set of permissions granted to members of the group -->
+			<xs:element name="permissions" type="permissionGroup" />
+		</xs:sequence>
+	</xs:group>
+
+	<xs:simpleType name="groupType">
+		<xs:restriction base="xs:token">
+			<!-- Channels should only have one group of type "guest". All users who are not members of the channel are automatically assigned to this group. -->
+			<xs:enumeration value="guest" />
+			
+			<!-- A group with no additional properties. -->
+			<xs:enumeration value="normal" />
+			
+			<!-- Groups intended to have moderation rights, such as removing and banning other users. -->
+			<xs:enumeration value="moderator" />
+			
+			<!-- Groups intended to have administration rights, such as editing members, groups, details, etc. Also includes moderation rights. -->
+			<xs:enumeration value="admin" />
+			
+			<!-- Channels should have only one "owner" group, and only one user should be assigned to it. 
+			The channel owner has full rights within the channel, which cannot be removed (any values in "permissions" will be ignored). -->
+			<xs:enumeration value="owner" />
+			
+			<!-- Defines a system group. Only system channels should define their own system groups; System groups in non-system channels will be ignored. -->
+			<xs:enumeration value="system" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="iconUrlType">
+		<xs:group ref="resource" />
+	</xs:complexType>
+	
+	<xs:group name="resource">
+		<!-- Defines a resource which is defined in one of three ways: -->
+		<xs:choice>
+			<!-- Put the raw resource data in the actual XML document, using a base64 encoded string -->
+			<xs:element name="data" type="xmime:base64Binary" />
+			<!-- Define the remote URL to the resource, so applications can fetch the resource data -->
+			<xs:element name="remoteURL" type="xs:anyURI" />
+			<!-- Define the URI of the resource, so applications can match it to a local file -->
+			<xs:element name="URI" type="xs:anyURI" />
+		</xs:choice>
+	</xs:group>
+
+	<xs:complexType name="permissionGroup">
+		<xs:sequence>
+			<xs:element name="permission" type="permissionData"
+				minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="permissionData">
+		<xs:attributeGroup ref="permissionAttr" />
+	</xs:complexType>
+
+	<xs:attributeGroup name="permissionAttr">
+		<xs:attribute name="type" type="permissionType" />
+		
+		<!-- Defines whether the permission should be granted. The value set here overrides the permission in the default group (if present) -->
+		<xs:attribute name="granted" type="xs:boolean" default="true" />
+	</xs:attributeGroup>
+
+	<xs:simpleType name="permissionType">
+		<xs:restriction base="xs:token">
+			<!-- The ability to enter the channel -->
+			<xs:enumeration value="join" />
+			
+			<!-- The ability to send messages in the channel -->
+			<xs:enumeration value="talk" />
+			
+			<!-- The ability to remove other users from the channel. -->
+			<xs:enumeration value="kick" />
+			
+			<!-- The ability to temporarily block another user from joining the channel. -->
+			<xs:enumeration value="tempban" />
+			
+			<!-- The ability to empty the channel of all users, allowing any temporary attributes (eg temp bans) to expire. -->
+			<xs:enumeration value="reset" />
+			
+			<!-- The ability to permanently block another user from joining the channel, until their ban is manually removed.  -->
+			<xs:enumeration value="permban" />
+			<xs:enumeration value="memberedit" />
+			<xs:enumeration value="groupedit" />
+			<xs:enumeration value="detailedit" />
+			<xs:enumeration value="lock" />
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>

@@ -25,14 +25,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Source;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import com.sundays.chat.io.ChannelDataManager;
 import com.sundays.chat.io.ChannelDetails;
@@ -51,12 +60,32 @@ public class XmlChannelManager implements ChannelDataManager {
 	
 	private final File folder;
 	private DocumentBuilderFactory factory;
+	private final Schema schema;
 	
 	private Map<Integer, ChannelData> channelDataCache;
 
-	public XmlChannelManager(File folder) {
+	public XmlChannelManager(File folder, File schemaFile) {
 		this.folder = folder;
 		this.factory = DocumentBuilderFactory.newInstance();
+		if (schemaFile == null || !schemaFile.exists() || !schemaFile.isFile()) {
+			logger.warn("No channel schema specified (or specified schema does not exist).");
+			schema = null;
+		} else {
+			schema = loadSchema(schemaFile);
+		}
+	}
+	
+	private final Schema loadSchema (File schemaFile) {
+		SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+		Source schemaSource = new StreamSource(schemaFile);
+	    Schema schema;
+		try {
+			schema = factory.newSchema(schemaSource);
+		} catch (SAXException ex) {
+			logger.warn("Error parsing channel XML schema.", ex);
+			schema = null;
+		}
+		return schema;
 	}
 	
 	private ChannelData fetchChannelData (int channelID) {
@@ -68,7 +97,22 @@ public class XmlChannelManager implements ChannelDataManager {
 		ChannelData data = new ChannelData();
 		try {
 			DocumentBuilder builder = factory.newDocumentBuilder();
-			Document doc = builder.parse(file);
+			Document doc;
+			try {
+				doc = builder.parse(file);
+			} catch (SAXException ex) {
+				logger.error("Channel data for "+channelID+" is not well-formed.", ex);
+				return null;
+			}
+			
+			Validator validator = schema.newValidator();
+			try {
+				validator.validate(new DOMSource(doc));
+			} catch (SAXException ex) {
+				logger.error("Channel data for "+channelID+" does not conform to XML schema.", ex);
+				return null;
+			}
+			
 			doc.getDocumentElement().normalize();
 			
 			
@@ -115,7 +159,7 @@ public class XmlChannelManager implements ChannelDataManager {
 					}
 				}
 			}
-		} catch (Exception ex) {
+		} catch (IOException | ParserConfigurationException ex) {
 			logger.error("Failed to fetch data for channel "+channelID, ex);
 			return null;
 		}

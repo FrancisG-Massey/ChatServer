@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  Copyright (c) 2013, 2015 Francis G.
+  
+  This file is part of ChatServer.
+  
+  ChatServer is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 2 of the License, or
+  (at your option) any later version.
+  
+  ChatServer is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+  
+  You should have received a copy of the GNU General Public License
+  along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="http://www.example.org/chatserver/channel" 
+	xmlns="http://www.example.org/chatserver/channel"
+	xmlns:csg="http://www.example.org/chatserver/groups"
+    elementFormDefault="qualified">
+    
+    <xs:import namespace="http://www.example.org/chatserver/groups" schemaLocation="groups.xsd" />
+    
+    <xs:element name="channel">
+    	<xs:complexType>
+	        <xs:sequence>
+	            <xs:element name="name" type="xs:token" />
+	            <xs:element name="alias" type="aliasType" />
+	            <xs:element name="welcomeMessage" type="xs:string" />
+	            <xs:element name="description" type="xs:string" />
+	            <xs:element ref="csg:groups" />
+	            <xs:element name="members" type="memberList" />
+	            <xs:element name="bans" type="banList" />
+	        </xs:sequence>
+	        <xs:attribute name="id" type="xs:integer" use="required"/>
+	    </xs:complexType>        
+    </xs:element>    
+    
+    <xs:simpleType name="aliasType">
+        <xs:restriction base="xs:token">
+        	<xs:maxLength value="10" />
+        	<xs:minLength value="2" />
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <xs:complexType name="memberList">
+    	<xs:sequence>
+    		<xs:element name="member" type="memberLink" maxOccurs="unbounded" />
+    	</xs:sequence>
+    </xs:complexType>
+    
+    <xs:complexType name="banList">
+    	<xs:sequence>
+    		<xs:element name="ban" type="banLink" minOccurs="0" maxOccurs="unbounded" />
+    	</xs:sequence>
+    </xs:complexType>
+    
+    <xs:complexType name="memberLink">
+    	<xs:attributeGroup ref="channelUserLink" />
+    	<xs:attribute name="group" type="xs:integer" />
+    </xs:complexType>
+    
+    <xs:complexType name="banLink">
+    	<xs:attributeGroup ref="channelUserLink" />
+    </xs:complexType>
+    
+    <xs:attributeGroup name="channelUserLink">
+    	<xs:attribute name="user" type="xs:integer" />
+    </xs:attributeGroup>
+</xs:schema>
