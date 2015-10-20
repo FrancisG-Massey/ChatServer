@@ -28,6 +28,11 @@ public class ChannelGroupData {
 	public String groupIconUrl;
 	public int overrides;
 	
+	public ChannelGroupData(int groupID, int channelID) {
+		this.groupID = groupID;
+		this.channelID = channelID;
+	}
+	
 	public ChannelGroupData (int channelID, int groupID, String groupName, String permissions, 
 			String type, String groupIconUrl) {
 		this.channelID = channelID;
@@ -37,7 +42,7 @@ public class ChannelGroupData {
 		this.type = type;
 		this.groupIconUrl = groupIconUrl;
 	}
-	
+
 	public ChannelGroupData overrides (int overrides) {
 		this.overrides = overrides;
 		return this;

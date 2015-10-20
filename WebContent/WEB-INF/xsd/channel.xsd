@@ -32,6 +32,7 @@
 	            <xs:element name="alias" type="aliasType" />
 	            <xs:element name="welcomeMessage" type="xs:string" />
 	            <xs:element name="description" type="xs:string" />
+	            <xs:element name="owner" type="xs:integer" />
 	            <xs:element ref="csg:groups" />
 	            <xs:element name="members" type="memberList" />
 	            <xs:element name="bans" type="banList" />

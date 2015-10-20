@@ -21,9 +21,12 @@ package com.sundays.chat.io.xml;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -46,23 +49,23 @@ import org.xml.sax.SAXException;
 import com.sundays.chat.io.ChannelDataManager;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
+import com.sundays.chat.server.Settings;
 
+/**
+ * An XML back-end for channel data storage. Uses one file for each channel and stores data conforming to the channel.xsd schema.
+ * 
+ * @author Francis
+ */
 public class XmlChannelManager implements ChannelDataManager {
 
 	private static final Logger logger = Logger.getLogger(XmlChannelManager.class);
-	
-	private static class ChannelData {
-		private ChannelDetails details;
-		private Map<Integer, Byte> ranks;
-		private List<Integer> bans;
-		private List<ChannelGroupData> groups;
-	}
 	
 	private final File folder;
 	private DocumentBuilderFactory factory;
 	private final Schema schema;
 	
-	private Map<Integer, ChannelData> channelDataCache;
+	private Map<Integer, Document> channelDataCache = new HashMap<>();
+	private Set<Integer> savePending = Collections.synchronizedSet(new HashSet<Integer>());
 
 	public XmlChannelManager(File folder, File schemaFile) {
 		this.folder = folder;
@@ -88,100 +91,102 @@ public class XmlChannelManager implements ChannelDataManager {
 		return schema;
 	}
 	
-	private ChannelData fetchChannelData (int channelID) {
-		File file = new File(folder, channelID+".xml");
-		if (!file.exists()) {
-			logger.warn("Permanent data for channel "+channelID+" not found at "+file.getAbsolutePath());
-			return null;
-		}
-		ChannelData data = new ChannelData();
-		try {
-			DocumentBuilder builder = factory.newDocumentBuilder();
-			Document doc;
-			try {
-				doc = builder.parse(file);
-			} catch (SAXException ex) {
-				logger.error("Channel data for "+channelID+" is not well-formed.", ex);
+	private Document loadChannelDoc (int channelID) {
+		Document doc;
+		synchronized (channelDataCache) {
+			if (channelDataCache.containsKey(channelID)) {
+				return channelDataCache.get(channelID);
+			}
+			File file = new File(folder, channelID+".xml");
+			if (!file.exists()) {
+				logger.warn("Permanent data for channel "+channelID+" not found at "+file.getAbsolutePath());
 				return null;
 			}
-			
-			Validator validator = schema.newValidator();
 			try {
-				validator.validate(new DOMSource(doc));
-			} catch (SAXException ex) {
-				logger.error("Channel data for "+channelID+" does not conform to XML schema.", ex);
+				DocumentBuilder builder = factory.newDocumentBuilder();
+				try {
+					doc = builder.parse(file);
+				} catch (SAXException ex) {
+					logger.error("Channel data for "+channelID+" is not well-formed.", ex);
+					return null;
+				}
+					
+				Validator validator = schema.newValidator();
+				try {
+					validator.validate(new DOMSource(doc));
+				} catch (SAXException ex) {
+					logger.error("Channel data for "+channelID+" does not conform to XML schema.", ex);
+					return null;
+				}
+			} catch (IOException | ParserConfigurationException ex) {
+				logger.error("Failed to fetch data for channel "+channelID, ex);
 				return null;
 			}
 			
 			doc.getDocumentElement().normalize();
 			
-			
-			NodeList nodes = doc.getElementsByTagName("channel");
-			Node node = nodes.item(0);
-			if (node.getNodeType() == Node.ELEMENT_NODE) {
-				Element element = (Element) node;
-				int id = Integer.parseInt(element.getAttribute("id"));
-				int owner = Integer.parseInt(element.getAttribute("owner"));
-				if (id != channelID) {
-					logger.warn("ChannelID attribute in file does not match actual ID. File="+file.getAbsolutePath()+", channel="+channelID);
-					return null;
-				}
-				String name = element.getElementsByTagName("name").item(0).getTextContent();
-				String message = element.getElementsByTagName("message").item(0).getTextContent();
-				String abbreviation = element.getElementsByTagName("abbreviation").item(0).getTextContent();
-				data.details = new ChannelDetails(id, name, message, abbreviation, null, null, false, owner);
-				
-				
-				node = element.getElementsByTagName("ranks").item(0);
-				data.ranks = new HashMap<>();
-				if (node.getNodeType() == Node.ELEMENT_NODE) {
-					Element rankList = (Element) node;
-					nodes = rankList.getElementsByTagName("rank");
-					Element rank;
-					for (int i = 0; i < nodes.getLength(); i++) {
-						rank = (Element) nodes.item(i);
-						int userID = Integer.parseInt(rank.getAttribute("user"));
-						byte rankID = Byte.parseByte(rank.getAttribute("rank"));
-						data.ranks.put(userID, rankID);
-					}
-				}
-				
-				node = element.getElementsByTagName("bans").item(0);
-				data.bans = new ArrayList<>();
-				if (node.getNodeType() == Node.ELEMENT_NODE) {
-					Element banList = (Element) node;
-					nodes = banList.getElementsByTagName("ban");
-					Element ban;
-					for (int i = 0; i < nodes.getLength(); i++) {
-						ban = (Element) nodes.item(i);
-						int userID = Integer.parseInt(ban.getAttribute("user"));
-						data.bans.add(userID);
-					}
-				}
-			}
-		} catch (IOException | ParserConfigurationException ex) {
-			logger.error("Failed to fetch data for channel "+channelID, ex);
-			return null;
+			channelDataCache.put(channelID, doc);
 		}
-		return data;
+		return doc;
 	}
 
 	@Override
 	public void addRank(int channelID, int userID) {
-		// TODO Auto-generated method stub
+		Document channelDoc = loadChannelDoc(channelID);
 
+		synchronized (channelDoc) {
+			Element membersElement = (Element) channelDoc.getElementsByTagName("members").item(0);
+			Element newMember = channelDoc.createElement("member");
+			newMember.setAttribute("user", Integer.toString(userID));
+			newMember.setAttribute("group", Integer.toString(Settings.DEFAULT_RANK));
+			membersElement.appendChild(newMember);
+		}
+		savePending.add(channelID);
 	}
 
 	@Override
 	public void changeRank(int channelID, int userID, byte rankID) {
-		// TODO Auto-generated method stub
-
+		Document channelDoc = loadChannelDoc(channelID);
+		
+		synchronized (channelDoc) {
+			Element membersElement = (Element) channelDoc.getElementsByTagName("members").item(0);
+			Element member = null;
+			NodeList membersList = membersElement.getChildNodes();
+			for (int i=0;i<membersList.getLength();i++) {
+				Node memberNode = membersList.item(i);
+				if (memberNode instanceof Element) {
+					Element memberElement = (Element) memberNode;
+					if (userID == Integer.parseInt(memberElement.getAttribute("user"))) {
+						member = memberElement;
+						break;
+					}
+				}
+			}
+			if (member != null) {
+				member.setAttribute("group", Integer.toString(rankID));
+			}
+		}
+		savePending.add(channelID);
 	}
 
 	@Override
 	public void removeRank(int channelID, int userID) {
-		// TODO Auto-generated method stub
-
+		Document channelDoc = loadChannelDoc(channelID);
+		
+		synchronized (channelDoc) {
+			Element membersElement = (Element) channelDoc.getElementsByTagName("members").item(0);
+			NodeList membersList = membersElement.getChildNodes();
+			for (int i=0;i<membersList.getLength();i++) {
+				Node memberNode = membersList.item(i);
+				if (memberNode instanceof Element) {
+					Element memberElement = (Element) memberNode;
+					if (userID == Integer.parseInt(memberElement.getAttribute("user"))) {
+						membersElement.removeChild(memberElement);
+					}
+				}
+			}
+		}
+		savePending.add(channelID);
 	}
 
 	@Override
@@ -222,58 +227,80 @@ public class XmlChannelManager implements ChannelDataManager {
 
 	@Override
 	public ChannelDetails getChannelDetails(int channelID) {
-		synchronized (channelDataCache) {
-			if (channelDataCache.containsKey(channelID)) {
-				return channelDataCache.get(channelID).details;
-			}
-			ChannelData data = this.fetchChannelData(channelID);
-			if (data != null) {
-				channelDataCache.put(channelID, data);
-			}
-			return data.details;
+		Document channelDoc = loadChannelDoc(channelID);
+		
+		ChannelDetails details = new ChannelDetails();
+		synchronized (channelDoc) {
+			details.name = channelDoc.getElementsByTagName("name").item(0).getTextContent();
+			details.abbreviation = channelDoc.getElementsByTagName("alias").item(0).getTextContent();
+			details.openingMessage = channelDoc.getElementsByTagName("welcomeMessage").item(0).getTextContent();
+			details.owner = Integer.parseInt(channelDoc.getElementsByTagName("owner").item(0).getTextContent());
 		}
+		return details;
 	}
 
 	@Override
 	public List<Integer> getChannelBans(int channelID) {
-		synchronized (channelDataCache) {
-			if (channelDataCache.containsKey(channelID)) {
-				return channelDataCache.get(channelID).bans;
+		Document channelDoc = loadChannelDoc(channelID);
+		
+		List<Integer> bans = new ArrayList<>();
+		synchronized (channelDoc) {
+			Element bansElement = (Element) channelDoc.getElementsByTagName("bans").item(0);
+			NodeList bansList = bansElement.getChildNodes();
+			for (int i=0;i<bansList.getLength();i++) {
+				Node banNode = bansList.item(i);
+				if (banNode instanceof Element) {
+					Element banElement = (Element) banNode;
+					bans.add(Integer.parseInt(banElement.getAttribute("user")));
+				}
 			}
-			ChannelData data = this.fetchChannelData(channelID);
-			if (data != null) {
-				channelDataCache.put(channelID, data);
-			}
-			return data.bans;
 		}
+		return bans;
 	}
 
 	@Override
 	public Map<Integer, Byte> getChannelRanks(int channelID) {
-		synchronized (channelDataCache) {
-			if (channelDataCache.containsKey(channelID)) {
-				return channelDataCache.get(channelID).ranks;
+		Document channelDoc = loadChannelDoc(channelID);
+		
+		Map<Integer, Byte> members = new HashMap<>();
+		synchronized (channelDoc) {
+			Element membersElement = (Element) channelDoc.getElementsByTagName("members").item(0);
+			NodeList membersList = membersElement.getChildNodes();
+			for (int i=0;i<membersList.getLength();i++) {
+				Node memberNode = membersList.item(i);
+				if (memberNode instanceof Element) {
+					Element memberElement = (Element) memberNode;
+					int user = Integer.parseInt(memberElement.getAttribute("user"));
+					byte group = Byte.parseByte(memberElement.getAttribute("group"));
+					members.put(user, group);
+				}
 			}
-			ChannelData data = this.fetchChannelData(channelID);
-			if (data != null) {
-				channelDataCache.put(channelID, data);
-			}
-			return data.ranks;
 		}
+		return members;
 	}
 
 	@Override
 	public List<ChannelGroupData> getChannelGroups(int channelID) {
-		synchronized (channelDataCache) {
-			if (channelDataCache.containsKey(channelID)) {
-				return channelDataCache.get(channelID).groups;
+		Document channelDoc = loadChannelDoc(channelID);
+		
+		List<ChannelGroupData> groups = new ArrayList<>();
+		synchronized (channelDoc) {
+			Element groupsElement = (Element) channelDoc.getElementsByTagName("groups").item(0);
+			NodeList groupsList = groupsElement.getChildNodes();
+			for (int i=0;i<groupsList.getLength();i++) {
+				Node groupNode = groupsList.item(i);
+				if (groupNode instanceof Element) {
+					Element groupElement = (Element) groupNode;
+					int groupID = Integer.parseInt(groupElement.getAttribute("id"));
+					ChannelGroupData groupData = new ChannelGroupData(groupID, channelID);
+					groupData.groupName = groupElement.getElementsByTagName("name").item(0).getTextContent();
+					groupData.type = groupElement.getElementsByTagName("type").item(0).getTextContent();
+					
+					groups.add(groupData);
+				}
 			}
-			ChannelData data = this.fetchChannelData(channelID);
-			if (data != null) {
-				channelDataCache.put(channelID, data);
-			}
-			return data.groups;
 		}
+		return groups;
 	}
 
 	@Override
