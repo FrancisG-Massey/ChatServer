@@ -28,11 +28,11 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.sundays.chat.io.ChannelDataManager;
+import com.sundays.chat.io.ChannelDataSave;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
 
-public class JDBCChannelManager implements ChannelDataManager {
+public class JDBCChannelManager implements ChannelDataSave {
 
 	private static final Logger logger = Logger.getLogger(JDBCChannelManager.class);
 
@@ -55,17 +55,17 @@ public class JDBCChannelManager implements ChannelDataManager {
 	}
 
 	@Override
-	public void addRank(int channelID, int userID) {
+	public void addMember(int channelID, int userID, int group) {
 		rankBanUpdater.addRank(channelID, userID);
 	}
 
 	@Override
-	public void changeRank(int channelID, int userID, byte rankID) {
-		rankBanUpdater.changeRank(channelID, userID, rankID);
+	public void updateMember(int channelID, int userID, int group) {
+		rankBanUpdater.changeRank(channelID, userID, group);
 	}
 
 	@Override
-	public void removeRank(int channelID, int userID) {
+	public void removeMember(int channelID, int userID) {
 		rankBanUpdater.removeRank(channelID, userID);
 	}
 
@@ -95,7 +95,7 @@ public class JDBCChannelManager implements ChannelDataManager {
 	}
 
 	@Override
-	public void syncDetails(int channelID, ChannelDetails details) {
+	public void updateDetails(int channelID, ChannelDetails details) {
 		channelUpdater.syncDetails(channelID, details);
 	}
 

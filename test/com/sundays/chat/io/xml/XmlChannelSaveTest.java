@@ -60,7 +60,7 @@ public class XmlChannelSaveTest extends ChannelSaveTest {
 		details.abbreviation = "N 2";
 		details.openingMessage = "This is a new message...";
 		details.owner = 101;
-		saveTest.syncDetails(100, details);
+		saveTest.updateDetails(100, details);
 		
 		saveTest.commitChanges();//Apply the change
 		

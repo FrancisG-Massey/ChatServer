@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.sundays.chat.io.ChannelDataManager;
+import com.sundays.chat.io.ChannelDataSave;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.server.ChatServer;
@@ -65,7 +65,7 @@ public class ChannelManager {
     //private ChannelCleanup cleanupThread = new ChannelCleanup();
     
     //The interface used to connect to the channel permanent data back-end
-    private final ChannelDataManager permDataUpdater;
+    private final ChannelDataSave permDataUpdater;
     
     private final ArrayList<Channel> channelUnloadQueue = new ArrayList<Channel>();
     
@@ -157,7 +157,12 @@ public class ChannelManager {
 						if (c.flushRequired) {
 							//If the channel data is required to be flushed, flush the details for the channel.
 							//c.flushPermissions();
-							permDataUpdater.syncDetails(c.getID(), c.getChannelDetails());
+							try {
+								permDataUpdater.updateDetails(c.getID(), c.getChannelDetails());
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
 							c.flushRequired = false;
 						}
 						
@@ -213,7 +218,7 @@ public class ChannelManager {
     	return response;
     }
 
-    protected void loadChannel (int channelID) {
+    protected void loadChannel (int channelID) throws IOException {
         if (!channels.containsKey(channelID)) {
             ChannelDetails details = permDataUpdater.getChannelDetails(channelID);
             channels.put(channelID, new Channel(channelID, details, permDataUpdater));

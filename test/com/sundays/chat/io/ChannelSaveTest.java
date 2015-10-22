@@ -21,6 +21,7 @@ package com.sundays.chat.io;
 import static org.junit.Assert.*;
 import static org.junit.Assume.assumeTrue;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +35,7 @@ import com.sundays.chat.server.Settings;
 
 public abstract class ChannelSaveTest {
 	
-	protected ChannelDataManager saveTest;
+	protected ChannelDataSave saveTest;
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
@@ -48,7 +49,7 @@ public abstract class ChannelSaveTest {
 	public abstract void tearDown() throws Exception;
 
 	@Test
-	public void testLoadDetails() {
+	public void testLoadDetails() throws IOException {
 		ChannelDetails details = saveTest.getChannelDetails(100);
 		assertEquals(100, details.id);
 		assertEquals("Test Channel", details.name);
@@ -58,14 +59,14 @@ public abstract class ChannelSaveTest {
 	}
 
 	@Test
-	public void testUpdateDetails() {
+	public void testUpdateDetails() throws IOException {
 		ChannelDetails details = new ChannelDetails();
 		details.id = 100;
 		details.name = "Name 2";
 		details.abbreviation = "N 2";
 		details.openingMessage = "This is a new message...";
 		details.owner = 101;
-		saveTest.syncDetails(100, details);
+		saveTest.updateDetails(100, details);
 		
 		details = saveTest.getChannelDetails(100);
 		assertEquals(100, details.id);
@@ -76,7 +77,7 @@ public abstract class ChannelSaveTest {
 	}
 
 	@Test
-	public void testLoadBans() {
+	public void testLoadBans() throws IOException {
 		List<Integer> bans = saveTest.getChannelBans(100);
 		assertEquals(2, bans.size());
 		assertEquals(103, bans.get(0).intValue());
@@ -84,7 +85,7 @@ public abstract class ChannelSaveTest {
 	}
 
 	@Test
-	public void testLoadMembers() {
+	public void testLoadMembers() throws IOException {
 		Map<Integer, Byte> members = saveTest.getChannelRanks(100);
 		assertEquals(2, members.size());
 		assertTrue(members.containsKey(100));
@@ -94,18 +95,18 @@ public abstract class ChannelSaveTest {
 	}
 	
 	@Test
-	public void testAddMember() {
-		saveTest.addRank(100, 109);
+	public void testAddMember() throws IOException {
+		saveTest.addMember(100, 109, Settings.DEFAULT_RANK);
 		Map<Integer, Byte> members = saveTest.getChannelRanks(100);
 		assertTrue(members.containsKey(109));
 		assertEquals(Settings.DEFAULT_RANK, members.get(109).byteValue());
 	}
 	
 	@Test
-	public void testUpdateMember() {
+	public void testUpdateMember() throws IOException {
 		Map<Integer, Byte> members = saveTest.getChannelRanks(100);
 		assumeTrue(members.containsKey(101));//Since this behavior is only defined for existing members, we should assume they exist first. 
-		saveTest.changeRank(100, 101, (byte) 5);
+		saveTest.updateMember(100, 101, 5);
 		
 		members = saveTest.getChannelRanks(100);
 		assertTrue(members.containsKey(101));
@@ -113,24 +114,24 @@ public abstract class ChannelSaveTest {
 	}
 	
 	@Test
-	public void testRemoveMember() {
+	public void testRemoveMember() throws IOException {
 		Map<Integer, Byte> members = saveTest.getChannelRanks(100);
 		assumeTrue(members.containsKey(101));
-		saveTest.removeRank(100, 101);
+		saveTest.removeMember(100, 101);
 		
 		members = saveTest.getChannelRanks(100);
 		assertFalse(members.containsKey(101));
 	}
 	
 	@Test
-	public void testAddBan() {
+	public void testAddBan() throws IOException {
 		saveTest.addBan(100, 110);
 		List<Integer> bans = saveTest.getChannelBans(100);
 		assertTrue(bans.contains(Integer.valueOf(110)));
 	}
 	
 	@Test
-	public void testRemoveBan() {
+	public void testRemoveBan() throws IOException {
 		List<Integer> bans = saveTest.getChannelBans(100);
 		assertTrue(bans.contains(Integer.valueOf(103)));
 		saveTest.removeBan(100, 103);

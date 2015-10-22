@@ -56,9 +56,9 @@ public interface IOManager extends AutoCloseable {
 	
 	/**
 	 * Returns the IO interface for loading and saving channel data
-	 * @return the {@linkplain ChannelDataManager} implementation for the persistance layer
+	 * @return the {@linkplain ChannelDataSave} implementation for the persistance layer
 	 * @throws IllegalStateException If this method was called before {@link #init(Properties)}, or if an exception thrown during initialisation prevented the user IO manager from initialising
 	 */
-	public ChannelDataManager getChannelIO() throws IllegalStateException;
+	public ChannelDataSave getChannelIO() throws IllegalStateException;
 
 }

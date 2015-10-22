@@ -81,7 +81,7 @@ public class GroupDataUpdater {
         }*/
 	}
 
-	public synchronized void changeRank(int channelID, int userID, int rankID) {
+	public synchronized void changeRank(int channelID, int userID, int group) {
 		//Updates the rank change queue with the specified rank change
 		ChannelUserMatcher rankChangeKey = new ChannelUserMatcher(channelID, userID);
 		
@@ -93,7 +93,7 @@ public class GroupDataUpdater {
 			//A rank update was already cued. Remove the previous update from the queue, as this new change overrides it
 			rankChanges.remove(rankChangeKey);
 		}	
-		rankChanges.put(rankChangeKey, rankID);//Place the user in the rank change cue
+		rankChanges.put(rankChangeKey, group);//Place the user in the rank change cue
 		/*try {
             UpdateQuery q = new UpdateQuery(ChatServer.server.dbCon, "UPDATE `channelRanks` SET `rank` = ? WHERE `channel` = ? AND `user` = ?");
             q.addInt(1, rankID);

@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.sundays.chat.io.ChannelDataManager;
+import com.sundays.chat.io.ChannelDataSave;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
 
@@ -35,7 +35,7 @@ import com.sundays.chat.io.ChannelGroupData;
  * 
  * @author Francis
  */
-public class DummyChannelDataIO implements ChannelDataManager {
+public class DummyChannelDataIO implements ChannelDataSave {
 	
 	public List<CallEvent> calls = new ArrayList<>();
 
@@ -44,17 +44,17 @@ public class DummyChannelDataIO implements ChannelDataManager {
 	}
 
 	@Override
-	public void addRank(int channelID, int userID) {
-		calls.add(new CallEvent("addRank", channelID, userID));
+	public void addMember(int channelID, int userID, int group) {
+		calls.add(new CallEvent("addRank", channelID, userID, group));
 	}
 
 	@Override
-	public void changeRank(int channelID, int userID, byte rankID) {
-		calls.add(new CallEvent("changeRank", channelID, userID, rankID));
+	public void updateMember(int channelID, int userID, int group) {
+		calls.add(new CallEvent("changeRank", channelID, userID, group));
 	}
 
 	@Override
-	public void removeRank(int channelID, int userID) {
+	public void removeMember(int channelID, int userID) {
 		calls.add(new CallEvent("removeRank", channelID, userID));
 	}
 
@@ -84,7 +84,7 @@ public class DummyChannelDataIO implements ChannelDataManager {
 	}
 
 	@Override
-	public void syncDetails(int channelID, ChannelDetails details) {
+	public void updateDetails(int channelID, ChannelDetails details) {
 		calls.add(new CallEvent("syncDetails", channelID, details));
 	}
 

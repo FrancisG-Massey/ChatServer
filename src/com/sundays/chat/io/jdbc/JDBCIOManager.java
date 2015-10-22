@@ -20,7 +20,7 @@ package com.sundays.chat.io.jdbc;
 
 import java.util.Properties;
 
-import com.sundays.chat.io.ChannelDataManager;
+import com.sundays.chat.io.ChannelDataSave;
 import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.io.IOManager;
 import com.sundays.chat.io.UserDataManager;
@@ -30,7 +30,7 @@ public class JDBCIOManager implements IOManager {
 	
 	private UserDataManager userManager;
 	private ChannelIndex channelIndex;
-	private ChannelDataManager channelManager;
+	private ChannelDataSave channelManager;
 	private ConnectionManager dbcon;
 	
 	public JDBCIOManager () {
@@ -74,7 +74,7 @@ public class JDBCIOManager implements IOManager {
 	}
 
 	@Override
-	public ChannelDataManager getChannelIO() {
+	public ChannelDataSave getChannelIO() {
 		if (channelManager == null) {
 			throw new IllegalStateException("Channel manager is not initialised.");
 		}

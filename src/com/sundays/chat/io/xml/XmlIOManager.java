@@ -21,7 +21,7 @@ package com.sundays.chat.io.xml;
 import java.io.File;
 import java.util.Properties;
 
-import com.sundays.chat.io.ChannelDataManager;
+import com.sundays.chat.io.ChannelDataSave;
 import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.io.IOManager;
 import com.sundays.chat.io.UserDataManager;
@@ -38,7 +38,7 @@ public class XmlIOManager implements IOManager {
 	
 	private ChannelIndex channelIndex;
 	
-	private ChannelDataManager channelManager;
+	private ChannelDataSave channelManager;
 	
 	public XmlIOManager () {
 		
@@ -83,7 +83,7 @@ public class XmlIOManager implements IOManager {
 	}
 
 	@Override
-	public ChannelDataManager getChannelIO() {
+	public ChannelDataSave getChannelIO() {
 		if (channelManager == null) {
 			throw new IllegalStateException("Channel manager is not initialised.");
 		}

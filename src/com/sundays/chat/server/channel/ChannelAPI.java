@@ -19,6 +19,7 @@
 package com.sundays.chat.server.channel;
 
 import java.awt.Color;
+import java.io.IOException;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -51,7 +52,12 @@ public class ChannelAPI {
     public MessagePayload getChannelDetails (int channelID) {
         Channel channel = channelManager.getChannel(channelID);
         if (channel == null) {
-        	channelManager.loadChannel(channelID);
+        	try {
+				channelManager.loadChannel(channelID);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         	channel = channelManager.getChannel(channelID);
         	if (channel == null) {
         		return null;
@@ -78,7 +84,12 @@ public class ChannelAPI {
         Channel channel = channelManager.getChannel(channelID);
         JSONObject rankNames = new JSONObject();
         if (channel == null) {
-        	channelManager.loadChannel(channelID);
+        	try {
+				channelManager.loadChannel(channelID);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         	channel = channelManager.getChannel(channelID);
         	if (channel == null) {
         		return null;
@@ -91,7 +102,12 @@ public class ChannelAPI {
     public JSONObject getPermissions (int cID) {
     	Channel channel = channelManager.getChannel(cID);
     	if (channel == null) {
-    		channelManager.loadChannel(cID);
+    		try {
+				channelManager.loadChannel(cID);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         	channel = channelManager.getChannel(cID);
         	if (channel == null) {
         		return null;
@@ -103,7 +119,12 @@ public class ChannelAPI {
     public MessagePayload getRankList (int cID) {
         Channel channel = channelManager.getChannel(cID);
         if (channel == null) {
-        	channelManager.loadChannel(cID);
+        	try {
+				channelManager.loadChannel(cID);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         	channel = channelManager.getChannel(cID);
         	if (channel == null) {
         		return null;
@@ -115,7 +136,12 @@ public class ChannelAPI {
     public JSONObject getBanList (int cID) {
         Channel channel = channelManager.getChannel(cID);
         if (channel == null) {
-        	channelManager.loadChannel(cID);
+        	try {
+				channelManager.loadChannel(cID);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         	channel = channelManager.getChannel(cID);
         	if (channel == null) {
         		return null;
@@ -127,7 +153,12 @@ public class ChannelAPI {
     public JSONObject getChannelGroups (int cID) {
     	Channel c = channelManager.getChannel(cID);
         if (c == null) {
-        	channelManager.loadChannel(cID);
+        	try {
+				channelManager.loadChannel(cID);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         	c = channelManager.getChannel(cID);
         }
     	return messageFactory.prepareGroupList(c);
@@ -149,7 +180,12 @@ public class ChannelAPI {
                 return response;
             } else {
                 //If the channel exists but is not loaded, load the channel
-                channelManager.loadChannel(cID);
+                try {
+					channelManager.loadChannel(cID);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
                 channel = channelManager.getChannel(cID);
             }            
         }

@@ -19,6 +19,7 @@
 package com.sundays.chat.server.channel;
 
 import java.awt.Color;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -33,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
-import com.sundays.chat.io.ChannelDataManager;
+import com.sundays.chat.io.ChannelDataSave;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.server.Permission;
@@ -76,14 +77,14 @@ public final class Channel {
     private int lockRank = -100;
     private int ownerID;
     private long lockExpires = 0L;
-    private transient final ChannelDataManager io;
+    private transient final ChannelDataSave io;
     
     /**
      * 
      * @param id The ID for the new channel
      * @param io The IO manager for saving channel data.
      */
-    protected Channel (int id, ChannelDataManager io) {
+    protected Channel (int id, ChannelDataSave io) {
     	this.id = id;
         this.io = io;
     	this.permissions = new EnumMap<Permission, Integer>(Permission.class);
@@ -96,7 +97,7 @@ public final class Channel {
     	this.ranks = new ConcurrentHashMap<>();
     }
 
-    protected Channel(int id, ChannelDetails details, ChannelDataManager io) {
+    protected Channel(int id, ChannelDetails details, ChannelDataSave io) throws IOException {
         this.id = id;
         this.io = io;
         this.name = details.name;
@@ -313,32 +314,32 @@ public final class Channel {
 		return responseGroups;    	
     }
 
-    private Map<Integer, Byte> loadRanks() {
+    private Map<Integer, Byte> loadRanks() throws IOException {
     	Map<Integer, Byte> ranks = io.getChannelRanks(id);
         for (Entry<Integer, Byte> r : ranks.entrySet()) {
         	//Run through the ranks, removing any invalid sets
         	if (permBans.contains(r.getKey())) {
         		logger.warn("User "+r.getKey()+" from channel "+id+" is on the ban list. Removing from rank list.");
         		ranks.remove(r);
-        		io.removeRank(id, r.getKey());
+        		io.removeMember(id, r.getKey());
         	} else if (r.getValue() < 1 || r.getValue() > Settings.TOTAL_RANKS) {
         		//Rank was found to contain an invalid value. Convert to the default rank.
         		logger.warn("User "+r.getKey()+" from channel "+id+" holds an invalid rank of:"+r.getValue()+"." +
         				" Swapping to the default rank of: "+Settings.DEFAULT_RANK+".");
         		r.setValue((byte) Settings.DEFAULT_RANK);
-        		io.changeRank(id, r.getKey(), Settings.DEFAULT_RANK);
+        		io.updateMember(id, r.getKey(), Settings.DEFAULT_RANK);
         	} else if (r.getValue() == Settings.OWNER_RANK && r.getKey() != ownerID) {
         		logger.warn("User "+r.getKey()+" from channel "+id+" holds a rank of owner(11), but is not specified as the channel owner." +
         				" Swapping to the default rank of: "+Settings.DEFAULT_RANK+".");
         		r.setValue((byte) Settings.DEFAULT_RANK);
-        		io.changeRank(id, r.getKey(), Settings.DEFAULT_RANK);
+        		io.updateMember(id, r.getKey(), Settings.DEFAULT_RANK);
         	}
         }
     	System.out.println(ranks.size() + " rank(s) found for this channel.");
     	return new ConcurrentHashMap<Integer, Byte>(ranks);
     }
     
-    private Set<Integer> loadBanList () {
+    private Set<Integer> loadBanList () throws IOException {
     	List<Integer> bans = io.getChannelBans(id);//Load the bans from the back-end
     	/*for (int ban : bans) {
     		//Validates all entries, removing any names which are on the rank list
@@ -532,7 +533,12 @@ public final class Channel {
 	        if (permBans.contains(uID)) {
 	            return false;
 	        }
-	        io.addRank(id, uID);
+	        try {
+				io.addMember(id, uID, Settings.DEFAULT_RANK);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 	        ranks.put(uID, (byte) Settings.DEFAULT_RANK);
     	}
         return true;
@@ -546,7 +552,12 @@ public final class Channel {
 	        if (permBans.contains(uID)) {
 	            return false;
 	        }
-	        io.changeRank(id, uID, rank);
+	        try {
+				io.updateMember(id, uID, rank);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 	        ranks.put(uID, (byte) rank);
     	}
         return true;
@@ -557,7 +568,12 @@ public final class Channel {
 	        if (!ranks.containsKey(uID)) {
 	            return false;
 	        }
-	        io.removeRank(id, uID);
+	        try {
+				io.removeMember(id, uID);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 	        ranks.remove(uID);
     	}
         return true;
@@ -568,7 +584,12 @@ public final class Channel {
 	        if (permBans.contains(uID)) {
 	            return false;
 	        }        
-	        io.addBan(id, uID);
+	        try {
+				io.addBan(id, uID);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 	        permBans.add(uID);
     	}
         return true;
@@ -579,7 +600,12 @@ public final class Channel {
 		    if (!permBans.contains(uID)) {
 		        return false;
 		    }
-		    io.removeBan(id, uID);
+		    try {
+				io.removeBan(id, uID);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		    permBans.remove(uID);
     	}
         return true;

@@ -55,10 +55,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import com.sundays.chat.io.ChannelDataManager;
+import com.sundays.chat.io.ChannelDataSave;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
-import com.sundays.chat.server.Settings;
 import com.sundays.chat.utils.NamespaceContextMap;
 
 /**
@@ -66,7 +65,7 @@ import com.sundays.chat.utils.NamespaceContextMap;
  * 
  * @author Francis
  */
-public class XmlChannelManager implements ChannelDataManager {
+public class XmlChannelManager implements ChannelDataSave {
 
 	private static final Logger logger = Logger.getLogger(XmlChannelManager.class);
 	
@@ -161,7 +160,7 @@ public class XmlChannelManager implements ChannelDataManager {
 	}
 
 	@Override
-	public void addRank(int channelID, int userID) {
+	public void addMember(int channelID, int userID, int group) {
 		Document channelDoc = loadChannelDoc(channelID);
 		
 		if (memberListLookup == null) {
@@ -183,14 +182,14 @@ public class XmlChannelManager implements ChannelDataManager {
 			//Need to use 'createElementNS' as the document does not add it with 'createElement'.
 			Element newMember = channelDoc.createElementNS(memberList.getNamespaceURI(), "member");
 			newMember.setAttribute("user", Integer.toString(userID));
-			newMember.setAttribute("group", Byte.toString(Settings.DEFAULT_RANK));
+			newMember.setAttribute("group", Integer.toString(group));
 			memberList.appendChild(newMember);
 		}
 		savePending.add(channelID);
 	}
 
 	@Override
-	public void changeRank(int channelID, int userID, byte rankID) {
+	public void updateMember(int channelID, int userID, int group) {
 		Document channelDoc = loadChannelDoc(channelID);
 		
 		synchronized (channelDoc) {
@@ -202,14 +201,14 @@ public class XmlChannelManager implements ChannelDataManager {
 				return;
 			}
 			if (member != null) {
-				member.setAttribute("group", Integer.toString(rankID));
+				member.setAttribute("group", Integer.toString(group));
 			}
 		}
 		savePending.add(channelID);
 	}
 
 	@Override
-	public void removeRank(int channelID, int userID) {
+	public void removeMember(int channelID, int userID) {
 		Document channelDoc = loadChannelDoc(channelID);
 		
 		if (memberListLookup == null) {
@@ -325,7 +324,7 @@ public class XmlChannelManager implements ChannelDataManager {
 	}
 
 	@Override
-	public void syncDetails(int channelID, ChannelDetails details) {
+	public void updateDetails(int channelID, ChannelDetails details) {
 		Document channelDoc = loadChannelDoc(channelID);
 		
 		try {
