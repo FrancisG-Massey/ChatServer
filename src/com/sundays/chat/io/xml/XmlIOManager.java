@@ -32,7 +32,7 @@ import com.sundays.chat.utils.ConfigurationException;
  * 
  * @author Francis
  */
-public class XmlIOManager implements IOManager {
+public final class XmlIOManager implements IOManager {
 	
 	private UserDataManager userManager;
 	
@@ -63,7 +63,7 @@ public class XmlIOManager implements IOManager {
 		if (properties.containsKey("channels.schema")) {
 			channelSchema = new File((String) properties.get("channels.schema"));
 		}
-		channelManager = new XmlChannelManager(channelDirectory, channelSchema);
+		channelManager = new XmlChannelSave(channelDirectory, channelSchema);
 	}
 
 	@Override

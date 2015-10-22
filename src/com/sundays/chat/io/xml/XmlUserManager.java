@@ -40,7 +40,7 @@ import org.apache.log4j.Logger;
 import com.sundays.chat.io.UserDataManager;
 import com.sundays.chat.io.UserDetails;
 
-public class XmlUserManager implements UserDataManager {
+public final class XmlUserManager implements UserDataManager {
 
 	private static final Logger logger = Logger.getLogger(XmlUserManager.class);
 	

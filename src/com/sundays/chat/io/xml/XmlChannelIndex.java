@@ -50,7 +50,7 @@ import com.sundays.chat.io.ChannelIndex;
  * 
  * @author Francis
  */
-public class XmlChannelIndex implements ChannelIndex {
+public final class XmlChannelIndex implements ChannelIndex {
 
 	private static final Logger logger = Logger.getLogger(XmlChannelIndex.class);
 	

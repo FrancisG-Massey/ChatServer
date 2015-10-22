@@ -164,14 +164,14 @@ public class ChannelDataUpdater {
 				}
 				for (Entry<Integer, ChannelDetails> update : detailChangesCopy.entrySet()) {
 					ChannelDetails details = update.getValue();
-					channelUpdateQuery.setString(1, details.name);
-					channelUpdateQuery.setString(2, details.abbreviation);					
-					channelUpdateQuery.setBlob(3, new SerialBlob(compressPermissions(details.permissions)));
-					channelUpdateQuery.setBlob(4, new SerialBlob(compressRankNamesV2(details.rankNames)));
-					channelUpdateQuery.setString(5, details.openingMessage);
-					channelUpdateQuery.setBoolean(6, details.trackMessages);
-					channelUpdateQuery.setInt(7, details.owner);
-					channelUpdateQuery.setInt(8, details.id);
+					channelUpdateQuery.setString(1, details.getName());
+					channelUpdateQuery.setString(2, details.getAlias());					
+					channelUpdateQuery.setBlob(3, new SerialBlob(compressPermissions(details.getPermissions())));
+					channelUpdateQuery.setBlob(4, new SerialBlob(compressRankNamesV2(details.getRankNames())));
+					channelUpdateQuery.setString(5, details.getWelcomeMessage());
+					channelUpdateQuery.setBoolean(6, details.isTrackMessages());
+					channelUpdateQuery.setInt(7, details.getOwner());
+					channelUpdateQuery.setInt(8, details.getId());
 					try {
 						channelUpdateQuery.execute();
 		            } catch (MySQLIntegrityConstraintViolationException ex) {

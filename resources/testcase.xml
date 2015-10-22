@@ -6,8 +6,7 @@
 	<name>Test Channel</name>
 	<alias>T C</alias>
 	<welcomeMessage>Welcome to the Test Channel!</welcomeMessage>
-	<description>The testing channel for this server. Used for ensuring
-		channel features work correctly.</description>
+	<description>The testing channel for this server. Used for ensuring channel features work correctly.</description>
 	<owner>100</owner>
 	<csg:groups>
 		<csg:group id="0" overridesDefault="true">

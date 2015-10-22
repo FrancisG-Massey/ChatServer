@@ -69,7 +69,7 @@ public class ChannelSyncTest {
 		assertEquals("changeRank", call.getMethod());
 		assertEquals("channelID in io call does not match actual channel ID! Found: "+call.getArg(0), 100, call.getArg(0));
 		assertEquals("userID in io call does not match actual user ID! Found: "+call.getArg(1), 102, call.getArg(1));
-		assertEquals("rankID in io call does not match actual rank ID! Found: "+call.getArg(2), Settings.MOD_RANK, call.getArg(2));
+		assertEquals("rankID in io call does not match actual rank ID! Found: "+call.getArg(2), Settings.MOD_RANK, ((Integer) call.getArg(2)).intValue());
 	}
 
 	@Test

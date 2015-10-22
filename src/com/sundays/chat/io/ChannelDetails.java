@@ -28,16 +28,18 @@ import java.util.Map;
  */
 public class ChannelDetails {
 	
-	public static final int VERSION = 4;//The interface version
-	public static final int MIN_VERSION = 3;//The minimum supported version
+	public static final int VERSION = 5;//The interface version
+	public static final int MIN_VERSION = 5;//The minimum supported version
 	
-	//Basic string details
-	public String name, openingMessage, abbreviation;
-	public int id;//Channel ID	
-	public Integer[] permissions;//Channel permissions
-	public Map<Byte, String> rankNames;//Channel rank names (these replace the default "Rank One", "Rank Two", etc)
-	public boolean trackMessages;
-	public int owner;
+	private int id;//Channel ID	
+	private String name;
+	private String welcomeMessage;
+	private String alias;
+	private String description;
+	private int owner;
+	private Integer[] permissions;//Channel permissions
+	private Map<Byte, String> rankNames;//Channel rank names (these replace the default "Rank One", "Rank Two", etc)
+	private boolean trackMessages;
 	
 	public ChannelDetails () {
 		
@@ -49,12 +51,116 @@ public class ChannelDetails {
 		//Full constructor used when data can be added all at once
 		this.id = id;
 		this.name = name;
-		this.openingMessage = openingMessage;
-		this.abbreviation = abbreviation;
+		this.welcomeMessage = openingMessage;
+		this.alias = abbreviation;
 		this.permissions = permissions;
 		this.rankNames = rankNames;
 		this.trackMessages = trackMessages;
 		this.owner = owner;
+	}
+	
+	public int getId() {
+		return id;
+	}
+	
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getWelcomeMessage() {
+		return welcomeMessage;
+	}
+
+	public void setWelcomeMessage(String welcomeMessage) {
+		this.welcomeMessage = welcomeMessage;
+	}
+
+	public String getAlias() {
+		return alias;
+	}
+
+	public void setAlias(String alias) {
+		this.alias = alias;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	/**
+	 * Gets the user ID of the channel owner
+	 * @return The owner's user ID
+	 */
+	public int getOwner() {
+		return owner;
+	}
+
+	/**
+	 * Sets the ID of the channel owner
+	 * @param owner The user ID for the channel owner
+	 */
+	public void setOwner(int owner) {
+		this.owner = owner;
+	}
+
+	/**
+	 * Gets the permissions for this channel.
+	 * NOTE: This method is deprecated and will be removed in later versions. Use groups instead.
+	 * @return An integer array containing the permissions for this channel, where the key is the permission ID and the value is the minimum rank the permission is assigned to.
+	 */
+	@Deprecated
+	public Integer[] getPermissions() {
+		return permissions;
+	}
+
+	/**
+	 * @param permissions the permissions to set
+	 */
+	@Deprecated
+	public void setPermissions(Integer[] permissions) {
+		this.permissions = permissions;
+	}
+
+	/**
+	 * @return the rankNames
+	 */
+	@Deprecated
+	public Map<Byte, String> getRankNames() {
+		return rankNames;
+	}
+
+	/**
+	 * @param rankNames the rankNames to set
+	 */
+	@Deprecated
+	public void setRankNames(Map<Byte, String> rankNames) {
+		this.rankNames = rankNames;
+	}
+
+	/**
+	 * @return the trackMessages
+	 */
+	public boolean isTrackMessages() {
+		return trackMessages;
+	}
+
+	/**
+	 * @param trackMessages the trackMessages to set
+	 */
+	public void setTrackMessages(boolean trackMessages) {
+		this.trackMessages = trackMessages;
 	}
 
 	/* (non-Javadoc)
@@ -62,12 +168,8 @@ public class ChannelDetails {
 	 */
 	@Override
 	public String toString() {
-		return "ChannelDetails [name=" + name
-				+ ", openingMessage=" + openingMessage
-				+ ", abbreviation=" + abbreviation
-				+ ", id=" + id + ", permissions="
-				+ Arrays.toString(permissions) + ", rankNames=" + rankNames
-				+ ", trackMessages=" + trackMessages + ", owner="
-				+ owner + "]";
+		return "ChannelDetails [id=" + id + ", name=" + name + ", welcomeMessage=" + welcomeMessage + ", alias=" + alias + ", description="
+				+ description + ", owner=" + owner + ", permissions=" + Arrays.toString(permissions) + ", rankNames=" + rankNames
+				+ ", trackMessages=" + trackMessages + "]";
 	}
 }

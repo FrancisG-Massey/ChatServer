@@ -100,13 +100,13 @@ public final class Channel {
     protected Channel(int id, ChannelDetails details, ChannelDataSave io) throws IOException {
         this.id = id;
         this.io = io;
-        this.name = details.name;
-        this.ownerID = details.owner;
-        this.openingMessage = details.openingMessage;
-        this.channelAbbr = details.abbreviation;
-        this.permissions = validatePermissions(details.permissions);
-        this.rankNames = validateRankNames(details.rankNames);
-        this.trackMessages = details.trackMessages;
+        this.name = details.getName();
+        this.ownerID = details.getOwner();
+        this.openingMessage = details.getWelcomeMessage();
+        this.channelAbbr = details.getAlias();
+        this.permissions = validatePermissions(details.getPermissions());
+        this.rankNames = validateRankNames(details.getRankNames());
+        this.trackMessages = details.isTrackMessages();
         this.groups = loadGroups(io.getChannelGroups(id));
         this.permBans = loadBanList();//Bans MUST be loaded before ranks. This ensures that people on the ban list take priority over people on the rank list
         this.ranks = loadRanks();
@@ -151,7 +151,7 @@ public final class Channel {
 
 	/**
 	 * Sets the message presented to users when joining the channel to the provided string
-	 * @param openingMessage The new opening message for the channel.
+	 * @param welcomeMessage The new opening message for the channel.
 	 */
 	protected void setOpeningMessage(String message) {
 		this.openingMessage = message;

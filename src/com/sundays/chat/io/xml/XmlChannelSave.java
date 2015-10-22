@@ -65,9 +65,9 @@ import com.sundays.chat.utils.NamespaceContextMap;
  * 
  * @author Francis
  */
-public class XmlChannelManager implements ChannelDataSave {
+public final class XmlChannelSave implements ChannelDataSave {
 
-	private static final Logger logger = Logger.getLogger(XmlChannelManager.class);
+	private static final Logger logger = Logger.getLogger(XmlChannelSave.class);
 	
 	private final File saveFolder;
 	private DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -89,7 +89,7 @@ public class XmlChannelManager implements ChannelDataSave {
 	private XPathExpression memberListLookup;
 	private XPathExpression banListLookup;
 
-	public XmlChannelManager(File folder, File schemaFile) {
+	public XmlChannelSave(File folder, File schemaFile) {
 		this.saveFolder = folder;
 		factory.setNamespaceAware(true);
 		if (schemaFile == null || !schemaFile.exists() || !schemaFile.isFile()) {
@@ -148,7 +148,7 @@ public class XmlChannelManager implements ChannelDataSave {
 	private void saveChannelDoc (int channelID, Document document) {
 		try {
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
-			transformerFactory.setAttribute("indent-number", 4);
+			//transformerFactory.setAttribute("indent-number", 4);
 			Transformer transformer = transformerFactory.newTransformer();
 			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 			DOMSource source = new DOMSource(document);
@@ -343,16 +343,19 @@ public class XmlChannelManager implements ChannelDataSave {
 		synchronized (channelDoc) {
 			try {
 				Element nameElement = (Element) nameLookup.evaluate(channelDoc, XPathConstants.NODE);
-				nameElement.setTextContent(details.name);
+				nameElement.setTextContent(details.getName());
 				
 				Element alaisElement = (Element) aliasLookup.evaluate(channelDoc, XPathConstants.NODE);
-				alaisElement.setTextContent(details.abbreviation);
+				alaisElement.setTextContent(details.getAlias());
 				
 				Element messageElement = (Element) welcomeMessageLookup.evaluate(channelDoc, XPathConstants.NODE);
-				messageElement.setTextContent(details.openingMessage);
+				messageElement.setTextContent(details.getWelcomeMessage());
+				
+				Element descriptionElement = (Element) descriptionLookup.evaluate(channelDoc, XPathConstants.NODE);
+				descriptionElement.setTextContent(details.getDescription());
 				
 				Element ownerElement = (Element) ownerLookup.evaluate(channelDoc, XPathConstants.NODE);
-				ownerElement.setTextContent(Integer.toString(details.owner));
+				ownerElement.setTextContent(Integer.toString(details.getOwner()));
 			} catch (XPathExpressionException ex) {
 				logger.error("Failed to evaluate details lookup expression. ", ex);
 			}
@@ -379,13 +382,13 @@ public class XmlChannelManager implements ChannelDataSave {
 		
 		ChannelDetails details = new ChannelDetails();
 		synchronized (channelDoc) {
-			details.id = channelID;
+			details.setId(channelID);
 			try {
-				details.name = nameLookup.evaluate(channelDoc);
-				details.abbreviation = aliasLookup.evaluate(channelDoc);
-				details.openingMessage = welcomeMessageLookup.evaluate(channelDoc);
-				//TODO: Add description
-				details.owner = Integer.parseInt(ownerLookup.evaluate(channelDoc));
+				details.setName(nameLookup.evaluate(channelDoc));
+				details.setAlias(aliasLookup.evaluate(channelDoc));
+				details.setWelcomeMessage(welcomeMessageLookup.evaluate(channelDoc));
+				details.setDescription(descriptionLookup.evaluate(channelDoc));
+				details.setOwner(Integer.parseInt(ownerLookup.evaluate(channelDoc)));
 			} catch (XPathExpressionException ex) {
 				logger.error("Failed to evaluate details lookup expression. ", ex);
 			}
