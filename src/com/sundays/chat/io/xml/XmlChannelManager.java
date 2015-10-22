@@ -71,8 +71,16 @@ public class XmlChannelManager implements ChannelDataManager {
 	private Map<Integer, Document> channelDataCache = new HashMap<>();
 	private Set<Integer> savePending = Collections.synchronizedSet(new HashSet<Integer>());
 	
+	private XPathExpression nameLookup;
+	private XPathExpression aliasLookup;
+	private XPathExpression welcomeMessageLookup;
+	private XPathExpression descriptionLookup;
+	private XPathExpression ownerLookup;
+	
+	
 	private XPathExpression banLookup;
 	private XPathExpression memberLookup;
+	private XPathExpression groupLookup;
 	private XPathExpression memberListLookup;
 	private XPathExpression banListLookup;
 
@@ -299,20 +307,70 @@ public class XmlChannelManager implements ChannelDataManager {
 
 	@Override
 	public void syncDetails(int channelID, ChannelDetails details) {
-		// TODO Auto-generated method stub
-
+		Document channelDoc = loadChannelDoc(channelID);
+		
+		try {
+			if (nameLookup == null) {
+				nameLookup = xPath.compile("/csc:channel/csc:name");
+				aliasLookup = xPath.compile("/csc:channel/csc:alias");
+				welcomeMessageLookup = xPath.compile("/csc:channel/csc:welcomeMessage");
+				descriptionLookup = xPath.compile("/csc:channel/csc:description");
+				ownerLookup = xPath.compile("/csc:channel/csc:owner");
+			}
+		} catch (XPathExpressionException ex) {
+			logger.error("Failed to compile details lookup expression. This probably indicates a configuration or program error.", ex);
+			return;
+		}
+		
+		synchronized (channelDoc) {
+			try {
+				Element nameElement = (Element) nameLookup.evaluate(channelDoc, XPathConstants.NODE);
+				nameElement.setTextContent(details.name);
+				
+				Element alaisElement = (Element) aliasLookup.evaluate(channelDoc, XPathConstants.NODE);
+				alaisElement.setTextContent(details.abbreviation);
+				
+				Element messageElement = (Element) welcomeMessageLookup.evaluate(channelDoc, XPathConstants.NODE);
+				messageElement.setTextContent(details.openingMessage);
+				
+				Element ownerElement = (Element) ownerLookup.evaluate(channelDoc, XPathConstants.NODE);
+				ownerElement.setTextContent(Integer.toString(details.owner));
+			} catch (XPathExpressionException ex) {
+				logger.error("Failed to evaluate details lookup expression. ", ex);
+			}
+		}
+		savePending.add(channelID);
 	}
 
 	@Override
 	public ChannelDetails getChannelDetails(int channelID) {
 		Document channelDoc = loadChannelDoc(channelID);
 		
+		try {
+			if (nameLookup == null) {
+				nameLookup = xPath.compile("/csc:channel/csc:name");
+				aliasLookup = xPath.compile("/csc:channel/csc:alias");
+				welcomeMessageLookup = xPath.compile("/csc:channel/csc:welcomeMessage");
+				descriptionLookup = xPath.compile("/csc:channel/csc:description");
+				ownerLookup = xPath.compile("/csc:channel/csc:owner");
+			}
+		} catch (XPathExpressionException ex) {
+			logger.error("Failed to compile details lookup expression. This probably indicates a configuration or program error.", ex);
+			return null;
+		}
+		
 		ChannelDetails details = new ChannelDetails();
 		synchronized (channelDoc) {
-			details.name = channelDoc.getElementsByTagName("name").item(0).getTextContent();
-			details.abbreviation = channelDoc.getElementsByTagName("alias").item(0).getTextContent();
-			details.openingMessage = channelDoc.getElementsByTagName("welcomeMessage").item(0).getTextContent();
-			details.owner = Integer.parseInt(channelDoc.getElementsByTagName("owner").item(0).getTextContent());
+			details.id = channelID;
+			try {
+				details.name = nameLookup.evaluate(channelDoc);
+				details.abbreviation = aliasLookup.evaluate(channelDoc);
+				details.openingMessage = welcomeMessageLookup.evaluate(channelDoc);
+				//TODO: Add description
+				details.owner = Integer.parseInt(ownerLookup.evaluate(channelDoc));
+			} catch (XPathExpressionException ex) {
+				logger.error("Failed to evaluate details lookup expression. ", ex);
+			}
 		}
 		return details;
 	}
@@ -386,10 +444,23 @@ public class XmlChannelManager implements ChannelDataManager {
 	public List<ChannelGroupData> getChannelGroups(int channelID) {
 		Document channelDoc = loadChannelDoc(channelID);
 		
+		if (groupLookup == null) {
+			try {
+				groupLookup = xPath.compile("/csc:channel/csc:groups/csc:group");
+			} catch (XPathExpressionException ex) {
+				logger.error("Failed to compile group lookup expression. This probably indicates a configuration or program error.", ex);
+			}
+		}
+		
 		List<ChannelGroupData> groups = new ArrayList<>();
 		synchronized (channelDoc) {
-			Element groupsElement = (Element) channelDoc.getElementsByTagName("groups").item(0);
-			NodeList groupsList = groupsElement.getChildNodes();
+			NodeList groupsList;
+			try {
+				groupsList = (NodeList) groupLookup.evaluate(channelDoc, XPathConstants.NODESET);
+			} catch (XPathExpressionException ex) {
+				logger.error("Failed to evaluate group lookup expression.", ex);
+				return null;
+			}
 			for (int i=0;i<groupsList.getLength();i++) {
 				Node groupNode = groupsList.item(i);
 				if (groupNode instanceof Element) {

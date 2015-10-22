@@ -48,6 +48,34 @@ public abstract class ChannelSaveTest {
 	public abstract void tearDown() throws Exception;
 
 	@Test
+	public void testLoadDetails() {
+		ChannelDetails details = saveTest.getChannelDetails(100);
+		assertEquals(100, details.id);
+		assertEquals("Test Channel", details.name);
+		assertEquals("T C", details.abbreviation);	
+		assertEquals("Welcome to the Test Channel!", details.openingMessage);
+		assertEquals(100, details.owner);
+	}
+
+	@Test
+	public void testUpdateDetails() {
+		ChannelDetails details = new ChannelDetails();
+		details.id = 100;
+		details.name = "Name 2";
+		details.abbreviation = "N 2";
+		details.openingMessage = "This is a new message...";
+		details.owner = 101;
+		saveTest.syncDetails(100, details);
+		
+		details = saveTest.getChannelDetails(100);
+		assertEquals(100, details.id);
+		assertEquals("Name 2", details.name);
+		assertEquals("N 2", details.abbreviation);	
+		assertEquals("This is a new message...", details.openingMessage);
+		assertEquals(101, details.owner);
+	}
+
+	@Test
 	public void testLoadBans() {
 		List<Integer> bans = saveTest.getChannelBans(100);
 		assertEquals(2, bans.size());
