@@ -135,11 +135,18 @@ public class XmlChannelManager implements ChannelDataManager {
 		Document channelDoc = loadChannelDoc(channelID);
 
 		synchronized (channelDoc) {
-			Element membersElement = (Element) channelDoc.getElementsByTagName("members").item(0);
-			Element newMember = channelDoc.createElement("member");
+			Element memberList;
+			try {
+				memberList = (Element) xPath.compile("/csc:channel/csc:members").evaluate(channelDoc, XPathConstants.NODE);
+			} catch (XPathExpressionException ex) {
+				logger.error("Failed to run member search expression.", ex);
+				return;
+			}
+			//Need to use 'createElementNS' as the document does not add it with 'createElement'.
+			Element newMember = channelDoc.createElementNS(memberList.getNamespaceURI(),"member");
 			newMember.setAttribute("user", Integer.toString(userID));
-			newMember.setAttribute("group", Integer.toString(Settings.DEFAULT_RANK));
-			membersElement.appendChild(newMember);
+			newMember.setAttribute("group", Byte.toString(Settings.DEFAULT_RANK));
+			memberList.appendChild(newMember);
 		}
 		savePending.add(channelID);
 	}
@@ -152,22 +159,11 @@ public class XmlChannelManager implements ChannelDataManager {
 			//Element membersElement = (Element) channelDoc.getElementsByTagName("members").item(0);
 			Element member;
 			try {
-				member = (Element) xPath.compile("/members/member[@user='+userID+']").evaluate(channelDoc, XPathConstants.NODE);
+				member = (Element) xPath.compile("/csc:channel/csc:members/csc:member[@user="+userID+"]").evaluate(channelDoc, XPathConstants.NODE);
 			} catch (XPathExpressionException ex) {
-				logger.error("Error running changeRank request.", ex);
+				logger.error("Failed to run member search expression.", ex);
 				return;
 			}
-			/*NodeList membersList = membersElement.getChildNodes();
-			for (int i=0;i<membersList.getLength();i++) {
-				Node memberNode = membersList.item(i);
-				if (memberNode instanceof Element) {
-					Element memberElement = (Element) memberNode;
-					if (userID == Integer.parseInt(memberElement.getAttribute("user"))) {
-						member = memberElement;
-						break;
-					}
-				}
-			}*/
 			if (member != null) {
 				member.setAttribute("group", Integer.toString(rankID));
 			}
@@ -180,16 +176,22 @@ public class XmlChannelManager implements ChannelDataManager {
 		Document channelDoc = loadChannelDoc(channelID);
 		
 		synchronized (channelDoc) {
-			Element membersElement = (Element) channelDoc.getElementsByTagName("members").item(0);
-			NodeList membersList = membersElement.getChildNodes();
-			for (int i=0;i<membersList.getLength();i++) {
-				Node memberNode = membersList.item(i);
-				if (memberNode instanceof Element) {
-					Element memberElement = (Element) memberNode;
-					if (userID == Integer.parseInt(memberElement.getAttribute("user"))) {
-						membersElement.removeChild(memberElement);
-					}
+			Element member;
+			try {
+				member = (Element) xPath.compile("/csc:channel/csc:members/csc:member[@user="+userID+"]").evaluate(channelDoc, XPathConstants.NODE);
+			} catch (XPathExpressionException ex) {
+				logger.error("Failed to run member search expression.", ex);
+				return;
+			}
+			if (member != null) {
+				Element memberList;
+				try {
+					memberList = (Element) xPath.compile("/csc:channel/csc:members").evaluate(channelDoc, XPathConstants.NODE);
+				} catch (XPathExpressionException ex) {
+					logger.error("Failed to run member search expression.", ex);
+					return;
 				}
+				memberList.removeChild(member);
 			}
 		}
 		savePending.add(channelID);
@@ -290,8 +292,14 @@ public class XmlChannelManager implements ChannelDataManager {
 		
 		Map<Integer, Byte> members = new HashMap<>();
 		synchronized (channelDoc) {
-			Element membersElement = (Element) channelDoc.getElementsByTagName("members").item(0);
-			NodeList membersList = membersElement.getChildNodes();
+			NodeList membersList;
+			try {
+				membersList = (NodeList) memberLookup.evaluate(channelDoc, XPathConstants.NODESET);
+			} catch (XPathExpressionException ex) {
+				logger.error("Failed to evaluate member lookup expression.", ex);
+				return null;
+			}
+			System.out.println(membersList.getLength());
 			for (int i=0;i<membersList.getLength();i++) {
 				Node memberNode = membersList.item(i);
 				if (memberNode instanceof Element) {
