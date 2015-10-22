@@ -18,12 +18,16 @@
  *******************************************************************************/
 package com.sundays.chat.io.xml;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.File;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 
 import com.google.common.io.Files;
+import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelSaveTest;
 
 public class XmlChannelSaveTest extends ChannelSaveTest {
@@ -46,6 +50,30 @@ public class XmlChannelSaveTest extends ChannelSaveTest {
 	public void tearDown() throws Exception {
 		xmlFile.delete();
 		saveTest = null;
+	}
+	
+	@Test
+	public void testFileSave () throws Exception {
+		ChannelDetails details = new ChannelDetails();
+		details.id = 100;
+		details.name = "Name 2";
+		details.abbreviation = "N 2";
+		details.openingMessage = "This is a new message...";
+		details.owner = 101;
+		saveTest.syncDetails(100, details);
+		
+		saveTest.commitChanges();//Apply the change
+		
+		//Remove any cached channel data by creating a new instance
+		saveTest = new XmlChannelManager(channelsDir, channelSchema);
+		
+		details = saveTest.getChannelDetails(100);
+		assertEquals(100, details.id);
+		assertEquals("Name 2", details.name);
+		assertEquals("N 2", details.abbreviation);	
+		assertEquals("This is a new message...", details.openingMessage);
+		assertEquals(101, details.owner);
+		
 	}
 
 }

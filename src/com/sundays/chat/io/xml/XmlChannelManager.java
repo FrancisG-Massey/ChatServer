@@ -32,7 +32,13 @@ import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -64,7 +70,7 @@ public class XmlChannelManager implements ChannelDataManager {
 
 	private static final Logger logger = Logger.getLogger(XmlChannelManager.class);
 	
-	private final File folder;
+	private final File saveFolder;
 	private DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 	private XPath xPath = XPathFactory.newInstance().newXPath();
 	
@@ -85,7 +91,7 @@ public class XmlChannelManager implements ChannelDataManager {
 	private XPathExpression banListLookup;
 
 	public XmlChannelManager(File folder, File schemaFile) {
-		this.folder = folder;
+		this.saveFolder = folder;
 		factory.setNamespaceAware(true);
 		if (schemaFile == null || !schemaFile.exists() || !schemaFile.isFile()) {
 			logger.warn("No channel schema specified (or specified schema does not exist).");
@@ -115,7 +121,7 @@ public class XmlChannelManager implements ChannelDataManager {
 			if (channelDataCache.containsKey(channelID)) {
 				return channelDataCache.get(channelID);
 			}
-			File file = new File(folder, channelID+".xml");
+			File file = new File(saveFolder, channelID+".xml");
 			if (!file.exists()) {
 				logger.warn("Permanent data for channel "+channelID+" not found at "+file.getAbsolutePath());
 				return null;
@@ -138,6 +144,20 @@ public class XmlChannelManager implements ChannelDataManager {
 			channelDataCache.put(channelID, doc);
 		}
 		return doc;
+	}
+	
+	private void saveChannelDoc (int channelID, Document document) {
+		try {
+			TransformerFactory transformerFactory = TransformerFactory.newInstance();
+			transformerFactory.setAttribute("indent-number", 4);
+			Transformer transformer = transformerFactory.newTransformer();
+			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+			DOMSource source = new DOMSource(document);
+			StreamResult result = new StreamResult(new File(saveFolder,  Integer.toString(channelID) + ".xml"));
+			transformer.transform(source, result);
+		} catch (TransformerException ex) {
+			logger.error("Problem saving data for channel "+channelID, ex);
+		}
 	}
 
 	@Override
@@ -174,7 +194,6 @@ public class XmlChannelManager implements ChannelDataManager {
 		Document channelDoc = loadChannelDoc(channelID);
 		
 		synchronized (channelDoc) {
-			//Element membersElement = (Element) channelDoc.getElementsByTagName("members").item(0);
 			Element member;
 			try {
 				member = (Element) xPath.compile("/csc:channel/csc:members/csc:member[@user="+userID+"]").evaluate(channelDoc, XPathConstants.NODE);
@@ -479,8 +498,12 @@ public class XmlChannelManager implements ChannelDataManager {
 
 	@Override
 	public void commitChanges() throws IOException {
-		// TODO Auto-generated method stub
-
+		synchronized (savePending) {
+			for (Integer channelID : savePending) {
+				saveChannelDoc(channelID, channelDataCache.get(channelID));
+			}
+			savePending.clear();
+		}
 	}
 
 }
