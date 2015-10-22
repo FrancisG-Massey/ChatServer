@@ -90,7 +90,7 @@
 	   	    <fileset dir="${test.result.dir}">
 	   	        <include name="*.xml"/>
 	   	    </fileset>
-	   	    <report todir="${qa.dir}" styledir="junitreport" format="noframes">
+	   	    <report todir="${qa.dir}" styledir="resources/junitreport" format="noframes">
 	   	    </report>
 	   	</junitreport>
    </target>
