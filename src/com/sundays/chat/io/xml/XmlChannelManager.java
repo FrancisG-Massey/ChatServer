@@ -73,6 +73,8 @@ public class XmlChannelManager implements ChannelDataManager {
 	
 	private XPathExpression banLookup;
 	private XPathExpression memberLookup;
+	private XPathExpression memberListLookup;
+	private XPathExpression banListLookup;
 
 	public XmlChannelManager(File folder, File schemaFile) {
 		this.folder = folder;
@@ -133,17 +135,25 @@ public class XmlChannelManager implements ChannelDataManager {
 	@Override
 	public void addRank(int channelID, int userID) {
 		Document channelDoc = loadChannelDoc(channelID);
-
+		
+		if (memberListLookup == null) {
+			try {
+				memberListLookup = xPath.compile("/csc:channel/csc:members");
+			} catch (XPathExpressionException ex) {
+				logger.error("Failed to compile member lookup expression. This probably indicates a configuration or program error.", ex);
+			}
+		}
+		
 		synchronized (channelDoc) {
 			Element memberList;
 			try {
-				memberList = (Element) xPath.compile("/csc:channel/csc:members").evaluate(channelDoc, XPathConstants.NODE);
+				memberList = (Element) memberListLookup.evaluate(channelDoc, XPathConstants.NODE);
 			} catch (XPathExpressionException ex) {
 				logger.error("Failed to run member search expression.", ex);
 				return;
 			}
 			//Need to use 'createElementNS' as the document does not add it with 'createElement'.
-			Element newMember = channelDoc.createElementNS(memberList.getNamespaceURI(),"member");
+			Element newMember = channelDoc.createElementNS(memberList.getNamespaceURI(), "member");
 			newMember.setAttribute("user", Integer.toString(userID));
 			newMember.setAttribute("group", Byte.toString(Settings.DEFAULT_RANK));
 			memberList.appendChild(newMember);
@@ -175,6 +185,14 @@ public class XmlChannelManager implements ChannelDataManager {
 	public void removeRank(int channelID, int userID) {
 		Document channelDoc = loadChannelDoc(channelID);
 		
+		if (memberListLookup == null) {
+			try {
+				memberListLookup = xPath.compile("/csc:channel/csc:members");
+			} catch (XPathExpressionException ex) {
+				logger.error("Failed to compile member lookup expression. This probably indicates a configuration or program error.", ex);
+			}
+		}
+		
 		synchronized (channelDoc) {
 			Element member;
 			try {
@@ -186,7 +204,7 @@ public class XmlChannelManager implements ChannelDataManager {
 			if (member != null) {
 				Element memberList;
 				try {
-					memberList = (Element) xPath.compile("/csc:channel/csc:members").evaluate(channelDoc, XPathConstants.NODE);
+					memberList = (Element) memberListLookup.evaluate(channelDoc, XPathConstants.NODE);
 				} catch (XPathExpressionException ex) {
 					logger.error("Failed to run member search expression.", ex);
 					return;
@@ -199,13 +217,65 @@ public class XmlChannelManager implements ChannelDataManager {
 
 	@Override
 	public void addBan(int channelID, int userID) {
-		// TODO Auto-generated method stub
+		Document channelDoc = loadChannelDoc(channelID);
+		
+		if (banListLookup == null) {
+			try {
+				banListLookup = xPath.compile("/csc:channel/csc:bans");
+			} catch (XPathExpressionException ex) {
+				logger.error("Failed to compile ban lookup expression. This probably indicates a configuration or program error.", ex);
+			}
+		}
+
+		synchronized (channelDoc) {
+			Element banList;
+			try {
+				banList = (Element) banListLookup.evaluate(channelDoc, XPathConstants.NODE);
+			} catch (XPathExpressionException ex) {
+				logger.error("Failed to run ban search expression.", ex);
+				return;
+			}
+			//Need to use 'createElementNS' as the document does not add it with 'createElement'.
+			Element newBan = channelDoc.createElementNS(banList.getNamespaceURI(), "ban");
+			newBan.setAttribute("user", Integer.toString(userID));
+			banList.appendChild(newBan);
+		}
+		savePending.add(channelID);
 
 	}
 
 	@Override
 	public void removeBan(int channelID, int userID) {
-		// TODO Auto-generated method stub
+		Document channelDoc = loadChannelDoc(channelID);
+		
+		if (banListLookup == null) {
+			try {
+				banListLookup = xPath.compile("/csc:channel/csc:bans");
+			} catch (XPathExpressionException ex) {
+				logger.error("Failed to compile ban lookup expression. This probably indicates a configuration or program error.", ex);
+			}
+		}
+		
+		synchronized (channelDoc) {
+			Element ban;
+			try {
+				ban = (Element) xPath.compile("/csc:channel/csc:bans/csc:ban[@user="+userID+"]").evaluate(channelDoc, XPathConstants.NODE);
+			} catch (XPathExpressionException ex) {
+				logger.error("Failed to run ban search expression.", ex);
+				return;
+			}
+			if (ban != null) {
+				Element banList;
+				try {
+					banList = (Element) banListLookup.evaluate(channelDoc, XPathConstants.NODE);
+				} catch (XPathExpressionException ex) {
+					logger.error("Failed to run ban search expression.", ex);
+					return;
+				}
+				banList.removeChild(ban);
+			}
+		}
+		savePending.add(channelID);
 
 	}
 
@@ -299,7 +369,6 @@ public class XmlChannelManager implements ChannelDataManager {
 				logger.error("Failed to evaluate member lookup expression.", ex);
 				return null;
 			}
-			System.out.println(membersList.getLength());
 			for (int i=0;i<membersList.getLength();i++) {
 				Node memberNode = membersList.item(i);
 				if (memberNode instanceof Element) {

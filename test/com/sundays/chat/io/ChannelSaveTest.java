@@ -69,7 +69,6 @@ public abstract class ChannelSaveTest {
 	public void testAddMember() {
 		saveTest.addRank(100, 109);
 		Map<Integer, Byte> members = saveTest.getChannelRanks(100);
-		System.out.println(members);
 		assertTrue(members.containsKey(109));
 		assertEquals(Settings.DEFAULT_RANK, members.get(109).byteValue());
 	}
@@ -93,6 +92,23 @@ public abstract class ChannelSaveTest {
 		
 		members = saveTest.getChannelRanks(100);
 		assertFalse(members.containsKey(101));
+	}
+	
+	@Test
+	public void testAddBan() {
+		saveTest.addBan(100, 110);
+		List<Integer> bans = saveTest.getChannelBans(100);
+		assertTrue(bans.contains(Integer.valueOf(110)));
+	}
+	
+	@Test
+	public void testRemoveBan() {
+		List<Integer> bans = saveTest.getChannelBans(100);
+		assertTrue(bans.contains(Integer.valueOf(103)));
+		saveTest.removeBan(100, 103);
+		
+		bans = saveTest.getChannelBans(100);
+		assertFalse(bans.contains(Integer.valueOf(103)));
 	}
 
 }
