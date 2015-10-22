@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<channel xmlns="http://www.example.org/chatserver/channel"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:csg="http://www.example.org/chatserver/groups"
+	xmlns:xmime="http://www.w3.org/2005/05/xmlmime" id="100">
+	<name>Test Channel</name>
+	<alias>T C</alias>
+	<welcomeMessage>Welcome to the Test Channel!</welcomeMessage>
+	<description>The testing channel for this server. Used for ensuring
+		channel features work correctly.</description>
+	<owner>100</owner>
+	<csg:groups>
+		<csg:group id="0" overridesDefault="true">
+			<csg:name>Guest</csg:name>
+			<csg:type>normal</csg:type>
+			<csg:description>Represents users who are not members of the channel.
+			</csg:description>
+			<csg:icon>
+				<csg:remoteURL>http://example.com/icons/groups/guest_new.png
+				</csg:remoteURL>
+			</csg:icon>
+			<csg:permissions>
+				<csg:permission type="talk" granted="true" />
+				<csg:permission type="join" granted="true" />
+				<csg:permission type="reset" granted="false" />
+			</csg:permissions>
+		</csg:group>
+		<csg:group id="9" overridesDefault="true">
+			<csg:name>Administrator</csg:name>
+			<csg:type>admin</csg:type>
+			<csg:description>Represents users who are not members of the channel.
+			</csg:description>
+			<csg:icon>
+				<csg:data xmime:contentType="image/png">iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAAQYSURBVHjatJY/y6VXFcV/a+1zZ2JmUNSIrUUIpNE6aMSAhSEWkkb8BiE2ikKwFyxEbCwsBkRwCguJhOgnMAiBYCdotIiKfxiEICTR9z57L4vn3puZ+Kb0wuLywD5n77XP2WsdJeH//dPLzz4CgAFVsdaibur94j8Y6TNkfgnXFzcbnOuWwBK+PyCAIkIIcw3yDJNfZPhqD1yH61L7WnrRXsaDUOA5EgLfNTxRwHtxXZZrk1iG9wJ/QfBZBIIPEP0wcDuCC96nxyZ8CfjQA0wEZV9g22V9SzY2qISkTwq+CeKC/83yaJIXvG3940xeBT5/OZmApAtKehr7SZdRGew9kfUNSY9dYhFSIEHhI+m81D23PJMfzeSxgReFnn2XorB3qPT1tYq1RC2zakct37b1PYud4aXIPJyZn/X0491z1wk/IPOvkNty7uJ8+cxIS+jgJ1z1lKuoVXid/43XwstftPX8g83Oncl8Lj2vdM/vPZM/JL4jAPEQxd2IrwkwpsRzXrKW0aHwjcKHwjcWOhTLAvHtwCcQn5b0U8RXAiS8WCHLCjF3QM9Lekjlcun7Wr7JoX5i8bQlZDOGDAgRBveQMoYPq/PzMI9O5xYdyCTDKwD2Mi5+J/Fb6XwGpsrfsfUaB3/Mh71NaxU31uKwijoYH4yW8WFR5U+ldGu/aAHyT5TXo2ALlIzMr+yAhZdRWWU+vlxoFV5ieVE3Frp52RjXwmXkna0lJJPwd5E3RfD5+rn0EgYrSECJcu0bFNii1oIlsk4zVLUzOV1t75eYk+j+NVSHOrXLQvKvcb0u71VRJkt7AokqQ0Ehlswet7dRtbeYEnGQRMifc1JBHxSWYjNvO3nNA0xQN+qhNqgGBjRBE9zBPdBBHdynNcmu5glCfzzP2XK8D8UAw586+0ZqGIsWO5uTEuR8wxKG2bW5gQY2MZvIBM3c00lm1nEJIN7n9a0MaHYl7oTQeESlkIY0RIIJTegMQ9PavyfDNmEbDpk9y0rPbjYS3mbQMA7xxniIDFNwlg0JEjJNT8g2ZGt6a7Ye0sP00J3D2b3WXM2+tJROv8lJy8HUGK8iDq6T0mpnOdNMQjboDttx6OOwbXBs6M5fzqq8rqb3do2Y8MYAyTBttrVwhao5D9QunhH7qv08upscN3Ic5mqY/zR97HtnNVszJ29O6G3eWkv0mn3Q1mCb3mV9F03tvpHTM2AapofZmm1rtis4Xg29zeWNsvrt3Ofxra3Cqt2YXMbeh7G0e0XkdyUdmNnRfTqXo9iuhuMxHz0Fst75d9/vZO9Y+duxQEXKujihz0nYPV/ndiHNwPSku2/20beOx9zrbfpc/tqOD9jlb6w86QF1mDpJzmmKpYD2h0Hu4zMRvU2683BfzSPd88bM/OO86X8HAKEEW2sm9eBpAAAAAElFTkSuQmCC
+				</csg:data>
+			</csg:icon>
+			<csg:permissions>
+				<csg:permission type="talk" granted="true" />
+				<csg:permission type="join" granted="true" />
+				<csg:permission type="reset" granted="true" />
+				<csg:permission type="tempban" granted="true" />
+				<csg:permission type="groupedit" granted="false" />
+			</csg:permissions>
+		</csg:group>
+	</csg:groups>
+	<members>
+		<member user="100" group="11" />
+		<member user="101" group="9" />
+	</members>
+	<bans>
+		<ban user="103" />
+		<ban user="107" />
+	</bans>
+</channel>

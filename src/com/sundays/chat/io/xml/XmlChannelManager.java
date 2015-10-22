@@ -33,11 +33,14 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
-import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
@@ -50,6 +53,7 @@ import com.sundays.chat.io.ChannelDataManager;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.server.Settings;
+import com.sundays.chat.utils.NamespaceContextMap;
 
 /**
  * An XML back-end for channel data storage. Uses one file for each channel and stores data conforming to the channel.xsd schema.
@@ -61,21 +65,25 @@ public class XmlChannelManager implements ChannelDataManager {
 	private static final Logger logger = Logger.getLogger(XmlChannelManager.class);
 	
 	private final File folder;
-	private DocumentBuilderFactory factory;
-	private final Schema schema;
+	private DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+	private XPath xPath = XPathFactory.newInstance().newXPath();
 	
 	private Map<Integer, Document> channelDataCache = new HashMap<>();
 	private Set<Integer> savePending = Collections.synchronizedSet(new HashSet<Integer>());
+	
+	private XPathExpression banLookup;
+	private XPathExpression memberLookup;
 
 	public XmlChannelManager(File folder, File schemaFile) {
 		this.folder = folder;
-		this.factory = DocumentBuilderFactory.newInstance();
+		factory.setNamespaceAware(true);
 		if (schemaFile == null || !schemaFile.exists() || !schemaFile.isFile()) {
 			logger.warn("No channel schema specified (or specified schema does not exist).");
-			schema = null;
 		} else {
-			schema = loadSchema(schemaFile);
+			Schema schema = loadSchema(schemaFile);
+			factory.setSchema(schema);
 		}
+		xPath.setNamespaceContext(new NamespaceContextMap("csc", "http://www.example.org/chatserver/channel"));
 	}
 	
 	private final Schema loadSchema (File schemaFile) {
@@ -107,15 +115,7 @@ public class XmlChannelManager implements ChannelDataManager {
 				try {
 					doc = builder.parse(file);
 				} catch (SAXException ex) {
-					logger.error("Channel data for "+channelID+" is not well-formed.", ex);
-					return null;
-				}
-					
-				Validator validator = schema.newValidator();
-				try {
-					validator.validate(new DOMSource(doc));
-				} catch (SAXException ex) {
-					logger.error("Channel data for "+channelID+" does not conform to XML schema.", ex);
+					logger.error("Channel data for "+channelID+" is invalid.", ex);
 					return null;
 				}
 			} catch (IOException | ParserConfigurationException ex) {
@@ -149,9 +149,15 @@ public class XmlChannelManager implements ChannelDataManager {
 		Document channelDoc = loadChannelDoc(channelID);
 		
 		synchronized (channelDoc) {
-			Element membersElement = (Element) channelDoc.getElementsByTagName("members").item(0);
-			Element member = null;
-			NodeList membersList = membersElement.getChildNodes();
+			//Element membersElement = (Element) channelDoc.getElementsByTagName("members").item(0);
+			Element member;
+			try {
+				member = (Element) xPath.compile("/members/member[@user='+userID+']").evaluate(channelDoc, XPathConstants.NODE);
+			} catch (XPathExpressionException ex) {
+				logger.error("Error running changeRank request.", ex);
+				return;
+			}
+			/*NodeList membersList = membersElement.getChildNodes();
 			for (int i=0;i<membersList.getLength();i++) {
 				Node memberNode = membersList.item(i);
 				if (memberNode instanceof Element) {
@@ -161,7 +167,7 @@ public class XmlChannelManager implements ChannelDataManager {
 						break;
 					}
 				}
-			}
+			}*/
 			if (member != null) {
 				member.setAttribute("group", Integer.toString(rankID));
 			}
@@ -243,10 +249,22 @@ public class XmlChannelManager implements ChannelDataManager {
 	public List<Integer> getChannelBans(int channelID) {
 		Document channelDoc = loadChannelDoc(channelID);
 		
+		if (banLookup == null) {
+			try {
+				banLookup = xPath.compile("/csc:channel/csc:bans/csc:ban");
+			} catch (XPathExpressionException ex) {
+				logger.error("Failed to compile ban lookup expression. This probably indicates a configuration or program error.", ex);
+			}
+		}
 		List<Integer> bans = new ArrayList<>();
 		synchronized (channelDoc) {
-			Element bansElement = (Element) channelDoc.getElementsByTagName("bans").item(0);
-			NodeList bansList = bansElement.getChildNodes();
+			NodeList bansList;
+			try {
+				bansList = (NodeList) banLookup.evaluate(channelDoc, XPathConstants.NODESET);
+			} catch (XPathExpressionException ex) {
+				logger.error("Failed to evaluate ban lookup expression.", ex);
+				return null;
+			}
 			for (int i=0;i<bansList.getLength();i++) {
 				Node banNode = bansList.item(i);
 				if (banNode instanceof Element) {
@@ -261,6 +279,14 @@ public class XmlChannelManager implements ChannelDataManager {
 	@Override
 	public Map<Integer, Byte> getChannelRanks(int channelID) {
 		Document channelDoc = loadChannelDoc(channelID);
+		
+		if (memberLookup == null) {
+			try {
+				memberLookup = xPath.compile("/csc:channel/csc:members/csc:member");
+			} catch (XPathExpressionException ex) {
+				logger.error("Failed to compile member lookup expression. This probably indicates a configuration or program error.", ex);
+			}
+		}
 		
 		Map<Integer, Byte> members = new HashMap<>();
 		synchronized (channelDoc) {
