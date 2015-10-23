@@ -24,15 +24,18 @@ import java.util.Set;
 
 import com.sundays.chat.io.ChannelGroupType;
 
-public enum ChannelPermission {
-	/* This enumeration defines information about permissions within channels
+/**
+ * This enumeration defines information about permissions within channels
 	 * The first value represents the permissionID
 	 * The second value represents the default rank for that permission
 	 * The third value represents the minimum rank that may hold that permission
 	 * The fourth value represents the maximum rank that the permission may be set to (this means that ranks above and including this will ALWAYS hold the permission)
 	 * If any of the values are going to be set to system ranks, you should use their variables (defined above) rather than manually entering the rank ID
 	 * WARNING: the permission ID (first value) MUST be the same as the permission's position in the enumeration. If required, use dummy fields to fill in gaps.
-	 */
+ * 
+ * @author Francis
+ */
+public enum ChannelPermission {
 	
 	JOIN (0, "Groups with this permission are allowed to join this channel.", 		
 			new ChannelGroupType[]{ChannelGroupType.NORMAL, ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM}),

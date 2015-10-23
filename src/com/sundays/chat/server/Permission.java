@@ -42,6 +42,7 @@ import com.sundays.chat.server.Settings.PresetRanks;
  * 
  * @author Francis
  */
+@Deprecated
 public enum Permission {
     	JOIN (0, DEFAULT_RANK, GUEST_RANK, OWNER_RANK),
     	TALK (1, DEFAULT_RANK, GUEST_RANK, OWNER_RANK),
