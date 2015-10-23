@@ -58,6 +58,7 @@ import org.xml.sax.SAXException;
 import com.sundays.chat.io.ChannelDataSave;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
+import com.sundays.chat.io.ChannelGroupType;
 import com.sundays.chat.utils.NamespaceContextMap;
 
 /**
@@ -488,8 +489,8 @@ public final class XmlChannelSave implements ChannelDataSave {
 					Element groupElement = (Element) groupNode;
 					int groupID = Integer.parseInt(groupElement.getAttribute("id"));
 					ChannelGroupData groupData = new ChannelGroupData(groupID, channelID);
-					groupData.groupName = groupElement.getElementsByTagName("name").item(0).getTextContent();
-					groupData.type = groupElement.getElementsByTagName("type").item(0).getTextContent();
+					groupData.setName(groupElement.getElementsByTagName("name").item(0).getTextContent());
+					groupData.setType(ChannelGroupType.getByName(groupElement.getElementsByTagName("type").item(0).getTextContent()));
 					
 					groups.add(groupData);
 				}

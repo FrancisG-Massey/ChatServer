@@ -27,6 +27,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Joiner;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.server.Settings;
@@ -367,12 +368,13 @@ public class GroupDataUpdater {
 							+" `groupType` = ?, `groupIconUrl` = ? WHERE `groupID` = ? AND `channelID` = ?");
 				}
 				for (ChannelGroupData group : groupUpdatesCopy) {
-					groupUpdateQuery.setString(1, group.groupName);
-					groupUpdateQuery.setString(2, group.permissions);
-					groupUpdateQuery.setString(3, group.type);
+					String permissions = Joiner.on(',').join(group.getPermissions());
+					groupUpdateQuery.setString(1, group.getName());
+					groupUpdateQuery.setString(2, permissions);
+					groupUpdateQuery.setString(3, group.getType().getSimpleName());
 					groupUpdateQuery.setString(4, group.groupIconUrl);
-					groupUpdateQuery.setInt(5, group.groupID);
-					groupUpdateQuery.setInt(6, group.channelID);
+					groupUpdateQuery.setInt(5, group.getGroupID());
+					groupUpdateQuery.setInt(6, group.getChannelID());
 					try {
 						groupUpdateQuery.execute();
 		            } catch (MySQLIntegrityConstraintViolationException ex) {

@@ -20,7 +20,9 @@ package com.sundays.chat.server.channel;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,7 +31,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.sundays.chat.io.ChannelGroupData;
-import com.sundays.chat.server.GroupType;
+import com.sundays.chat.io.ChannelGroupType;
 
 public class ChannelGroup {
 	
@@ -38,8 +40,7 @@ public class ChannelGroup {
 	public final EnumSet<ChannelPermission> permissions = EnumSet.noneOf(ChannelPermission.class);
 	private String groupName, groupIconUrl;
 	public final int groupID, channelID;
-	public int overrides;
-	public GroupType groupType = GroupType.NORMAL;
+	public ChannelGroupType groupType = ChannelGroupType.NORMAL;
 	
 	private byte legacyRank;
 	
@@ -54,7 +55,7 @@ public class ChannelGroup {
 		this.legacyRank = legacyRank;
 	}
 	
-	public ChannelGroup (int channelID, int groupID, String name, String url, GroupType type) {
+	public ChannelGroup (int channelID, int groupID, String name, String url, ChannelGroupType type) {
 		this.groupID = groupID;
 		this.channelID = channelID;
 		this.groupName = name;
@@ -64,19 +65,17 @@ public class ChannelGroup {
 	
 	public ChannelGroup (ChannelGroupData data) {
 		//Fixed data fields
-		this.groupID = data.groupID;
-		this.channelID = data.channelID;
+		this.groupID = data.getGroupID();
+		this.channelID = data.getChannelID();
 		
 		//Variable simple fields
-		this.overrides = data.overrides;
-		this.groupName = data.groupName;
+		this.groupName = data.getName();
 		this.groupIconUrl = data.groupIconUrl;
-		this.groupType = GroupType.valueOf(data.type.toUpperCase());
+		this.groupType = data.getType();
 		
 		//Group permissions
-		String[] permissionStrings = data.permissions.substring(1, data.permissions.length() - 1).split(",");
 		boolean hasAllPermissions = false;
-		for (String permission : permissionStrings) {
+		for (String permission : data.getPermissions()) {
 			ChannelPermission p = ChannelPermission.valueOf(permission.toUpperCase().replace("\"", "").trim());
 			if (p == ChannelPermission.ALL) {
 				permissions.addAll(EnumSet.allOf(ChannelPermission.class));
@@ -102,7 +101,6 @@ public class ChannelGroup {
 		this.groupName = oldGroup.groupName;
 		this.groupIconUrl = oldGroup.groupIconUrl;
 		this.groupType = oldGroup.groupType;
-		this.overrides = oldGroup.overrides;
 	}
 	
 	public String getName () {
@@ -111,11 +109,6 @@ public class ChannelGroup {
 	
 	public String getIconUrl () {
 		return this.groupIconUrl;
-	}
-	
-	public ChannelGroup overrides (int overrides) {
-		this.overrides = overrides;
-		return this;
 	}
 	
 	protected void setName (String newName) {
@@ -131,8 +124,9 @@ public class ChannelGroup {
 	}
 	
 	public ChannelGroupData encode () {
+		Set<String> permissions = new HashSet<>();
 		return new ChannelGroupData(channelID, groupID, groupName, 
-				permissions.toString(), groupType.toString(), groupIconUrl);
+				permissions, groupType, groupIconUrl);
 	}
 	
 	/*

@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 import com.sundays.chat.io.ChannelDataSave;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
+import com.sundays.chat.io.ChannelGroupType;
 
 public class JDBCChannelManager implements ChannelDataSave {
 
@@ -194,8 +195,9 @@ public class JDBCChannelManager implements ChannelDataSave {
 			groupFetchQuery.execute();
 			ResultSet res = groupFetchQuery.getResultSet();
 			while (res.next()) {
-				groups.add(new ChannelGroupData(channelID, res.getInt(1), res.getString(2), res.getString(3), res.getString(4), res
-						.getString(5)).overrides(res.getInt(6)));
+				ChannelGroupType groupType = ChannelGroupType.getByName(res.getString(4));
+				groups.add(new ChannelGroupData(channelID, res.getInt(1), res.getString(2), res.getString(3).split(","), groupType, res
+						.getString(5)));
 			}
 			res.last();
 		} catch (SQLException ex) {

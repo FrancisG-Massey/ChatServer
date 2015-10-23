@@ -26,6 +26,7 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.sundays.chat.io.ChannelGroupType;
 import com.sundays.chat.server.channel.ChannelGroup;
 import com.sundays.chat.utils.GeneralTools;
 
@@ -172,6 +173,6 @@ public class Settings {
     
     static {       
     	systemGroups.clear();
-    	systemGroups.put(53, new ChannelGroup(50, 53, "Unknown", null, GroupType.NORMAL).overrides(-2));
+    	systemGroups.put(53, new ChannelGroup(50, -2, "Unknown", null, ChannelGroupType.NORMAL));
     }
 }

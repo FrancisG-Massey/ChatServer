@@ -188,7 +188,7 @@ public class ChannelMessageFactory {
      */
     public MessagePayload createGroupDetails (ChannelGroup group) {
     	MessagePayload message = new MessagePayload();
-    	message.put("id", group.overrides);
+    	message.put("id", group.getLegacyRank());
     	message.put("name", group.getName());
     	message.put("icon", group.getIconUrl());
     	message.put("type", group.groupType);

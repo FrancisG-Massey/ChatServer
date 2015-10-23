@@ -27,8 +27,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.sundays.chat.io.ChannelGroupType;
 import com.sundays.chat.io.UserDetails;
-import com.sundays.chat.server.GroupType;
 import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.channel.dummy.DummyChannelDataIO;
 import com.sundays.chat.server.channel.dummy.DummyUserManager;
@@ -80,11 +80,11 @@ public class MessageFactoryTest {
 	
 	@Test
 	public void testGroupMessage () {
-		ChannelGroup group = new ChannelGroup(100, 1, "Member", "http://example.com/icon.png", GroupType.NORMAL);
+		ChannelGroup group = new ChannelGroup(100, 1, "Member", "http://example.com/icon.png", ChannelGroupType.NORMAL);
 		MessagePayload message = factory.createGroupDetails(group);
 		assertEquals("Member", message.get("name"));
 		assertEquals("http://example.com/icon.png", message.get("icon"));
-		assertEquals(GroupType.NORMAL, message.get("type"));
+		assertEquals(ChannelGroupType.NORMAL, message.get("type"));
 	}
 	
 	@Test

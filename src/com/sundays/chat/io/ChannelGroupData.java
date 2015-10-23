@@ -18,44 +18,136 @@
  *******************************************************************************/
 package com.sundays.chat.io;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 public class ChannelGroupData {
 	
-	public final int groupID, channelID;
-	public String groupName;
-	public String permissions;
-	public String type;
+	private final int groupID;
+	private final int channelID;
+	private boolean overridesDefault;
+	private String name;
+	private ChannelGroupType type;
+	private String description;
 
 	public String groupIconUrl;
-	public int overrides;
+	
+	private Set<String> permissions;
 	
 	public ChannelGroupData(int groupID, int channelID) {
 		this.groupID = groupID;
 		this.channelID = channelID;
 	}
 	
-	public ChannelGroupData (int channelID, int groupID, String groupName, String permissions, 
-			String type, String groupIconUrl) {
+	public ChannelGroupData (int channelID, int groupID, String groupName, String[] permissions, 
+			ChannelGroupType type, String groupIconUrl) {
+		this(channelID, groupID, groupName, new HashSet<>(Arrays.asList(permissions)), type, groupIconUrl);
+	}
+	
+	public ChannelGroupData (int channelID, int groupID, String groupName, Set<String> permissions, 
+			ChannelGroupType type, String groupIconUrl) {
 		this.channelID = channelID;
 		this.groupID = groupID;
-		this.groupName = groupName;
+		this.name = groupName;
 		this.permissions = permissions;
 		this.type = type;
 		this.groupIconUrl = groupIconUrl;
 	}
 
-	public ChannelGroupData overrides (int overrides) {
-		this.overrides = overrides;
-		return this;
+	/**
+	 * Gets the ID for this channel group. If the group overrides a default group, the ID will be the same as the default.
+	 * 
+	 * @return The ID for the group.
+	 */
+	public int getGroupID() {
+		return groupID;
 	}
-	
+
+	/**
+	 * @return the channelID
+	 */
+	public int getChannelID() {
+		return channelID;
+	}
+
+	/**
+	 * @return the overridesDefault
+	 */
+	public boolean overridesDefault() {
+		return overridesDefault;
+	}
+
+	/**
+	 * @param overridesDefault the overridesDefault to set
+	 */
+	public void setOverridesDefault(boolean overridesDefault) {
+		this.overridesDefault = overridesDefault;
+	}
+
+	/**
+	 * @return the name
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @param name the name to set
+	 */
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	/**
+	 * @return the type
+	 */
+	public ChannelGroupType getType() {
+		return type;
+	}
+
+	/**
+	 * @param type the type to set
+	 */
+	public void setType(ChannelGroupType type) {
+		this.type = type;
+	}
+
+	/**
+	 * @return the description
+	 */
+	public String getDescription() {
+		return description;
+	}
+
+	/**
+	 * @param description the description to set
+	 */
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	/**
+	 * @return the permissions
+	 */
+	public Set<String> getPermissions() {
+		return permissions;
+	}
+
+	/**
+	 * @param permissions the permissions to set
+	 */
+	public void setPermissions(Set<String> permissions) {
+		this.permissions = permissions;
+	}
+
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
-		return "ChannelGroupData [groupID=" + groupID + ", channelID="
-				+ channelID + ", groupName=" + groupName + ", permissions="
-				+ permissions + ", type=" + type + ", groupIconUrl="
-				+ groupIconUrl + ", overrides=" + overrides + "]";
+		return "ChannelGroupData [groupID=" + groupID + ", channelID=" + channelID + ", overridesDefault=" + overridesDefault + ", name="
+				+ name + ", type=" + type + ", description=" + description + ", groupIconUrl=" + groupIconUrl + ", permissions="
+				+ permissions + "]";
 	}
 }

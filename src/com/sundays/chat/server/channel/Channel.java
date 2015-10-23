@@ -298,14 +298,14 @@ public final class Channel {
     		//responseGroups.put(rawGroupData.groupID, new ChannelGroup(rawGroupData));
     		
     		//Temporary method, whereby group data overrides the existing groups. This will be used until group adding/removing/modifying is implemented
-    		responseGroups.put(rawGroupData.overrides, new ChannelGroup(rawGroupData));
+    		responseGroups.put(rawGroupData.getGroupID(), new ChannelGroup(rawGroupData));
     	}
     	//Temporary override method:
     	for (Entry<Byte, String> rankName : rankNames.entrySet()) {
     		if (!responseGroups.containsKey(rankName.getKey())) {
     			ChannelGroup newGroup = new ChannelGroup(id, (int) Math.random(), rankName.getKey().byteValue());
     			newGroup.setName(rankName.getValue());
-    			newGroup.overrides = rankName.getKey();
+    			//newGroup.overrides = rankName.getKey();
     			newGroup.setIconUrl("images/ranks/rank"+rankName.getKey()+".png");
     			responseGroups.put(rankName.getKey().intValue(), newGroup);
     		}
