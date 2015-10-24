@@ -20,11 +20,26 @@ package com.sundays.chat.io.jdbc;
 
 public class ChannelUserMatcher {
 
-	public final int channelID, userID;
+	private final int channelID;
+	private final int userID;
 
 	public ChannelUserMatcher (int channelID, int userID) {
 		this.channelID = channelID;
 		this.userID = userID;
+	}
+
+	/**
+	 * @return the channelID
+	 */
+	public int getChannelID() {
+		return channelID;
+	}
+
+	/**
+	 * @return the userID
+	 */
+	public int getUserID() {
+		return userID;
 	}
 
 	/* (non-Javadoc)

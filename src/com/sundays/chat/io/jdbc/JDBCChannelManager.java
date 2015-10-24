@@ -37,7 +37,7 @@ public class JDBCChannelManager implements ChannelDataSave {
 
 	private static final Logger logger = Logger.getLogger(JDBCChannelManager.class);
 
-	public static final String RANK_TABLE_NAME = "channelRanks";
+	public static final String MEMBER_TABLE_NAME = "channelRanks";
 	public static final String BAN_TABLE_NAME = "channelBans";
 	public static final String DETAIL_TABLE_NAME = "channels";
 	public static final String GROUP_TABLE_NAME = "channelGroups";
@@ -168,7 +168,7 @@ public class JDBCChannelManager implements ChannelDataSave {
 		try {
 			if (rankFetchQuery == null) {
 				rankFetchQuery = dbCon.getConnection().prepareStatement(
-						"SELECT `user`, `rank` FROM `" + RANK_TABLE_NAME + "` WHERE `channel` = ?");
+						"SELECT `user`, `rank` FROM `" + MEMBER_TABLE_NAME + "` WHERE `channel` = ?");
 			}
 			rankFetchQuery.setInt(1, channelID);
 			rankFetchQuery.execute();
