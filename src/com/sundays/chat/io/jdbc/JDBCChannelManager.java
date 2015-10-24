@@ -163,8 +163,8 @@ public class JDBCChannelManager implements ChannelDataSave {
 	}
 
 	@Override
-	public Map<Integer, Byte> getChannelRanks(int channelID) {
-		Map<Integer, Byte> ranks = new HashMap<Integer, Byte>();
+	public Map<Integer, Integer> getChannelMembers(int channelID) {
+		Map<Integer, Integer> ranks = new HashMap<>();
 		try {
 			if (rankFetchQuery == null) {
 				rankFetchQuery = dbCon.getConnection().prepareStatement(
@@ -174,7 +174,7 @@ public class JDBCChannelManager implements ChannelDataSave {
 			rankFetchQuery.execute();
 			ResultSet res = rankFetchQuery.getResultSet();
 			while (res.next()) {
-				ranks.put(res.getInt(1), res.getByte(2));
+				ranks.put(res.getInt(1), res.getInt(2));
 			}
 			res.last();
 		} catch (SQLException ex) {

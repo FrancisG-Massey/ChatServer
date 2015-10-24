@@ -429,7 +429,7 @@ public final class XmlChannelSave implements ChannelDataSave {
 	}
 
 	@Override
-	public Map<Integer, Byte> getChannelRanks(int channelID) {
+	public Map<Integer, Integer> getChannelMembers(int channelID) {
 		Document channelDoc = loadChannelDoc(channelID);
 		
 		if (memberLookup == null) {
@@ -440,7 +440,7 @@ public final class XmlChannelSave implements ChannelDataSave {
 			}
 		}
 		
-		Map<Integer, Byte> members = new HashMap<>();
+		Map<Integer, Integer> members = new HashMap<>();
 		synchronized (channelDoc) {
 			NodeList membersList;
 			try {
@@ -454,7 +454,7 @@ public final class XmlChannelSave implements ChannelDataSave {
 				if (memberNode instanceof Element) {
 					Element memberElement = (Element) memberNode;
 					int user = Integer.parseInt(memberElement.getAttribute("user"));
-					byte group = Byte.parseByte(memberElement.getAttribute("group"));
+					int group = Integer.parseInt(memberElement.getAttribute("group"));
 					members.put(user, group);
 				}
 			}

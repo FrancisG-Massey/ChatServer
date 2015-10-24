@@ -135,7 +135,7 @@ public class XmlChannelSaveTest {
 
 	@Test
 	public void testLoadMembers() throws IOException {
-		Map<Integer, Byte> members = saveTest.getChannelRanks(100);
+		Map<Integer, Integer> members = saveTest.getChannelMembers(100);
 		assertEquals(2, members.size());
 		assertTrue(members.containsKey(100));
 		assertEquals(11, members.get(100).byteValue());
@@ -146,29 +146,29 @@ public class XmlChannelSaveTest {
 	@Test
 	public void testAddMember() throws IOException {
 		saveTest.addMember(100, 109, Settings.DEFAULT_RANK);
-		Map<Integer, Byte> members = saveTest.getChannelRanks(100);
+		Map<Integer, Integer> members = saveTest.getChannelMembers(100);
 		assertTrue(members.containsKey(109));
 		assertEquals(Settings.DEFAULT_RANK, members.get(109).byteValue());
 	}
 	
 	@Test
 	public void testUpdateMember() throws IOException {
-		Map<Integer, Byte> members = saveTest.getChannelRanks(100);
+		Map<Integer, Integer> members = saveTest.getChannelMembers(100);
 		assumeTrue(members.containsKey(101));//Since this behavior is only defined for existing members, we should assume they exist first. 
 		saveTest.updateMember(100, 101, 5);
 		
-		members = saveTest.getChannelRanks(100);
+		members = saveTest.getChannelMembers(100);
 		assertTrue(members.containsKey(101));
 		assertEquals(5, members.get(101).byteValue());
 	}
 	
 	@Test
 	public void testRemoveMember() throws IOException {
-		Map<Integer, Byte> members = saveTest.getChannelRanks(100);
+		Map<Integer, Integer> members = saveTest.getChannelMembers(100);
 		assumeTrue(members.containsKey(101));
 		saveTest.removeMember(100, 101);
 		
-		members = saveTest.getChannelRanks(100);
+		members = saveTest.getChannelMembers(100);
 		assertFalse(members.containsKey(101));
 	}
 	

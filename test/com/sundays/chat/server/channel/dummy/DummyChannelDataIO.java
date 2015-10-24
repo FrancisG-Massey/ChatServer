@@ -101,7 +101,7 @@ public class DummyChannelDataIO implements ChannelDataSave {
 	}
 
 	@Override
-	public Map<Integer, Byte> getChannelRanks(int channelID) {
+	public Map<Integer, Integer> getChannelMembers(int channelID) {
 		calls.add(new CallEvent("getChannelRanks", channelID));
 		return new HashMap<>();
 	}

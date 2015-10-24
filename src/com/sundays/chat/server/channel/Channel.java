@@ -58,7 +58,7 @@ public final class Channel {
     private String name = "Not in Channel";
     private String channelAbbr = "undefined";
     private String openingMessage = "Not in Channel";
-    private final Map<Integer, Byte> ranks;
+    private final Map<Integer, Integer> ranks;
     private final Set<Integer> permBans;
     private final Map<Byte, String> rankNames;
     private final EnumMap<Permission, Integer> permissions;
@@ -252,7 +252,7 @@ public final class Channel {
      * @param user The user to find the rank of.
      * @return The rank the user holds in the channel (0 for guest).
      */
-    public byte getUserRank (User user) {
+    public int getUserRank (User user) {
         return getUserRank(user.getUserID());
     }
 
@@ -262,8 +262,8 @@ public final class Channel {
      * @param userID The ID of the user to find the rank of.
      * @return The rank the user holds in the channel (0 for guest).
      */
-    public byte getUserRank (int userID) {
-    	byte rank = 0;
+    public int getUserRank (int userID) {
+    	int rank = 0;
     	if (userID == ownerID) {
     		rank = Settings.OWNER_RANK;
     	} else if (ranks.containsKey(userID)) {
@@ -314,9 +314,9 @@ public final class Channel {
 		return responseGroups;    	
     }
 
-    private Map<Integer, Byte> loadRanks() throws IOException {
-    	Map<Integer, Byte> ranks = io.getChannelRanks(id);
-        for (Entry<Integer, Byte> r : ranks.entrySet()) {
+    private Map<Integer, Integer> loadRanks() throws IOException {
+    	Map<Integer, Integer> ranks = io.getChannelMembers(id);
+        for (Entry<Integer, Integer> r : ranks.entrySet()) {
         	//Run through the ranks, removing any invalid sets
         	if (permBans.contains(r.getKey())) {
         		logger.warn("User "+r.getKey()+" from channel "+id+" is on the ban list. Removing from rank list.");
@@ -326,17 +326,17 @@ public final class Channel {
         		//Rank was found to contain an invalid value. Convert to the default rank.
         		logger.warn("User "+r.getKey()+" from channel "+id+" holds an invalid rank of:"+r.getValue()+"." +
         				" Swapping to the default rank of: "+Settings.DEFAULT_RANK+".");
-        		r.setValue((byte) Settings.DEFAULT_RANK);
+        		r.setValue((int) Settings.DEFAULT_RANK);
         		io.updateMember(id, r.getKey(), Settings.DEFAULT_RANK);
         	} else if (r.getValue() == Settings.OWNER_RANK && r.getKey() != ownerID) {
         		logger.warn("User "+r.getKey()+" from channel "+id+" holds a rank of owner(11), but is not specified as the channel owner." +
         				" Swapping to the default rank of: "+Settings.DEFAULT_RANK+".");
-        		r.setValue((byte) Settings.DEFAULT_RANK);
+        		r.setValue((int) Settings.DEFAULT_RANK);
         		io.updateMember(id, r.getKey(), Settings.DEFAULT_RANK);
         	}
         }
     	System.out.println(ranks.size() + " rank(s) found for this channel.");
-    	return new ConcurrentHashMap<Integer, Byte>(ranks);
+    	return new ConcurrentHashMap<>(ranks);
     }
     
     private Set<Integer> loadBanList () throws IOException {
@@ -539,12 +539,12 @@ public final class Channel {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-	        ranks.put(uID, (byte) Settings.DEFAULT_RANK);
+	        ranks.put(uID, (int) Settings.DEFAULT_RANK);
     	}
         return true;
     }
 
-    protected boolean setRank(int uID, byte rank) {
+    protected boolean setRank(int uID, int rank) {
     	synchronized (ranks) {//Make sure only one thread is trying to modify rank data at a time
 	        if (!ranks.containsKey(uID)) {
 	            return false;
@@ -558,7 +558,7 @@ public final class Channel {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-	        ranks.put(uID, (byte) rank);
+	        ranks.put(uID, rank);
     	}
         return true;
     }
@@ -621,7 +621,7 @@ public final class Channel {
         return this.rankNames;
     }
 
-    protected Map<Integer, Byte> getRanks() {
+    protected Map<Integer, Integer> getRanks() {
         return this.ranks;
     }
     

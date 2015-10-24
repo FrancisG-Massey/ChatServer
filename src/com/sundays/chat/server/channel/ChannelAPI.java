@@ -805,7 +805,7 @@ public class ChannelAPI {
         	response.put("message", "You do not have the ability to change the ranks of other users in this channel.");
             return response;
         }
-        byte currentRank = channel.getUserRank(uID);
+        int currentRank = channel.getUserRank(uID);
         if (channel.getUserRank(uID) <= 0) {
         	//Checks if the user is on the rank list
         	response.put("status", 400);

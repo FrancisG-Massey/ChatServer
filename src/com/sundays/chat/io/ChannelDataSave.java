@@ -98,7 +98,7 @@ public interface ChannelDataSave {
 	
 	public List<Integer> getChannelBans (int channelID) throws IOException;
 	
-	public Map<Integer, Byte> getChannelRanks (int channelID) throws IOException;
+	public Map<Integer, Integer> getChannelMembers (int channelID) throws IOException;
 	
 	public List<ChannelGroupData> getChannelGroups (int channelID) throws IOException;
 	
