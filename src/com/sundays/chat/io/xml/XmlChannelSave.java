@@ -509,4 +509,9 @@ public final class XmlChannelSave implements ChannelDataSave {
 		}
 	}
 
+	@Override
+	public void close() throws Exception {
+		commitChanges();//Commit any pending changes before shutting down.
+	}
+
 }

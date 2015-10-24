@@ -23,12 +23,12 @@ import java.util.Properties;
 import com.sundays.chat.io.ChannelDataSave;
 import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.io.IOManager;
-import com.sundays.chat.io.UserDataManager;
+import com.sundays.chat.io.UserDataSave;
 import com.sundays.chat.utils.ConfigurationException;
 
 public class JDBCIOManager implements IOManager {
 	
-	private UserDataManager userManager;
+	private UserDataSave userManager;
 	private ChannelIndex channelIndex;
 	private ChannelDataSave channelManager;
 	private ConnectionManager dbcon;
@@ -52,13 +52,13 @@ public class JDBCIOManager implements IOManager {
 			throw new ConfigurationException("jdbc.password not specfied!");
 		}
 		this.dbcon = new ConnectionManager(uri, username, password);
-		this.userManager = new JDBCUserManager(dbcon.getConnection());
+		this.userManager = new JDBCUserSave(dbcon.getConnection());
 		this.channelIndex = new JDBCChannelIndex(dbcon);
-		this.channelManager = new JDBCChannelManager(dbcon);
+		this.channelManager = new JDBCChannelSave(dbcon);
 	}
 
 	@Override
-	public UserDataManager getUserIO() {
+	public UserDataSave getUserIO() {
 		if (userManager == null) {
 			throw new IllegalStateException("User IO is not initialised.");
 		}

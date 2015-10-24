@@ -25,10 +25,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import com.sundays.chat.io.UserDataManager;
+import com.sundays.chat.io.UserDataSave;
 import com.sundays.chat.io.UserDetails;
 
-public class JDBCUserManager implements UserDataManager {
+public class JDBCUserSave implements UserDataSave {
 	
 	private Connection dbCon;
 	private PreparedStatement userCreation;
@@ -36,7 +36,7 @@ public class JDBCUserManager implements UserDataManager {
 	private PreparedStatement usernameLookup;
 	private PreparedStatement userDataSave;
 	
-	public JDBCUserManager (Connection dbCon) {
+	public JDBCUserSave (Connection dbCon) {
 		if (dbCon == null) {
 			throw new NullPointerException();
 		}

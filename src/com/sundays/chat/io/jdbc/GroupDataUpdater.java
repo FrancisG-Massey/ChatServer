@@ -205,7 +205,7 @@ public class GroupDataUpdater {
 			ChannelUserMatcher lastAddition = null;
 			try {
 				if (rankInsertQuery == null) {
-					rankInsertQuery = dbCon.getConnection().prepareStatement("INSERT INTO `"+JDBCChannelManager.MEMBER_TABLE_NAME+"` SET `channel` = ?, `user` = ?");
+					rankInsertQuery = dbCon.getConnection().prepareStatement("INSERT INTO `"+JDBCChannelSave.MEMBER_TABLE_NAME+"` SET `channel` = ?, `user` = ?");
 				}
 				for (ChannelUserMatcher addition : rankAdditionsCopy) {
 					lastAddition = addition;
@@ -228,7 +228,7 @@ public class GroupDataUpdater {
 			//If there are pending rank changes, run through them and update the relevant database fields
 			try {
 				if (rankUpdateQuery == null) {
-					rankUpdateQuery = dbCon.getConnection().prepareStatement("UPDATE `"+JDBCChannelManager.MEMBER_TABLE_NAME+"` SET `rank` = ? WHERE `channel` = ? AND `user` = ?");
+					rankUpdateQuery = dbCon.getConnection().prepareStatement("UPDATE `"+JDBCChannelSave.MEMBER_TABLE_NAME+"` SET `rank` = ? WHERE `channel` = ? AND `user` = ?");
 				}
 				for (Entry<ChannelUserMatcher, Integer> update : rankChangesCopy.entrySet()) {
 					rankUpdateQuery.setInt(1, update.getValue());
@@ -251,7 +251,7 @@ public class GroupDataUpdater {
 			//If there are pending rank removals, run through them and remove them from the relevant database fields
 			try {
 				if (rankDeleteQuery == null) {
-					rankDeleteQuery = dbCon.getConnection().prepareStatement("DELETE FROM `"+JDBCChannelManager.MEMBER_TABLE_NAME+"` WHERE `channel` = ? AND `user` = ? LIMIT 1");
+					rankDeleteQuery = dbCon.getConnection().prepareStatement("DELETE FROM `"+JDBCChannelSave.MEMBER_TABLE_NAME+"` WHERE `channel` = ? AND `user` = ? LIMIT 1");
 				}
 				for (ChannelUserMatcher removal : rankRemovalsCopy) {
 					rankDeleteQuery.setInt(1, removal.getChannelID());
@@ -273,7 +273,7 @@ public class GroupDataUpdater {
 			//If there are pending ban additions, run through them and insert them into the relevant database entries
 			try {
 				if (banInsertQuery == null) {
-					banInsertQuery = dbCon.getConnection().prepareStatement("INSERT INTO `"+JDBCChannelManager.BAN_TABLE_NAME+"` SET `channel` = ?, `user` = ?");
+					banInsertQuery = dbCon.getConnection().prepareStatement("INSERT INTO `"+JDBCChannelSave.BAN_TABLE_NAME+"` SET `channel` = ?, `user` = ?");
 				}
 				for (ChannelUserMatcher addition : banAdditionsCopy) {
 					banInsertQuery.setInt(1, addition.getChannelID());
@@ -295,7 +295,7 @@ public class GroupDataUpdater {
 			//If there are pending ban removals, run through them and remove them from the relevant database fields
 			try {
 				if (banDeleteQuery == null) {
-					banDeleteQuery = dbCon.getConnection().prepareStatement("DELETE FROM `"+JDBCChannelManager.BAN_TABLE_NAME+"` WHERE `channel` = ? AND `user` = ? LIMIT 1");
+					banDeleteQuery = dbCon.getConnection().prepareStatement("DELETE FROM `"+JDBCChannelSave.BAN_TABLE_NAME+"` WHERE `channel` = ? AND `user` = ? LIMIT 1");
 				}
 				for (ChannelUserMatcher removal : banRemovalsCopy) {
 					banDeleteQuery.setInt(1, removal.getChannelID());
@@ -317,7 +317,7 @@ public class GroupDataUpdater {
 			//If there are pending group updates, run through them and update all relevant groups
 			try {
 				if (groupUpdateQuery == null) {
-					groupUpdateQuery = dbCon.getConnection().prepareStatement("UPDATE `"+JDBCChannelManager.GROUP_TABLE_NAME+"` SET `groupName` = ?, `permissions` = ?,"
+					groupUpdateQuery = dbCon.getConnection().prepareStatement("UPDATE `"+JDBCChannelSave.GROUP_TABLE_NAME+"` SET `groupName` = ?, `permissions` = ?,"
 							+" `groupType` = ?, `icon` = ? WHERE `groupID` = ? AND `channelID` = ?");
 				}
 				for (ChannelGroupData group : groupUpdatesCopy) {

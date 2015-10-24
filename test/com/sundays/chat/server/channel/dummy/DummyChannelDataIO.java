@@ -117,4 +117,9 @@ public class DummyChannelDataIO implements ChannelDataSave {
 		calls.add(new CallEvent("commitChanges"));		
 	}
 
+	@Override
+	public void close() throws Exception {
+		calls.add(new CallEvent("close"));
+	}
+
 }

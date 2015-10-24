@@ -27,7 +27,7 @@ import java.io.IOException;
  * 
  * @author Francis
  */
-public interface UserDataManager extends AutoCloseable {
+public interface UserDataSave extends AutoCloseable {
 	
 	/**
 	 * Stores data for a newly created user

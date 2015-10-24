@@ -24,7 +24,7 @@ import java.util.Properties;
 import com.sundays.chat.io.ChannelDataSave;
 import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.io.IOManager;
-import com.sundays.chat.io.UserDataManager;
+import com.sundays.chat.io.UserDataSave;
 import com.sundays.chat.utils.ConfigurationException;
 
 /**
@@ -34,7 +34,7 @@ import com.sundays.chat.utils.ConfigurationException;
  */
 public final class XmlIOManager implements IOManager {
 	
-	private UserDataManager userManager;
+	private UserDataSave userManager;
 	
 	private ChannelIndex channelIndex;
 	
@@ -67,7 +67,7 @@ public final class XmlIOManager implements IOManager {
 	}
 
 	@Override
-	public UserDataManager getUserIO() {
+	public UserDataSave getUserIO() {
 		if (userManager == null) {
 			throw new IllegalStateException("User IO is not initialised.");
 		}

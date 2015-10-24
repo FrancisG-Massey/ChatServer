@@ -42,10 +42,10 @@ public interface IOManager extends AutoCloseable {
 	
 	/**
 	 * Returns the IO interface for loading and saving user data
-	 * @return the {@linkplain UserDataManager} implementation for the persistance layer
+	 * @return the {@linkplain UserDataSave} implementation for the persistance layer
 	 * @throws IllegalStateException If this method was called before {@link #init(Properties)}, or if an exception thrown during initialisation prevented the user IO manager from initialising
 	 */
-	public UserDataManager getUserIO() throws IllegalStateException;
+	public UserDataSave getUserIO() throws IllegalStateException;
 	
 	/**
 	 * Returns the IO interface for finding channels

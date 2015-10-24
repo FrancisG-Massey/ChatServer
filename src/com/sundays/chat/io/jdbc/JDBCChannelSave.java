@@ -33,9 +33,9 @@ import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.io.ChannelGroupType;
 
-public class JDBCChannelManager implements ChannelDataSave {
+public class JDBCChannelSave implements ChannelDataSave {
 
-	private static final Logger logger = Logger.getLogger(JDBCChannelManager.class);
+	private static final Logger logger = Logger.getLogger(JDBCChannelSave.class);
 
 	public static final String MEMBER_TABLE_NAME = "channelRanks";
 	public static final String BAN_TABLE_NAME = "channelBans";
@@ -51,7 +51,7 @@ public class JDBCChannelManager implements ChannelDataSave {
 	private PreparedStatement banFetchQuery;
 	private PreparedStatement groupFetchQuery;
 
-	public JDBCChannelManager(ConnectionManager dbCon) {
+	public JDBCChannelSave(ConnectionManager dbCon) {
 		this.dbCon = dbCon;
 	}
 
@@ -204,6 +204,11 @@ public class JDBCChannelManager implements ChannelDataSave {
 			logger.error("Failed to fetch groups for channel " + channelID, ex);
 		}
 		return groups;
+	}
+
+	@Override
+	public void close() throws Exception {
+		commitChanges();		
 	}
 
 }

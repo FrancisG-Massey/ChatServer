@@ -42,7 +42,7 @@ public class ChannelDataUpdater {
 	
 	private static final Logger logger = Logger.getLogger(ChannelDataUpdater.class);
 	
-	public static final String CHANNEL_TABLE_NAME = JDBCChannelManager.DETAIL_TABLE_NAME;
+	public static final String CHANNEL_TABLE_NAME = JDBCChannelSave.DETAIL_TABLE_NAME;
 
 	public static Integer[] decompressPermissions (byte[] permissions) {
 		Integer[] permissionArray = new Integer[Permission.values().length];

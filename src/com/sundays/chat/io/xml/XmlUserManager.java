@@ -37,10 +37,10 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.log4j.Logger;
 
-import com.sundays.chat.io.UserDataManager;
+import com.sundays.chat.io.UserDataSave;
 import com.sundays.chat.io.UserDetails;
 
-public final class XmlUserManager implements UserDataManager {
+public final class XmlUserManager implements UserDataSave {
 
 	private static final Logger logger = Logger.getLogger(XmlUserManager.class);
 	
