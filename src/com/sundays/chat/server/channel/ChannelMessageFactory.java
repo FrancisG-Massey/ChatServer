@@ -140,12 +140,12 @@ public class ChannelMessageFactory {
     	if (c == null) {
     		return null;
     	}
-        Map<Byte, String> rankNames = c.getRankNames();
+        Map<Integer, String> rankNames = c.getRankNames();
         try {
         	responseJSON.put("notice", "This API method is deprecated. Please use /channel/[x]/groups instead.");
         	responseJSON.put("numberRanks", rankNames.size());
         	List<JSONObject> ranks = new ArrayList<JSONObject>(rankNames.size());
-        	for (Entry<Byte, String> name : rankNames.entrySet()) {
+        	for (Entry<Integer, String> name : rankNames.entrySet()) {
         		JSONObject rank = new JSONObject();
         		rank.put("rankID", name.getKey());
         		rank.put("rankName",name.getValue());

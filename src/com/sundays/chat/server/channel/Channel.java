@@ -60,7 +60,7 @@ public final class Channel {
     private String openingMessage = "Not in Channel";
     private final Map<Integer, Integer> ranks;
     private final Set<Integer> permBans;
-    private final Map<Byte, String> rankNames;
+    private final Map<Integer, String> rankNames;
     private final EnumMap<Permission, Integer> permissions;
     private boolean trackMessages = false;
     private final Map<Integer, ChannelGroup> groups;
@@ -301,7 +301,7 @@ public final class Channel {
     		responseGroups.put(rawGroupData.getGroupID(), new ChannelGroup(rawGroupData));
     	}
     	//Temporary override method:
-    	for (Entry<Byte, String> rankName : rankNames.entrySet()) {
+    	for (Entry<Integer, String> rankName : rankNames.entrySet()) {
     		if (!responseGroups.containsKey(rankName.getKey())) {
     			ChannelGroup newGroup = new ChannelGroup(id, (int) Math.random(), rankName.getKey().byteValue());
     			newGroup.setName(rankName.getValue());
@@ -353,9 +353,9 @@ public final class Channel {
     	return banSet;//Make a concurrent version
     }
 
-    private Map<Byte, String> validateRankNames (Map<Byte, String> names) {
+    private Map<Integer, String> validateRankNames (Map<Integer, String> names) {
     	//Merges the custom rank names for the channel with the default rank names, checking that each name is valid
-    	Map<Byte, String> rankNamesArray = new LinkedHashMap<>(Settings.defaultRanks);
+    	Map<Integer, String> rankNamesArray = new LinkedHashMap<>(Settings.defaultRanks);
     	if (names == null || names.size() == 0) {
     		//If no names were sent, log a message and use defaults.
     		logger.warn("Invalid rank names sent for channel "+id+"; using defaults.");
@@ -365,10 +365,10 @@ public final class Channel {
     			Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Rank names received for channel "+channelID+" hold only "+names.size()+" names, " +
     					"while there are "+rankNamesArray.size()+" rank names in total. Missing names will use the default values.");
     		}*/
-    		for (Entry<Byte, String> nameMapping : names.entrySet()) {
+    		for (Entry<Integer, String> nameMapping : names.entrySet()) {
     			//For each additional name, check it's validility.
     			String name = nameMapping.getValue();
-    			byte rID = nameMapping.getKey();
+    			int rID = nameMapping.getKey();
     			if (rID > Settings.OWNER_RANK || rID < Settings.GUEST_RANK) {
     				//Custom rank names cannot override the names for global ranks (ranks above owner). Also, any ranks below 'guest' will not be able to enter the channel, and thus are irrelevant.
     				logger.warn("Name for rank id="+rID+" in the retrieved rank names specifies a name for a system rank, which is not allowed. Using default name.");
@@ -520,7 +520,7 @@ public final class Channel {
         this.flushRequired = true;//Notifies the auto-save thread that the channel data requires flushing
     }
 
-    protected void setRankName (byte rank, String name) {
+    protected void setRankName (int rank, String name) {
     	this.rankNames.put(rank, name);
     	this.flushRequired = true;
     }
@@ -617,7 +617,7 @@ public final class Channel {
         return this.members;
     }
 
-    protected Map<Byte, String> getRankNames() {
+    protected Map<Integer, String> getRankNames() {
         return this.rankNames;
     }
 

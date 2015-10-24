@@ -38,7 +38,7 @@ public class ChannelDetails {
 	private String description;
 	private int owner;
 	private Integer[] permissions;//Channel permissions
-	private Map<Byte, String> rankNames;//Channel rank names (these replace the default "Rank One", "Rank Two", etc)
+	private Map<Integer, String> rankNames;//Channel rank names (these replace the default "Rank One", "Rank Two", etc)
 	private boolean trackMessages;
 	
 	public ChannelDetails () {
@@ -46,7 +46,7 @@ public class ChannelDetails {
 	}
 	
 	public ChannelDetails (int id, String name, String openingMessage, 
-			String abbreviation, Integer[] permissions, Map<Byte, String> rankNames, 
+			String abbreviation, Integer[] permissions, Map<Integer, String> rankNames, 
 			boolean trackMessages, int owner) {
 		//Full constructor used when data can be added all at once
 		this.id = id;
@@ -137,7 +137,7 @@ public class ChannelDetails {
 	 * @return the rankNames
 	 */
 	@Deprecated
-	public Map<Byte, String> getRankNames() {
+	public Map<Integer, String> getRankNames() {
 		return rankNames;
 	}
 
@@ -145,7 +145,7 @@ public class ChannelDetails {
 	 * @param rankNames the rankNames to set
 	 */
 	@Deprecated
-	public void setRankNames(Map<Byte, String> rankNames) {
+	public void setRankNames(Map<Integer, String> rankNames) {
 		this.rankNames = rankNames;
 	}
 

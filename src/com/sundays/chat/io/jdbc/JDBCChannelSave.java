@@ -121,7 +121,7 @@ public class JDBCChannelSave implements ChannelDataSave {
 			detailFetchQuery.execute();
 			ResultSet res = detailFetchQuery.getResultSet();
 			while (res.next()) {
-				Map<Byte, String> rankNames = null;
+				Map<Integer, String> rankNames = null;
 				try {
 					rankNames = (res.getBytes(5) == null ? null : ChannelDataUpdater.decompressRankNamesV2(res.getBytes(5)));
 				} catch (IllegalArgumentException ex) {
