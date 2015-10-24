@@ -35,7 +35,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.google.common.io.Files;
-import com.sundays.chat.io.ChannelDataSave;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.server.Settings;
 
@@ -52,13 +51,12 @@ public class XmlChannelSaveTest {
 	
 	private File xmlFile;
 	
-	protected ChannelDataSave saveTest;
+	protected XmlChannelSave saveTest;
 
 	@Before
 	public void setUp() throws Exception {
 		xmlFile = new File(channelsDir, "100.xml");
 		Files.copy(testData, xmlFile);
-		System.out.println();
 		saveTest = new XmlChannelSave(channelsDir, channelSchema);
 	}
 

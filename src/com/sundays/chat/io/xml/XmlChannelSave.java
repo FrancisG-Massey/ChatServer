@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -55,6 +56,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.sundays.chat.io.ChannelDataSave;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
@@ -74,15 +78,39 @@ public final class XmlChannelSave implements ChannelDataSave {
 	private DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 	private XPath xPath = XPathFactory.newInstance().newXPath();
 	
-	private Map<Integer, Document> channelDataCache = new HashMap<>();
-	private Set<Integer> savePending = Collections.synchronizedSet(new HashSet<Integer>());
-	
+	private LoadingCache<Integer, Document> docCache = CacheBuilder.newBuilder().softValues().build(new CacheLoader<Integer, Document>() {
+
+		@Override
+		public Document load(Integer channelID) throws Exception {
+			Document doc;
+			File file = new File(saveFolder, channelID+".xml");
+			if (!file.exists()) {
+				throw new IOException("Permanent data for channel "+channelID+" not found at "+file.getAbsolutePath());
+			}
+			try {
+				DocumentBuilder builder = factory.newDocumentBuilder();
+				try {
+					doc = builder.parse(file);
+				} catch (SAXException ex) {
+					throw new IOException("Channel data for "+channelID+" is invalid.", ex);
+				}
+			} catch (IOException | ParserConfigurationException ex) {
+				throw new IOException("Failed to fetch data for channel "+channelID, ex);
+			}
+			
+			doc.getDocumentElement().normalize();
+			return doc;
+		}
+		
+	});
+	private Set<Document> savePending = Collections.synchronizedSet(new HashSet<Document>());
+
+	private XPathExpression idLookup;
 	private XPathExpression nameLookup;
 	private XPathExpression aliasLookup;
 	private XPathExpression welcomeMessageLookup;
 	private XPathExpression descriptionLookup;
-	private XPathExpression ownerLookup;
-	
+	private XPathExpression ownerLookup;	
 	
 	private XPathExpression banLookup;
 	private XPathExpression memberLookup;
@@ -115,38 +143,21 @@ public final class XmlChannelSave implements ChannelDataSave {
 		return schema;
 	}
 	
-	private Document loadChannelDoc (int channelID) {
-		Document doc;
-		synchronized (channelDataCache) {
-			if (channelDataCache.containsKey(channelID)) {
-				return channelDataCache.get(channelID);
-			}
-			File file = new File(saveFolder, channelID+".xml");
-			if (!file.exists()) {
-				logger.warn("Permanent data for channel "+channelID+" not found at "+file.getAbsolutePath());
-				return null;
-			}
+	private void saveChannelDoc (Document document) throws IOException {
+		
+		if (idLookup == null) {
 			try {
-				DocumentBuilder builder = factory.newDocumentBuilder();
-				try {
-					doc = builder.parse(file);
-				} catch (SAXException ex) {
-					logger.error("Channel data for "+channelID+" is invalid.", ex);
-					return null;
-				}
-			} catch (IOException | ParserConfigurationException ex) {
-				logger.error("Failed to fetch data for channel "+channelID, ex);
-				return null;
+				idLookup = xPath.compile("/csc:channel/@id");
+			} catch (XPathExpressionException ex) {
+				throw new IOException("Failed to compile id lookup expression. This probably indicates a configuration or program error.", ex);
 			}
-			
-			doc.getDocumentElement().normalize();
-			
-			channelDataCache.put(channelID, doc);
 		}
-		return doc;
-	}
-	
-	private void saveChannelDoc (int channelID, Document document) {
+		int channelID;
+		try {
+			channelID = Integer.parseInt(idLookup.evaluate(document));
+		} catch (XPathExpressionException ex) {
+			throw new IOException("Failed to find ID for channel data.", ex);
+		}
 		try {
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
 			//transformerFactory.setAttribute("indent-number", 4);
@@ -156,19 +167,26 @@ public final class XmlChannelSave implements ChannelDataSave {
 			StreamResult result = new StreamResult(new File(saveFolder,  Integer.toString(channelID) + ".xml"));
 			transformer.transform(source, result);
 		} catch (TransformerException ex) {
-			logger.error("Problem saving data for channel "+channelID, ex);
+			throw new IOException("Problem saving data for channel "+channelID, ex);
 		}
 	}
 
 	@Override
-	public void addMember(int channelID, int userID, int group) {
-		Document channelDoc = loadChannelDoc(channelID);
+	public void addMember(int channelID, int userID, int group) throws IOException {
+		Document channelDoc;
+		synchronized (docCache) {
+			try {
+				channelDoc = docCache.get(channelID);
+			} catch (ExecutionException ex) {
+				throw new IOException("Failed to find data for channel "+channelID+".", ex);
+			}
+		}
 		
 		if (memberListLookup == null) {
 			try {
 				memberListLookup = xPath.compile("/csc:channel/csc:members");
 			} catch (XPathExpressionException ex) {
-				logger.error("Failed to compile member lookup expression. This probably indicates a configuration or program error.", ex);
+				throw new IOException("Failed to compile member lookup expression. This probably indicates a configuration or program error.", ex);
 			}
 		}
 		
@@ -177,8 +195,7 @@ public final class XmlChannelSave implements ChannelDataSave {
 			try {
 				memberList = (Element) memberListLookup.evaluate(channelDoc, XPathConstants.NODE);
 			} catch (XPathExpressionException ex) {
-				logger.error("Failed to run member search expression.", ex);
-				return;
+				throw new IOException("Failed to run member search expression.", ex);
 			}
 			//Need to use 'createElementNS' as the document does not add it with 'createElement'.
 			Element newMember = channelDoc.createElementNS(memberList.getNamespaceURI(), "member");
@@ -186,37 +203,50 @@ public final class XmlChannelSave implements ChannelDataSave {
 			newMember.setAttribute("group", Integer.toString(group));
 			memberList.appendChild(newMember);
 		}
-		savePending.add(channelID);
+		savePending.add(channelDoc);
 	}
 
 	@Override
-	public void updateMember(int channelID, int userID, int group) {
-		Document channelDoc = loadChannelDoc(channelID);
+	public void updateMember(int channelID, int userID, int group) throws IOException {
+		Document channelDoc;
+		synchronized (docCache) {
+			try {
+				channelDoc = docCache.get(channelID);
+			} catch (ExecutionException ex) {
+				throw new IOException("Failed to find data for channel "+channelID+".", ex);
+			}
+		}
 		
 		synchronized (channelDoc) {
 			Element member;
 			try {
 				member = (Element) xPath.compile("/csc:channel/csc:members/csc:member[@user="+userID+"]").evaluate(channelDoc, XPathConstants.NODE);
 			} catch (XPathExpressionException ex) {
-				logger.error("Failed to run member search expression.", ex);
-				return;
+				throw new IOException("Failed to run member search expression.", ex);
 			}
 			if (member != null) {
 				member.setAttribute("group", Integer.toString(group));
 			}
 		}
-		savePending.add(channelID);
+		savePending.add(channelDoc);
 	}
 
 	@Override
-	public void removeMember(int channelID, int userID) {
-		Document channelDoc = loadChannelDoc(channelID);
+	public void removeMember(int channelID, int userID) throws IOException {
+		Document channelDoc;
+		synchronized (docCache) {
+			try {
+				channelDoc = docCache.get(channelID);
+			} catch (ExecutionException ex) {
+				throw new IOException("Failed to find data for channel "+channelID+".", ex);
+			}
+		}
 		
 		if (memberListLookup == null) {
 			try {
 				memberListLookup = xPath.compile("/csc:channel/csc:members");
 			} catch (XPathExpressionException ex) {
-				logger.error("Failed to compile member lookup expression. This probably indicates a configuration or program error.", ex);
+				throw new IOException("Failed to compile member lookup expression. This probably indicates a configuration or program error.", ex);
 			}
 		}
 		
@@ -225,32 +255,37 @@ public final class XmlChannelSave implements ChannelDataSave {
 			try {
 				member = (Element) xPath.compile("/csc:channel/csc:members/csc:member[@user="+userID+"]").evaluate(channelDoc, XPathConstants.NODE);
 			} catch (XPathExpressionException ex) {
-				logger.error("Failed to run member search expression.", ex);
-				return;
+				throw new IOException("Failed to run member search expression.", ex);
 			}
 			if (member != null) {
 				Element memberList;
 				try {
 					memberList = (Element) memberListLookup.evaluate(channelDoc, XPathConstants.NODE);
 				} catch (XPathExpressionException ex) {
-					logger.error("Failed to run member search expression.", ex);
-					return;
+					throw new IOException("Failed to run member search expression.", ex);
 				}
 				memberList.removeChild(member);
 			}
 		}
-		savePending.add(channelID);
+		savePending.add(channelDoc);
 	}
 
 	@Override
-	public void addBan(int channelID, int userID) {
-		Document channelDoc = loadChannelDoc(channelID);
+	public void addBan(int channelID, int userID) throws IOException {
+		Document channelDoc;
+		synchronized (docCache) {
+			try {
+				channelDoc = docCache.get(channelID);
+			} catch (ExecutionException ex) {
+				throw new IOException("Failed to find data for channel "+channelID+".", ex);
+			}
+		}
 		
 		if (banListLookup == null) {
 			try {
 				banListLookup = xPath.compile("/csc:channel/csc:bans");
 			} catch (XPathExpressionException ex) {
-				logger.error("Failed to compile ban lookup expression. This probably indicates a configuration or program error.", ex);
+				throw new IOException("Failed to compile ban lookup expression. This probably indicates a configuration or program error.", ex);
 			}
 		}
 
@@ -259,27 +294,33 @@ public final class XmlChannelSave implements ChannelDataSave {
 			try {
 				banList = (Element) banListLookup.evaluate(channelDoc, XPathConstants.NODE);
 			} catch (XPathExpressionException ex) {
-				logger.error("Failed to run ban search expression.", ex);
-				return;
+				throw new IOException("Failed to run ban search expression.", ex);
 			}
 			//Need to use 'createElementNS' as the document does not add it with 'createElement'.
 			Element newBan = channelDoc.createElementNS(banList.getNamespaceURI(), "ban");
 			newBan.setAttribute("user", Integer.toString(userID));
 			banList.appendChild(newBan);
 		}
-		savePending.add(channelID);
+		savePending.add(channelDoc);
 
 	}
 
 	@Override
-	public void removeBan(int channelID, int userID) {
-		Document channelDoc = loadChannelDoc(channelID);
+	public void removeBan(int channelID, int userID) throws IOException {
+		Document channelDoc;
+		synchronized (docCache) {
+			try {
+				channelDoc = docCache.get(channelID);
+			} catch (ExecutionException ex) {
+				throw new IOException("Failed to find data for channel "+channelID+".", ex);
+			}
+		}
 		
 		if (banListLookup == null) {
 			try {
 				banListLookup = xPath.compile("/csc:channel/csc:bans");
 			} catch (XPathExpressionException ex) {
-				logger.error("Failed to compile ban lookup expression. This probably indicates a configuration or program error.", ex);
+				throw new IOException("Failed to compile ban lookup expression. This probably indicates a configuration or program error.", ex);
 			}
 		}
 		
@@ -288,21 +329,19 @@ public final class XmlChannelSave implements ChannelDataSave {
 			try {
 				ban = (Element) xPath.compile("/csc:channel/csc:bans/csc:ban[@user="+userID+"]").evaluate(channelDoc, XPathConstants.NODE);
 			} catch (XPathExpressionException ex) {
-				logger.error("Failed to run ban search expression.", ex);
-				return;
+				throw new IOException("Failed to run ban search expression.", ex);
 			}
 			if (ban != null) {
 				Element banList;
 				try {
 					banList = (Element) banListLookup.evaluate(channelDoc, XPathConstants.NODE);
 				} catch (XPathExpressionException ex) {
-					logger.error("Failed to run ban search expression.", ex);
-					return;
+					throw new IOException("Failed to run ban search expression.", ex);
 				}
 				banList.removeChild(ban);
 			}
 		}
-		savePending.add(channelID);
+		savePending.add(channelDoc);
 
 	}
 
@@ -325,8 +364,15 @@ public final class XmlChannelSave implements ChannelDataSave {
 	}
 
 	@Override
-	public void updateDetails(int channelID, ChannelDetails details) {
-		Document channelDoc = loadChannelDoc(channelID);
+	public void updateDetails(int channelID, ChannelDetails details) throws IOException {
+		Document channelDoc;
+		synchronized (docCache) {
+			try {
+				channelDoc = docCache.get(channelID);
+			} catch (ExecutionException ex) {
+				throw new IOException("Failed to find data for channel "+channelID+".", ex);
+			}
+		}
 		
 		try {
 			if (nameLookup == null) {
@@ -337,8 +383,7 @@ public final class XmlChannelSave implements ChannelDataSave {
 				ownerLookup = xPath.compile("/csc:channel/csc:owner");
 			}
 		} catch (XPathExpressionException ex) {
-			logger.error("Failed to compile details lookup expression. This probably indicates a configuration or program error.", ex);
-			return;
+			throw new IOException("Failed to compile details lookup expression. This probably indicates a configuration or program error.", ex);
 		}
 		
 		synchronized (channelDoc) {
@@ -358,15 +403,22 @@ public final class XmlChannelSave implements ChannelDataSave {
 				Element ownerElement = (Element) ownerLookup.evaluate(channelDoc, XPathConstants.NODE);
 				ownerElement.setTextContent(Integer.toString(details.getOwner()));
 			} catch (XPathExpressionException ex) {
-				logger.error("Failed to evaluate details lookup expression. ", ex);
+				throw new IOException("Failed to evaluate details lookup expression. ", ex);
 			}
 		}
-		savePending.add(channelID);
+		savePending.add(channelDoc);
 	}
 
 	@Override
-	public ChannelDetails getChannelDetails(int channelID) {
-		Document channelDoc = loadChannelDoc(channelID);
+	public ChannelDetails getChannelDetails(int channelID) throws IOException {
+		Document channelDoc;
+		synchronized (docCache) {
+			try {
+				channelDoc = docCache.get(channelID);
+			} catch (ExecutionException ex) {
+				throw new IOException("Failed to find data for channel "+channelID+".", ex);
+			}
+		}
 		
 		try {
 			if (nameLookup == null) {
@@ -377,8 +429,7 @@ public final class XmlChannelSave implements ChannelDataSave {
 				ownerLookup = xPath.compile("/csc:channel/csc:owner");
 			}
 		} catch (XPathExpressionException ex) {
-			logger.error("Failed to compile details lookup expression. This probably indicates a configuration or program error.", ex);
-			return null;
+			throw new IOException("Failed to compile details lookup expression. This probably indicates a configuration or program error.", ex);
 		}
 		
 		ChannelDetails details = new ChannelDetails();
@@ -391,21 +442,28 @@ public final class XmlChannelSave implements ChannelDataSave {
 				details.setDescription(descriptionLookup.evaluate(channelDoc));
 				details.setOwner(Integer.parseInt(ownerLookup.evaluate(channelDoc)));
 			} catch (XPathExpressionException ex) {
-				logger.error("Failed to evaluate details lookup expression. ", ex);
+				throw new IOException("Failed to evaluate details lookup expression. ", ex);
 			}
 		}
 		return details;
 	}
 
 	@Override
-	public List<Integer> getChannelBans(int channelID) {
-		Document channelDoc = loadChannelDoc(channelID);
+	public List<Integer> getChannelBans(int channelID) throws IOException {
+		Document channelDoc;
+		synchronized (docCache) {
+			try {
+				channelDoc = docCache.get(channelID);
+			} catch (ExecutionException ex) {
+				throw new IOException("Failed to find data for channel "+channelID+".", ex);
+			}
+		}
 		
 		if (banLookup == null) {
 			try {
 				banLookup = xPath.compile("/csc:channel/csc:bans/csc:ban");
 			} catch (XPathExpressionException ex) {
-				logger.error("Failed to compile ban lookup expression. This probably indicates a configuration or program error.", ex);
+				throw new IOException("Failed to compile ban lookup expression. This probably indicates a configuration or program error.", ex);
 			}
 		}
 		List<Integer> bans = new ArrayList<>();
@@ -414,8 +472,7 @@ public final class XmlChannelSave implements ChannelDataSave {
 			try {
 				bansList = (NodeList) banLookup.evaluate(channelDoc, XPathConstants.NODESET);
 			} catch (XPathExpressionException ex) {
-				logger.error("Failed to evaluate ban lookup expression.", ex);
-				return null;
+				throw new IOException("Failed to evaluate ban lookup expression.", ex);
 			}
 			for (int i=0;i<bansList.getLength();i++) {
 				Node banNode = bansList.item(i);
@@ -429,14 +486,21 @@ public final class XmlChannelSave implements ChannelDataSave {
 	}
 
 	@Override
-	public Map<Integer, Integer> getChannelMembers(int channelID) {
-		Document channelDoc = loadChannelDoc(channelID);
+	public Map<Integer, Integer> getChannelMembers(int channelID) throws IOException {
+		Document channelDoc;
+		synchronized (docCache) {
+			try {
+				channelDoc = docCache.get(channelID);
+			} catch (ExecutionException ex) {
+				throw new IOException("Failed to find data for channel "+channelID+".", ex);
+			}
+		}
 		
 		if (memberLookup == null) {
 			try {
 				memberLookup = xPath.compile("/csc:channel/csc:members/csc:member");
 			} catch (XPathExpressionException ex) {
-				logger.error("Failed to compile member lookup expression. This probably indicates a configuration or program error.", ex);
+				throw new IOException("Failed to compile member lookup expression. This probably indicates a configuration or program error.", ex);
 			}
 		}
 		
@@ -446,8 +510,7 @@ public final class XmlChannelSave implements ChannelDataSave {
 			try {
 				membersList = (NodeList) memberLookup.evaluate(channelDoc, XPathConstants.NODESET);
 			} catch (XPathExpressionException ex) {
-				logger.error("Failed to evaluate member lookup expression.", ex);
-				return null;
+				throw new IOException("Failed to evaluate member lookup expression.", ex);
 			}
 			for (int i=0;i<membersList.getLength();i++) {
 				Node memberNode = membersList.item(i);
@@ -463,14 +526,21 @@ public final class XmlChannelSave implements ChannelDataSave {
 	}
 
 	@Override
-	public List<ChannelGroupData> getChannelGroups(int channelID) {
-		Document channelDoc = loadChannelDoc(channelID);
+	public List<ChannelGroupData> getChannelGroups(int channelID) throws IOException {
+		Document channelDoc;
+		synchronized (docCache) {
+			try {
+				channelDoc = docCache.get(channelID);
+			} catch (ExecutionException ex) {
+				throw new IOException("Failed to find data for channel "+channelID+".", ex);
+			}
+		}
 		
 		if (groupLookup == null) {
 			try {
 				groupLookup = xPath.compile("/csc:channel/csc:groups/csc:group");
 			} catch (XPathExpressionException ex) {
-				logger.error("Failed to compile group lookup expression. This probably indicates a configuration or program error.", ex);
+				throw new IOException("Failed to compile group lookup expression. This probably indicates a configuration or program error.", ex);
 			}
 		}
 		
@@ -480,8 +550,7 @@ public final class XmlChannelSave implements ChannelDataSave {
 			try {
 				groupsList = (NodeList) groupLookup.evaluate(channelDoc, XPathConstants.NODESET);
 			} catch (XPathExpressionException ex) {
-				logger.error("Failed to evaluate group lookup expression.", ex);
-				return null;
+				throw new IOException("Failed to evaluate group lookup expression.", ex);
 			}
 			for (int i=0;i<groupsList.getLength();i++) {
 				Node groupNode = groupsList.item(i);
@@ -502,8 +571,8 @@ public final class XmlChannelSave implements ChannelDataSave {
 	@Override
 	public void commitChanges() throws IOException {
 		synchronized (savePending) {
-			for (Integer channelID : savePending) {
-				saveChannelDoc(channelID, channelDataCache.get(channelID));
+			for (Document channelDoc : savePending) {
+				saveChannelDoc(channelDoc);
 			}
 			savePending.clear();
 		}
