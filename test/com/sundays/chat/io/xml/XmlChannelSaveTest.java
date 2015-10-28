@@ -18,9 +18,7 @@
  *******************************************************************************/
 package com.sundays.chat.io.xml;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.junit.Assume.assumeTrue;
 
 import java.io.File;
@@ -185,6 +183,17 @@ public class XmlChannelSaveTest {
 		
 		bans = saveTest.getChannelBans(100);
 		assertFalse(bans.contains(Integer.valueOf(103)));
+	}
+	
+	@Test(expected=IOException.class)
+	public void testRemoveChannel() throws IOException {
+		try {
+			saveTest.getChannelDetails(100);//If the channel doesn't exist, this will throw an exception.
+		} catch (IOException ex) {
+			fail("Channel does not exist!");
+		}
+		saveTest.removeChannel(100);
+		saveTest.getChannelDetails(100);
 	}
 
 }

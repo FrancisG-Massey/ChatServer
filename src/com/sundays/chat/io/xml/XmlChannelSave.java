@@ -78,7 +78,7 @@ public final class XmlChannelSave implements ChannelDataSave {
 	private DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 	private XPath xPath = XPathFactory.newInstance().newXPath();
 	
-	private LoadingCache<Integer, Document> docCache = CacheBuilder.newBuilder().softValues().build(new CacheLoader<Integer, Document>() {
+	private LoadingCache<Integer, Document> docCache = CacheBuilder.newBuilder().maximumSize(50).build(new CacheLoader<Integer, Document>() {
 
 		@Override
 		public Document load(Integer channelID) throws Exception {
@@ -592,9 +592,10 @@ public final class XmlChannelSave implements ChannelDataSave {
 
 	@Override
 	public void removeChannel(int channelID) throws IOException {
+		docCache.invalidate(channelID);
 		if (!new File(""+channelID+".xml").delete()) {
 			throw new IOException("Unable to remove channel xml file.");
-		}		
+		}			
 	}
 
 }
