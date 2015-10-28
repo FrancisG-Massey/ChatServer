@@ -18,9 +18,12 @@
  *******************************************************************************/
 package com.sundays.chat.io.jdbc;
 
+import java.io.IOException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +35,7 @@ import com.sundays.chat.io.ChannelDataSave;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.io.ChannelGroupType;
+import com.sundays.chat.server.Settings;
 
 public class JDBCChannelSave implements ChannelDataSave {
 
@@ -209,6 +213,78 @@ public class JDBCChannelSave implements ChannelDataSave {
 	@Override
 	public void close() throws Exception {
 		commitChanges();		
+	}
+
+	@Override
+	public int createChannel(ChannelDetails details) throws IOException {
+		Connection con = dbCon.getConnection();
+		try {
+			con.setAutoCommit(false);//Either all queries will succeed or none will.
+			
+			PreparedStatement statement = con.prepareStatement("INSERT INTO `"+DETAIL_TABLE_NAME+"` (`name`,`owner`) VALUES ?, ?", Statement.RETURN_GENERATED_KEYS);
+			statement.setString(1, details.getName());
+			statement.setInt(2, details.getOwner());
+			statement.execute();//Create the details
+			
+			if (statement.getUpdateCount() == 0) {
+				con.rollback();
+				throw new IOException("Failed to insert channel data into database.");
+			}
+			ResultSet res = statement.getGeneratedKeys();
+			
+			int channelID = res.getInt(1);
+			
+			statement = con.prepareStatement("INSERT INTO `"+MEMBER_TABLE_NAME+"` SET `channel` = ?, `user` = ?, `rank` = ?");
+			statement.setInt(1, channelID);
+			statement.setInt(2, details.getOwner());
+			statement.setInt(3, Settings.OWNER_RANK);
+			statement.execute();//Add the owner to the member list
+			
+			con.commit();
+			return channelID;
+		} catch (SQLException ex) {
+			throw new IOException("Failed to remove channel from database", ex);
+		} finally {
+			try {
+				con.setAutoCommit(true);
+			} catch (SQLException ex) {
+				throw new IOException("Failed to remove channel from database", ex);
+			}			
+		}
+	}
+
+	@Override
+	public void removeChannel(int channelID) throws IOException {
+		Connection con = dbCon.getConnection();
+		try {
+			con.setAutoCommit(false);//Either all queries will succeed or none will.
+			
+			PreparedStatement statement = con.prepareStatement("DELETE FROM `"+DETAIL_TABLE_NAME+"` WHERE `id` = ? LIMIT 1");
+			statement.setInt(1, channelID);
+			statement.execute();//Remove the details
+			
+			statement = con.prepareStatement("DELETE FROM `"+MEMBER_TABLE_NAME+"` WHERE `channel` = ? LIMIT 1");
+			statement.setInt(1, channelID);
+			statement.execute();//Remove the members
+			
+			statement = con.prepareStatement("DELETE FROM `"+BAN_TABLE_NAME+"` WHERE `channel` = ? LIMIT 1");
+			statement.setInt(1, channelID);
+			statement.execute();//Remove the bans
+			
+			statement = con.prepareStatement("DELETE FROM `"+GROUP_TABLE_NAME+"` WHERE `channel` = ? LIMIT 1");
+			statement.setInt(1, channelID);
+			statement.execute();//Remove the groups
+			
+			con.commit();
+		} catch (SQLException ex) {
+			throw new IOException("Failed to remove channel from database", ex);
+		} finally {
+			try {
+				con.setAutoCommit(true);
+			} catch (SQLException ex) {
+				throw new IOException("Failed to remove channel from database", ex);
+			}			
+		}
 	}
 
 }

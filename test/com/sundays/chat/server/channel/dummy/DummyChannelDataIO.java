@@ -122,4 +122,15 @@ public class DummyChannelDataIO implements ChannelDataSave {
 		calls.add(new CallEvent("close"));
 	}
 
+	@Override
+	public int createChannel(ChannelDetails details) throws IOException {
+		calls.add(new CallEvent("createChannel", details));
+		return 0;
+	}
+
+	@Override
+	public void removeChannel(int channelID) throws IOException {
+		calls.add(new CallEvent("removeChannel", channelID));
+	}
+
 }

@@ -20,6 +20,7 @@ package com.sundays.chat.io.xml;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -105,6 +106,7 @@ public final class XmlChannelSave implements ChannelDataSave {
 	});
 	private Set<Document> savePending = Collections.synchronizedSet(new HashSet<Document>());
 
+	//Keep a copy of the lookup expressions in memory, to make future lookups slightly faster.
 	private XPathExpression idLookup;
 	private XPathExpression nameLookup;
 	private XPathExpression aliasLookup;
@@ -581,6 +583,19 @@ public final class XmlChannelSave implements ChannelDataSave {
 	@Override
 	public void close() throws Exception {
 		commitChanges();//Commit any pending changes before shutting down.
+	}
+
+	@Override
+	public int createChannel(ChannelDetails details) throws IOException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public void removeChannel(int channelID) throws IOException {
+		if (!new File(""+channelID+".xml").delete()) {
+			throw new IOException("Unable to remove channel xml file.");
+		}		
 	}
 
 }

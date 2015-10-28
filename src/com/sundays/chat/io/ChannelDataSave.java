@@ -33,7 +33,23 @@ public interface ChannelDataSave extends AutoCloseable {
 	public static final int VERSION = 5;//The interface version
 	public static final int MIN_VERSION = 5;//The minimum version that the back-end and front-end must support in order for this interface to work
 	
-	//Rank changes
+	/**
+	 * Creates a new channel with the specified details.
+	 * 
+	 * @param details The details of the new channel. At least name and owner must be specified.
+	 * @return The ID of the newly created channel.
+	 * @throws IOException If an issue occurred during the creation. 
+	 */
+	public int createChannel (ChannelDetails details) throws IOException;
+	
+	/**
+	 * Removes the channel with the specified ID from the back-end.
+	 * 
+	 * @param channelID The ID of the channel to remove.
+	 * @throws IOException If an issue occurred during the removal.
+	 */
+	public void removeChannel (int channelID) throws IOException;
+	
 	/**
 	 * Adds the user to the channel's member list
 	 * @param channelID The ID of the channel
