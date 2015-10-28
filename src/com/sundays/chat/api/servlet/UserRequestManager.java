@@ -38,7 +38,7 @@ import com.sundays.chat.utils.HttpRequestTools;
 public class UserRequestManager extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
-	ServletChatServer server;
+	ServletLauncher server;
        
     /**
      * @see HttpServlet#HttpServlet()
@@ -50,7 +50,7 @@ public class UserRequestManager extends HttpServlet {
     @Override
     public void init (ServletConfig config) throws ServletException {
     	super.init(config);
-    	server = ServletChatServer.getInstance();
+    	server = ServletLauncher.getInstance();
     	if (!server.initalised) {
     		server.init(config);
     	}

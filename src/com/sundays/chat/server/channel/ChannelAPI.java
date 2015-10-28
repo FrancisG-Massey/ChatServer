@@ -24,7 +24,7 @@ import java.io.IOException;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.sundays.chat.server.ChatServer;
+import com.sundays.chat.server.Launcher;
 import com.sundays.chat.server.Permission;
 import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.message.MessagePayload;
@@ -40,7 +40,7 @@ public class ChannelAPI {
 	
 	private final ChannelMessageFactory messageFactory;
 	
-	public ChannelAPI (ChatServer server) {
+	public ChannelAPI (Launcher server) {
 		this.channelManager = server.getChannelManager();
 		this.userManager = server.getUserManager();
 		this.messageFactory = ChannelMessageFactory.getInstance();

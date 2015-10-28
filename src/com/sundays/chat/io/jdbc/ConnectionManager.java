@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
-import com.sundays.chat.api.servlet.ServletChatServer;
+import com.sundays.chat.api.servlet.ServletLauncher;
 
 public class ConnectionManager implements AutoCloseable {
 	
@@ -42,7 +42,7 @@ public class ConnectionManager implements AutoCloseable {
     	this.username = username;
     	this.password = password;
         connect();
-        ServletChatServer.getInstance().serverTaskScheduler().scheduleStandardTask(new Runnable () {
+        ServletLauncher.getInstance().serverTaskScheduler().scheduleStandardTask(new Runnable () {
 			@Override
 			public void run() {
 				if (con != null) {

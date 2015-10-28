@@ -23,7 +23,7 @@ import com.sundays.chat.server.channel.ChannelAPI;
 import com.sundays.chat.server.channel.ChannelManager;
 import com.sundays.chat.server.user.UserManager;
 
-public abstract class ChatServer {
+public abstract class Launcher {
 	
 	private UserManager userManager;
 	protected IOManager ioManager;

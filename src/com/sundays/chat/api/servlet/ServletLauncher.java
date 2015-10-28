@@ -29,26 +29,26 @@ import javax.servlet.ServletException;
 import org.apache.log4j.BasicConfigurator;
 
 import com.sundays.chat.io.IOManager;
-import com.sundays.chat.server.ChatServer;
+import com.sundays.chat.server.Launcher;
 import com.sundays.chat.server.Settings;
 
 /**
  * 
  * @author Francis
  */
-public final class ServletChatServer extends ChatServer {
+public final class ServletLauncher extends Launcher {
 
-	private static ServletChatServer instance;
+	private static ServletLauncher instance;
 	public boolean initalised = false;
 
-	public static ServletChatServer getInstance() {
+	public static ServletLauncher getInstance() {
 		if (instance == null) {
-			instance = new ServletChatServer();
+			instance = new ServletLauncher();
 		}
 		return instance;
 	}
 
-	private ServletChatServer() {
+	private ServletLauncher() {
 		
 	}
 

@@ -27,7 +27,7 @@ public class ServerMonitor implements ServletContextListener {
 	public void contextDestroyed(ServletContextEvent event) {
 		event.getServletContext().log("Shutting down ChatServer...");
 		try {
-			ServletChatServer.getInstance().shutdown();
+			ServletLauncher.getInstance().shutdown();
 		} catch (Exception ex) {
 			event.getServletContext().log("Error shutting down ChatServer", ex);
 		}
@@ -36,7 +36,7 @@ public class ServerMonitor implements ServletContextListener {
 	@Override
 	public void contextInitialized(ServletContextEvent event) {
 		event.getServletContext().log("Starting server...");
-		ServletChatServer.getInstance();
+		ServletLauncher.getInstance();
 	}
 
 }

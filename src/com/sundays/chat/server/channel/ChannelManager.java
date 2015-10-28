@@ -33,7 +33,7 @@ import org.json.JSONObject;
 import com.sundays.chat.io.ChannelDataSave;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelIndex;
-import com.sundays.chat.server.ChatServer;
+import com.sundays.chat.server.Launcher;
 import com.sundays.chat.server.Permission;
 import com.sundays.chat.server.ServerTaskQueue;
 import com.sundays.chat.server.ServerTaskQueue.TaskPriority;
@@ -56,7 +56,7 @@ public class ChannelManager {
     //A map which contains all valid channel IDs and names. It is used for resolving channel names into IDs
     private final ChannelIndex channelResolver;
     
-    private final ChatServer server;
+    private final Launcher server;
     
     //A joinLock can be applied to prevent users from joining new channels.
     protected boolean joinLock = false;
@@ -72,7 +72,7 @@ public class ChannelManager {
     /**
      * Manager and channel initialisation section
      */
-    public ChannelManager (ChatServer server) {
+    public ChannelManager (Launcher server) {
     	this.permDataUpdater = server.getIO().getChannelIO();
     	this.channelResolver = server.getIO().getChannelIndex();
     	this.server = server;
