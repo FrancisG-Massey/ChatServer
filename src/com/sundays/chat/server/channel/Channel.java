@@ -198,7 +198,7 @@ public final class Channel {
     }
     
     public boolean groupCanActionGroup (ChannelGroup source, ChannelGroup target) {    	
-    	return source.childGroups.contains(target.groupID);
+    	return source.childGroups.contains(target.getId());
     }
     
     protected ChannelGroup getUserGroup (User u) {
@@ -303,7 +303,7 @@ public final class Channel {
     	//Temporary override method:
     	for (Entry<Integer, String> rankName : rankNames.entrySet()) {
     		if (!responseGroups.containsKey(rankName.getKey())) {
-    			ChannelGroup newGroup = new ChannelGroup(id, (int) Math.random(), rankName.getKey().byteValue());
+    			ChannelGroup newGroup = new ChannelGroup(id, rankName.getKey(), rankName.getKey().byteValue());
     			newGroup.setName(rankName.getValue());
     			//newGroup.overrides = rankName.getKey();
     			newGroup.setIconUrl("images/ranks/rank"+rankName.getKey()+".png");

@@ -267,7 +267,7 @@ public class ChannelMessageFactory {
 		
 		ChannelGroup group = channel.getUserGroup(user.getUserID());
 		message.put("group", createGroupDetails(group));//New information about the group the user is in
-		message.put("rank", group.getLegacyRank());
+		message.put("rank", group.getId());
 		return message;
     }
     
@@ -300,7 +300,7 @@ public class ChannelMessageFactory {
             member.put("username", username);
 			ChannelGroup group = channel.getUserGroup(userID);
 			member.put("group", createGroupDetails(group));
-			member.put("rank", group.getLegacyRank());
+			member.put("rank", group.getId());
 			memberData.add(member);
 		}
     	message.put("ranks", (Serializable) memberData);
@@ -325,7 +325,7 @@ public class ChannelMessageFactory {
     	
     	ChannelGroup group = channel.getUserGroup(userID);
         message.put("group", createGroupDetails(group));//Information about the group of the user being added to the rank list
-		message.put("rank", group.getLegacyRank());//Rank of the user joining the channel
+		message.put("rank", group.getId());//Rank of the user joining the channel
 		
 		return message;            
     }
@@ -363,7 +363,7 @@ public class ChannelMessageFactory {
 		
 		ChannelGroup group = channel.getUserGroup(userID);
 		message.put("group", createGroupDetails(group));//New information about the group the user is in
-		message.put("rank", group.getLegacyRank());//Rank to change the user on the list to
+		message.put("rank", group.getId());//Rank to change the user on the list to
 		
 		return message;
     }
