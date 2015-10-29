@@ -24,7 +24,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class ServerTaskQueue {
+public class TaskScheduler {
 
 	//The mechanism for which to schedule delayed and repeating tasks
 	private final ScheduledThreadPoolExecutor timerPool;
@@ -41,7 +41,7 @@ public class ServerTaskQueue {
 	//Specifies whether or not new tasks can be scheduled
 	private boolean newTaskLock = false;
 	
-	public ServerTaskQueue () {
+	public TaskScheduler () {
 		timerPool = new ScheduledThreadPoolExecutor(1);
 	}
 	

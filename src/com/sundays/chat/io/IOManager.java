@@ -42,23 +42,23 @@ public interface IOManager extends AutoCloseable {
 	
 	/**
 	 * Returns the IO interface for loading and saving user data
-	 * @return the {@linkplain UserDataSave} implementation for the persistance layer
+	 * @return the {@linkplain UserDataIO} implementation for the persistence layer
 	 * @throws IllegalStateException If this method was called before {@link #init(Properties)}, or if an exception thrown during initialisation prevented the user IO manager from initialising
 	 */
-	public UserDataSave getUserIO() throws IllegalStateException;
+	public UserDataIO getUserIO() throws IllegalStateException;
 	
 	/**
 	 * Returns the IO interface for finding channels
-	 * @return the {@linkplain ChannelIndex} implementation for the persistance layer
+	 * @return the {@linkplain ChannelIndex} implementation for the persistence layer
 	 * @throws IllegalStateException If this method was called before {@link #init(Properties)}, or if an exception thrown during initialisation prevented the user IO manager from initialising
 	 */
 	public ChannelIndex getChannelIndex() throws IllegalStateException;
 	
 	/**
 	 * Returns the IO interface for loading and saving channel data
-	 * @return the {@linkplain ChannelDataSave} implementation for the persistance layer
+	 * @return the {@linkplain ChannelDataIO} implementation for the persistence layer
 	 * @throws IllegalStateException If this method was called before {@link #init(Properties)}, or if an exception thrown during initialisation prevented the user IO manager from initialising
 	 */
-	public ChannelDataSave getChannelIO() throws IllegalStateException;
+	public ChannelDataIO getChannelIO() throws IllegalStateException;
 
 }

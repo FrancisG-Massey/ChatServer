@@ -25,7 +25,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.sundays.chat.io.ChannelDataSave;
+import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.UserDetails;
 import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.channel.dummy.DummyChannelDataIO;
@@ -33,7 +33,7 @@ import com.sundays.chat.server.user.User;
 
 public class ChannelTest {
 	
-	private ChannelDataSave channelIO = new DummyChannelDataIO();
+	private ChannelDataIO channelIO = new DummyChannelDataIO();
 	private Channel channel;
 
 	@Before

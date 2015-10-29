@@ -39,7 +39,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.sundays.chat.io.GuestDetails;
-import com.sundays.chat.io.UserDataSave;
+import com.sundays.chat.io.UserDataIO;
 import com.sundays.chat.io.UserDetails;
 import com.sundays.chat.server.Launcher;
 
@@ -73,7 +73,7 @@ public final class UserManager implements UserLookup {
 	private PublicKey encryptKey = null;
     private PrivateKey decryptKey = null;
     private int nextGuestID = -100;//Decrementing integer for guest user ID (all guest IDs are less than -100)
-    private final UserDataSave userIO;
+    private final UserDataIO userIO;
     private final Launcher server;
     
     public UserManager (Launcher server) {

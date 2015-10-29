@@ -30,13 +30,13 @@ import java.util.logging.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.sundays.chat.io.ChannelDataSave;
+import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.server.Launcher;
 import com.sundays.chat.server.Permission;
-import com.sundays.chat.server.ServerTaskQueue;
-import com.sundays.chat.server.ServerTaskQueue.TaskPriority;
+import com.sundays.chat.server.TaskScheduler;
+import com.sundays.chat.server.TaskScheduler.TaskPriority;
 import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.message.MessageType;
@@ -65,7 +65,7 @@ public class ChannelManager {
     //private ChannelCleanup cleanupThread = new ChannelCleanup();
     
     //The interface used to connect to the channel permanent data back-end
-    private final ChannelDataSave permDataUpdater;
+    private final ChannelDataIO permDataUpdater;
     
     private final ArrayList<Channel> channelUnloadQueue = new ArrayList<Channel>();
     
@@ -99,7 +99,7 @@ public class ChannelManager {
         System.out.println("Found "+channelResolver.size()+" channels");
     }*/
     
-    private void setShutdownTasks (ServerTaskQueue taskCue) {
+    private void setShutdownTasks (TaskScheduler taskCue) {
     	taskCue.addShutdownTask(new Runnable () {
     		@Override
     		public void run () {

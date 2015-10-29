@@ -31,13 +31,13 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.sundays.chat.io.ChannelDataSave;
+import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.io.ChannelGroupType;
 import com.sundays.chat.server.Settings;
 
-public class JDBCChannelSave implements ChannelDataSave {
+public class JDBCChannelSave implements ChannelDataIO {
 
 	private static final Logger logger = Logger.getLogger(JDBCChannelSave.class);
 

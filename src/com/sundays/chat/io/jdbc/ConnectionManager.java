@@ -21,11 +21,13 @@ package com.sundays.chat.io.jdbc;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
 import com.sundays.chat.api.servlet.ServletLauncher;
+import com.sundays.chat.utils.ConfigurationException;
 
 public class ConnectionManager implements AutoCloseable {
 	
@@ -33,12 +35,33 @@ public class ConnectionManager implements AutoCloseable {
 	
     private final String username;
     private final String password;
-    private final String connectionString;    
+    private final String connectionString;
     private Connection con = null;
     private long lastUsed = System.currentTimeMillis();
     
-    public ConnectionManager (String url, String username, String password) {
-    	this.connectionString = url;
+    protected ConnectionManager (Properties properties) throws ConfigurationException {
+    	String uri = properties.getProperty("jdbc.uri");
+		String username = properties.getProperty("jdbc.username");
+		String password = properties.getProperty("jdbc.password");
+		String conClassName = properties.getProperty("jdbc.class");
+		if (conClassName == null) {
+			throw new ConfigurationException("jdbc.class not specfied!");
+		}
+		if (uri == null) {
+			throw new ConfigurationException("jdbc.uri not specfied!");
+		}
+		if (username == null) {
+			throw new ConfigurationException("jdbc.username not specfied!");
+		}
+		if (password == null) {
+			throw new ConfigurationException("jdbc.password not specfied!");
+		}
+		try {
+			Class.forName(conClassName);
+		} catch (ClassNotFoundException ex) {
+			throw new ConfigurationException("jdbc class '"+conClassName+"' could not be found!");
+		}
+    	this.connectionString = uri;
     	this.username = username;
     	this.password = password;
         connect();
@@ -62,10 +85,9 @@ public class ConnectionManager implements AutoCloseable {
     
     private void connect () {
     	try {
-        	Class.forName("com.mysql.jdbc.Driver");
             con = DriverManager.getConnection(connectionString, username, password);
             logger.info("Successfully connected to the chat database.");
-        } catch (SQLException | ClassNotFoundException ex) {
+        } catch (SQLException ex) {
         	logger.error("Problem connecting to database", ex);
         }        
     }

@@ -25,10 +25,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import com.sundays.chat.io.UserDataSave;
+import com.sundays.chat.io.UserDataIO;
 import com.sundays.chat.io.UserDetails;
 
-public class JDBCUserSave implements UserDataSave {
+public class JDBCUserSave implements UserDataIO {
 	
 	private Connection dbCon;
 	private PreparedStatement userCreation;

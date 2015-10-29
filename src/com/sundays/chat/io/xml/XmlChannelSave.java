@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -59,7 +60,7 @@ import org.xml.sax.SAXException;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.sundays.chat.io.ChannelDataSave;
+import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.io.ChannelGroupType;
@@ -70,7 +71,7 @@ import com.sundays.chat.utils.NamespaceContextMap;
  * 
  * @author Francis
  */
-public final class XmlChannelSave implements ChannelDataSave {
+public final class XmlChannelSave implements ChannelDataIO {
 
 	private static final Logger logger = Logger.getLogger(XmlChannelSave.class);
 	
@@ -78,7 +79,7 @@ public final class XmlChannelSave implements ChannelDataSave {
 	private DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 	private XPath xPath = XPathFactory.newInstance().newXPath();
 	
-	private LoadingCache<Integer, Document> docCache = CacheBuilder.newBuilder().maximumSize(50).build(new CacheLoader<Integer, Document>() {
+	private LoadingCache<Integer, Document> docCache = CacheBuilder.newBuilder().expireAfterAccess(5, TimeUnit.MINUTES).build(new CacheLoader<Integer, Document>() {
 
 		@Override
 		public Document load(Integer channelID) throws Exception {

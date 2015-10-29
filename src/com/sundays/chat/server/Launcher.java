@@ -29,7 +29,7 @@ public abstract class Launcher {
 	protected IOManager ioManager;
 	private ChannelManager channelManager;
 	private ChannelAPI channelAPI;
-	private ServerTaskQueue serverTaskScheduler;
+	private TaskScheduler serverTaskScheduler;
 	
 	public IOManager getIO() {
 		if (ioManager == null) {
@@ -59,9 +59,9 @@ public abstract class Launcher {
 		return userManager;
 	}
 	
-	public ServerTaskQueue serverTaskScheduler() {
+	public TaskScheduler serverTaskScheduler() {
 		if (serverTaskScheduler == null) {
-			serverTaskScheduler = new ServerTaskQueue();
+			serverTaskScheduler = new TaskScheduler();
 		}
 		return serverTaskScheduler;
 	}

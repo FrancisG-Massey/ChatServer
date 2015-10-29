@@ -28,7 +28,7 @@ import java.util.Map;
  * 
  * @author Francis
  */
-public interface ChannelDataSave extends AutoCloseable {	
+public interface ChannelDataIO extends AutoCloseable {	
 	
 	public static final int VERSION = 5;//The interface version
 	public static final int MIN_VERSION = 5;//The minimum version that the back-end and front-end must support in order for this interface to work

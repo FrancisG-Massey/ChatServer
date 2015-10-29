@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
-import com.sundays.chat.io.ChannelDataSave;
+import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.server.Permission;
@@ -77,14 +77,14 @@ public final class Channel {
     private int lockRank = -100;
     private int ownerID;
     private long lockExpires = 0L;
-    private transient final ChannelDataSave io;
+    private transient final ChannelDataIO io;
     
     /**
      * 
      * @param id The ID for the new channel
      * @param io The IO manager for saving channel data.
      */
-    protected Channel (int id, ChannelDataSave io) {
+    protected Channel (int id, ChannelDataIO io) {
     	this.id = id;
         this.io = io;
     	this.permissions = new EnumMap<Permission, Integer>(Permission.class);
@@ -97,7 +97,7 @@ public final class Channel {
     	this.ranks = new ConcurrentHashMap<>();
     }
 
-    protected Channel(int id, ChannelDetails details, ChannelDataSave io) throws IOException {
+    protected Channel(int id, ChannelDetails details, ChannelDataIO io) throws IOException {
         this.id = id;
         this.io = io;
         this.name = details.getName();

@@ -20,45 +20,33 @@ package com.sundays.chat.io.jdbc;
 
 import java.util.Properties;
 
-import com.sundays.chat.io.ChannelDataSave;
+import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.io.IOManager;
-import com.sundays.chat.io.UserDataSave;
+import com.sundays.chat.io.UserDataIO;
 import com.sundays.chat.utils.ConfigurationException;
 
 public class JDBCIOManager implements IOManager {
 	
-	private UserDataSave userManager;
+	private UserDataIO userManager;
 	private ChannelIndex channelIndex;
-	private ChannelDataSave channelManager;
+	private ChannelDataIO channelManager;
 	private ConnectionManager dbcon;
 	
 	public JDBCIOManager () {
-		
+		super();
 	}
 
 	@Override
-	public void init(Properties properties) throws ConfigurationException {
-		String uri = properties.getProperty("jdbc.uri");
-		String username = properties.getProperty("jdbc.username");
-		String password = properties.getProperty("jdbc.password");
-		if (uri == null) {
-			throw new ConfigurationException("jdbc.uri not specfied!");
-		}
-		if (username == null) {
-			throw new ConfigurationException("jdbc.username not specfied!");
-		}
-		if (password == null) {
-			throw new ConfigurationException("jdbc.password not specfied!");
-		}
-		this.dbcon = new ConnectionManager(uri, username, password);
+	public void init(Properties properties) throws ConfigurationException {		
+		this.dbcon = new ConnectionManager(properties);
 		this.userManager = new JDBCUserSave(dbcon.getConnection());
 		this.channelIndex = new JDBCChannelIndex(dbcon);
 		this.channelManager = new JDBCChannelSave(dbcon);
 	}
 
 	@Override
-	public UserDataSave getUserIO() {
+	public UserDataIO getUserIO() {
 		if (userManager == null) {
 			throw new IllegalStateException("User IO is not initialised.");
 		}
@@ -74,7 +62,7 @@ public class JDBCIOManager implements IOManager {
 	}
 
 	@Override
-	public ChannelDataSave getChannelIO() {
+	public ChannelDataIO getChannelIO() {
 		if (channelManager == null) {
 			throw new IllegalStateException("Channel manager is not initialised.");
 		}

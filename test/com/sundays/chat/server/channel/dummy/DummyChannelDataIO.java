@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.sundays.chat.io.ChannelDataSave;
+import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
 
@@ -35,7 +35,7 @@ import com.sundays.chat.io.ChannelGroupData;
  * 
  * @author Francis
  */
-public class DummyChannelDataIO implements ChannelDataSave {
+public class DummyChannelDataIO implements ChannelDataIO {
 	
 	public List<CallEvent> calls = new ArrayList<>();
 
