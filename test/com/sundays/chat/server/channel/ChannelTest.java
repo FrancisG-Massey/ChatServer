@@ -60,23 +60,23 @@ public class ChannelTest {
 
 	@Test
 	public void testAddMember() {
-		channel.addRank(100);
+		channel.addMember(100);
 		assertEquals(channel.getUserRank(100), Settings.DEFAULT_RANK);
 	}
 
 	@Test
 	public void testRemoveMember() {
-		channel.addRank(100);
+		channel.addMember(100);
 		assumeTrue(channel.getUserRank(100) == Settings.DEFAULT_RANK);
-		channel.removeRank(100);
+		channel.removeMember(100);
 		assertEquals(Settings.GUEST_RANK, channel.getUserRank(100));
 	}
 
 	@Test
 	public void testUpdateMember() {
-		channel.addRank(100);
+		channel.addMember(100);
 		assumeTrue(channel.getUserRank(100) == Settings.DEFAULT_RANK);
-		channel.setRank(100, Settings.ADMIN_RANK);
+		channel.setMemberGroup(100, Settings.ADMIN_RANK);
 		assertEquals(Settings.ADMIN_RANK, channel.getUserRank(100));
 	}
 

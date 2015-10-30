@@ -147,10 +147,10 @@ public class MessageFactoryTest {
 		for (int i=0;i<10;i++) {
 			//UserDetails details = new UserDetails(110+i, "Test"+i, 0);
 			//dummyChannel.addUser(new User(110+i, details));
-			dummyChannel.addRank(110+i);
+			dummyChannel.addMember(110+i);
 			userLookup.nameLookup.put(110+i, "Test"+i);
 		}
-		assumeTrue(dummyChannel.getRanks().size() == 10);//Assume all members were added properly.
+		assumeTrue(dummyChannel.getMembers().size() == 10);//Assume all members were added properly.
 		
 		MessagePayload message = factory.createMemberList(dummyChannel, userLookup);
 		assertEquals(100, message.get("id"));
@@ -169,7 +169,7 @@ public class MessageFactoryTest {
 
 	@Test
 	public void testMemberAddition() {
-		dummyChannel.addRank(102);
+		dummyChannel.addMember(102);
 		userLookup.nameLookup.put(102, "Test");
 		
 		assumeTrue(dummyChannel.getUserRank(102) == Settings.DEFAULT_RANK);
@@ -184,8 +184,8 @@ public class MessageFactoryTest {
 
 	@Test
 	public void testMemberUpdate() {
-		dummyChannel.addRank(102);
-		dummyChannel.setRank(102, Settings.ADMIN_RANK);
+		dummyChannel.addMember(102);
+		dummyChannel.setMemberGroup(102, Settings.ADMIN_RANK);
 		userLookup.nameLookup.put(102, "Test");
 		
 		assumeTrue(dummyChannel.getUserRank(102) == Settings.ADMIN_RANK);

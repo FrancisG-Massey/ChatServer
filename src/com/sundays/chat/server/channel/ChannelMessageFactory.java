@@ -169,7 +169,7 @@ public class ChannelMessageFactory {
     	}
     	MessagePayload message = new MessagePayload();
     	
-    	Map<Integer, Integer> ranksList = channel.getRanks();//Picks up the rank data for the channel
+    	Map<Integer, Integer> ranksList = channel.getMembers();//Picks up the rank data for the channel
     	
     	message.put("id", channel.getID());
     	message.put("totalUsers", ranksList.size());

@@ -529,7 +529,7 @@ public class ChannelAPI {
             return response;
         }
         
-        if (!channel.addRank(uID)) {        	
+        if (!channel.addMember(uID)) {        	
         	//Returns false if an error occurred in the rank changing process
         	response.put("status", 500);
         	response.put("msgCode", 134); 
@@ -595,7 +595,7 @@ public class ChannelAPI {
         	response.put("message", "You cannot revoke the rank of someone with the same or higher rank than your own.");
             return response;
         }
-        if (!channel.removeRank(uID)) {
+        if (!channel.removeMember(uID)) {
         	//Returns false if an error occurred in the rank changing process
         	response.put("status", 500);
         	response.put("msgCode", 138); 
@@ -669,7 +669,7 @@ public class ChannelAPI {
         	response.put("message", "You cannot alter the rank of someone with the same or higher rank than your own.");
             return response;
         }
-        if (!channel.setRank(uID, rank)) {
+        if (!channel.setMemberGroup(uID, rank)) {
         	//Returns false if an error occurred in the rank changing process
         	response.put("status", 500);
         	response.put("msgCode", 145); 

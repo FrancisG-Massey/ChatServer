@@ -48,7 +48,7 @@ public class ChannelSyncTest {
 
 	@Test
 	public void testAddMember() {
-		channel.addRank(102);
+		channel.addMember(102);
 		assumeTrue(channel.getUserRank(102) == Settings.DEFAULT_RANK);//Assume the addition succeeded
 		
 		CallEvent call = channelIO.calls.get(0);
@@ -59,11 +59,11 @@ public class ChannelSyncTest {
 
 	@Test
 	public void testUpdateMember() {
-		channel.addRank(102);
+		channel.addMember(102);
 		assumeTrue(channel.getUserRank(102) == Settings.DEFAULT_RANK);
 		channelIO.calls.clear();//Remove the "addRank" event, as this is tested in a different test case
 		
-		channel.setRank(102, Settings.MOD_RANK);
+		channel.setMemberGroup(102, Settings.MOD_RANK);
 		assumeTrue(channel.getUserRank(102) == Settings.MOD_RANK);//Assume the change succeeded
 		CallEvent call = channelIO.calls.get(0);
 		assertEquals("changeRank", call.getMethod());
@@ -74,11 +74,11 @@ public class ChannelSyncTest {
 
 	@Test
 	public void testRemoveMember() {
-		channel.addRank(102);
+		channel.addMember(102);
 		assumeTrue(channel.getUserRank(102) == Settings.DEFAULT_RANK);
 		channelIO.calls.clear();//Remove the "addRank" event, as this is tested in a different test case
 		
-		channel.removeRank(102);
+		channel.removeMember(102);
 		assumeTrue(channel.getUserRank(102) == Settings.GUEST_RANK);//Assume the removal succeeded
 		CallEvent call = channelIO.calls.get(0);
 		assertEquals("removeRank", call.getMethod());

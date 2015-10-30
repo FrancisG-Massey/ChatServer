@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -58,7 +59,7 @@ public final class Channel {
     private String name = "Not in Channel";
     private String channelAbbr = "undefined";
     private String openingMessage = "Not in Channel";
-    private final Map<Integer, Integer> ranks;
+    private final Map<Integer, Integer> members;
     private final Set<Integer> permBans;
     private final Map<Integer, String> rankNames;
     private final EnumMap<Permission, Integer> permissions;
@@ -67,7 +68,7 @@ public final class Channel {
     
     /*Instanced data*/
     private transient final Map<Integer, Long> tempBans = new ConcurrentHashMap<Integer, Long>();
-    private transient final Set<User> members = Collections.newSetFromMap(new ConcurrentHashMap<User, Boolean>());
+    private transient final Set<User> users = Collections.newSetFromMap(new ConcurrentHashMap<User, Boolean>());
     private transient final LinkedList<MessagePayload> messageCache = new LinkedList<>();
     //Contains a specified number of recent messages from the channel (global system and normal messages)
     protected boolean unloadInitialised = false;
@@ -94,7 +95,7 @@ public final class Channel {
     	this.rankNames = new LinkedHashMap<>(Settings.defaultRanks);
     	this.groups = loadGroups(new ArrayList<ChannelGroupData>());
     	this.permBans = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
-    	this.ranks = new ConcurrentHashMap<>();
+    	this.members = new ConcurrentHashMap<>();
     }
 
     protected Channel(int id, ChannelDetails details, ChannelDataIO io) throws IOException {
@@ -109,7 +110,7 @@ public final class Channel {
         this.trackMessages = details.isTrackMessages();
         this.groups = loadGroups(io.getChannelGroups(id));
         this.permBans = loadBanList();//Bans MUST be loaded before ranks. This ensures that people on the ban list take priority over people on the rank list
-        this.ranks = loadRanks();
+        this.members = loadMembers();
         logger.info("Successfully loaded channel: " + this.name);
     }
         
@@ -186,7 +187,7 @@ public final class Channel {
 	}
 
 	public int getUserCount() {
-        return this.members.size();
+        return this.users.size();
     }
 
     /*
@@ -209,8 +210,8 @@ public final class Channel {
     	ChannelGroup group = groups.get(Settings.GUEST_RANK);//Guest
     	if (uID == ownerID) {
     		group = groups.get(Settings.OWNER_RANK);
-    	} else if (ranks.containsKey(uID)) {
-        	group = groups.get(ranks.get(uID).intValue());//Manually selected group
+    	} else if (members.containsKey(uID)) {
+        	group = groups.get(members.get(uID).intValue());//Manually selected group
         } else if (permBans.contains(uID)) {
         	group = new ChannelGroup(Settings.systemGroups.get(53));//Permanently banned users
         }
@@ -266,8 +267,8 @@ public final class Channel {
     	int rank = 0;
     	if (userID == ownerID) {
     		rank = Settings.OWNER_RANK;
-    	} else if (ranks.containsKey(userID)) {
-        	rank = ranks.get(userID);
+    	} else if (members.containsKey(userID)) {
+        	rank = members.get(userID);
         } else if (permBans.contains(userID)) {
         	rank = -3;
         }
@@ -314,29 +315,49 @@ public final class Channel {
 		return responseGroups;    	
     }
 
-    private Map<Integer, Integer> loadRanks() throws IOException {
-    	Map<Integer, Integer> ranks = io.getChannelMembers(id);
-        for (Entry<Integer, Integer> r : ranks.entrySet()) {
-        	//Run through the ranks, removing any invalid sets
-        	if (permBans.contains(r.getKey())) {
-        		logger.warn("User "+r.getKey()+" from channel "+id+" is on the ban list. Removing from rank list.");
-        		ranks.remove(r);
-        		io.removeMember(id, r.getKey());
-        	} else if (r.getValue() < 1 || r.getValue() > Settings.TOTAL_RANKS) {
+    /**
+     * Fetches the members of this channel from the persistence layer and returns them as a map.
+     * Also validates the member list as follows:
+     * <ul>
+     * <li>If a member is on the ban list, remove them from the member list.</li>
+     * <li>If a member belongs to an invalid group, add them to the default group.</li>
+     * <li>If a member is assigned as owner, but is not the owner (designated by ownerID), add them to the default group.</li>
+     * <li>If the owner designated by ownerID is not in the member list (or is not assigned to the owner group), add them.</li>
+     * </ul>
+     * 
+     * @return a {@link Map} matching the user IDs of channel members to their groups
+     * @throws IOException If an error occurs while loading the members of the channel
+     */
+    private Map<Integer, Integer> loadMembers() throws IOException {
+    	Map<Integer, Integer> members = io.getChannelMembers(id);
+        for (Entry<Integer, Integer> member : members.entrySet()) {
+        	//Run through the members, removing any invalid sets
+        	if (permBans.contains(member.getKey())) {
+        		logger.warn("User "+member.getKey()+" from channel "+id+" is on the ban list. Removing from member list.");
+        		
+        		members.remove(member.getKey());
+        		io.removeMember(id, member.getKey());
+        	} else if (member.getValue() < 1 || member.getValue() > Settings.TOTAL_RANKS) {
         		//Rank was found to contain an invalid value. Convert to the default rank.
-        		logger.warn("User "+r.getKey()+" from channel "+id+" holds an invalid rank of:"+r.getValue()+"." +
-        				" Swapping to the default rank of: "+Settings.DEFAULT_RANK+".");
-        		r.setValue((int) Settings.DEFAULT_RANK);
-        		io.updateMember(id, r.getKey(), Settings.DEFAULT_RANK);
-        	} else if (r.getValue() == Settings.OWNER_RANK && r.getKey() != ownerID) {
-        		logger.warn("User "+r.getKey()+" from channel "+id+" holds a rank of owner(11), but is not specified as the channel owner." +
-        				" Swapping to the default rank of: "+Settings.DEFAULT_RANK+".");
-        		r.setValue((int) Settings.DEFAULT_RANK);
-        		io.updateMember(id, r.getKey(), Settings.DEFAULT_RANK);
+        		logger.warn("User "+member.getKey()+" from channel "+id+" belongs to an invalid group of "+member.getValue()+"." +
+        				" Swapping to the default group of: "+Settings.DEFAULT_RANK+".");
+        		
+        		member.setValue(Settings.DEFAULT_RANK);
+        		io.updateMember(id, member.getKey(), Settings.DEFAULT_RANK);
+        	} else if (member.getValue() == Settings.OWNER_RANK && member.getKey() != ownerID) {
+        		logger.warn("User "+member.getKey()+" from channel "+id+" belongs to the owner group, but is not specified as the channel owner." +
+        				" Swapping to the default group of: "+Settings.DEFAULT_RANK+".");
+        		
+        		member.setValue(Settings.DEFAULT_RANK);
+        		io.updateMember(id, member.getKey(), Settings.DEFAULT_RANK);
         	}
         }
-    	System.out.println(ranks.size() + " rank(s) found for this channel.");
-    	return new ConcurrentHashMap<>(ranks);
+        if (!members.containsKey(ownerID) || members.get(ownerID) != Settings.OWNER_RANK) {
+        	logger.warn("Channel "+id+" owner "+ownerID+" is not in the member list; adding.");
+        	members.put(ownerID, Settings.OWNER_RANK);
+        }
+    	logger.info(members.size() + " member(s) found for this channel.");
+    	return new HashMap<>(members);
     }
     
     private Set<Integer> loadBanList () throws IOException {
@@ -468,14 +489,14 @@ public final class Channel {
     }
 
     protected void addUser(User u) {
-        if (!members.contains(u)) {
-            members.add(u);
+        if (!users.contains(u)) {
+            users.add(u);
         }
     }
 
     protected void removeUser(User u) {
-        if (members.contains(u)) {
-            members.remove(u);
+        if (users.contains(u)) {
+            users.remove(u);
         }
     }
     
@@ -525,56 +546,73 @@ public final class Channel {
     	this.flushRequired = true;
     }
     
-    protected boolean addRank(int uID) {
-    	synchronized (ranks) {//Make sure only one thread is trying to modify rank data at a time
-	        if (ranks.containsKey(uID)) {
+    /**
+     * Adds the user to the channel's member list.
+     * If the request to add the member in the persistence layer fails, no changes will be made to the channel.
+     * @param userID The user ID of the member to add
+     * @return true if the member was added, false if the member could not be added (either due to an error, because the user was already added, or the user is banned).
+     */
+    protected boolean addMember(int userID) {
+    	synchronized (members) {//Make sure only one thread is trying to modify rank data at a time
+	        if (members.containsKey(userID)) {
 	            return false;
 	        }
-	        if (permBans.contains(uID)) {
+	        if (permBans.contains(userID)) {
 	            return false;
 	        }
 	        try {
-				io.addMember(id, uID, Settings.DEFAULT_RANK);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				io.addMember(id, userID, Settings.DEFAULT_RANK);
+			} catch (IOException ex) {
+				logger.error("Failed to add member "+userID, ex);
+				return false;
 			}
-	        ranks.put(uID, (int) Settings.DEFAULT_RANK);
+	        members.put(userID, Settings.DEFAULT_RANK);
     	}
         return true;
     }
 
-    protected boolean setRank(int uID, int rank) {
-    	synchronized (ranks) {//Make sure only one thread is trying to modify rank data at a time
-	        if (!ranks.containsKey(uID)) {
-	            return false;
-	        }
-	        if (permBans.contains(uID)) {
+    /**
+     * Changes the group the specified user belongs to. 
+     * This method does not verify that the group exists or whether the user can be assigned to this group; these must be checked separately.
+     * If the request to remove the member from the persistence layer fails, no changes will be made to the channel.
+     * @param userID The user ID of the member to update
+     * @param groupID The ID of the group to change to
+     * @return true if the member was updated, false if the member could not be updated (either due to an error or because the member does not exist).
+     */
+    protected boolean setMemberGroup(int userID, int groupID) {
+    	synchronized (members) {//Make sure only one thread is trying to modify member data at a time
+	        if (!members.containsKey(userID)) {
 	            return false;
 	        }
 	        try {
-				io.updateMember(id, uID, rank);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				io.updateMember(id, userID, groupID);
+			} catch (IOException ex) {
+				logger.error("Failed to update member group for "+userID, ex);
+				return false;
 			}
-	        ranks.put(uID, rank);
+	        members.put(userID, groupID);
     	}
         return true;
     }
 
-    protected boolean removeRank(int uID) {
-    	synchronized (ranks) {//Make sure only one thread is trying to modify rank data at a time
-	        if (!ranks.containsKey(uID)) {
+    /**
+     * Removes the user as a member of the channel. Also sends this updates the persistence layer.
+     * If the request to remove the member from the persistence layer fails, no changes will be made to the channel.
+     * @param userID The user ID of the member to remove
+     * @return true if the member was removed, false if the member could not be removed (either due to an error or because the member was already removed).
+     */
+    protected boolean removeMember(int userID) {
+    	synchronized (members) {//Make sure only one thread is trying to modify member data at a time
+	        if (!members.containsKey(userID)) {
 	            return false;
 	        }
 	        try {
-				io.removeMember(id, uID);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				io.removeMember(id, userID);
+			} catch (IOException ex) {
+				logger.error("Failed to remove member "+userID, ex);
+				return false;
 			}
-	        ranks.remove(uID);
+	        members.remove(userID);
     	}
         return true;
     }
@@ -614,27 +652,27 @@ public final class Channel {
     
     //Retrieve channel data
     protected Set<User> getUsers() {
-        return this.members;
+        return Collections.unmodifiableSet(this.users);
     }
 
     protected Map<Integer, String> getRankNames() {
         return this.rankNames;
     }
 
-    protected Map<Integer, Integer> getRanks() {
-        return this.ranks;
+    protected Map<Integer, Integer> getMembers() {
+        return Collections.unmodifiableMap(this.members);
     }
     
     protected Set<Integer> getBans() {
-    	return this.permBans;
+    	return Collections.unmodifiableSet(this.permBans);
     }
     
     protected Map<Integer, Long> getTempBans () {
-    	return this.tempBans;
+    	return Collections.unmodifiableMap(this.tempBans);
     }
     
     protected Map<Integer, ChannelGroup> getGroups () {
-    	return this.groups;
+    	return Collections.unmodifiableMap(this.groups);
     }
     
     protected int getNextMessageID () {

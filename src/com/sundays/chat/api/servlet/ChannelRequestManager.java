@@ -213,23 +213,23 @@ public class ChannelRequestManager extends HttpServlet {
 		}
 	}
 	
-	private JSONObject processGetRequest (String[] requestInfo, int cID, ChannelAPI api, HttpServletResponse response) throws JSONException, IOException {
+	private JSONObject processGetRequest (String[] requestInfo, int channelID, ChannelAPI api, HttpServletResponse response) throws JSONException, IOException {
 		JSONObject responseJSON = new JSONObject();
 		if (requestInfo.length == 1) {
 			//Request for channel details
-			responseJSON = new JSONObject(api.getChannelDetails(cID));			
+			responseJSON = new JSONObject(api.getChannelDetails(channelID));			
 		} else if ("userlist".equalsIgnoreCase(requestInfo[1])) {
 			//Request for channel list
-			responseJSON = new JSONObject(api.getChannelList(cID));	
+			responseJSON = new JSONObject(api.getChannelList(channelID));	
 		} else if ("members".equalsIgnoreCase(requestInfo[1])) {
 			//Request for channel member list
-			responseJSON = new JSONObject(api.getRankList(cID));
+			responseJSON = new JSONObject(api.getRankList(channelID));
 		} else if ("bans".equalsIgnoreCase(requestInfo[1])) {
 			//Request for channel permissions
-			responseJSON = new JSONObject(api.getBanList(cID));
+			responseJSON = new JSONObject(api.getBanList(channelID));
 		} else if ("groups".equalsIgnoreCase(requestInfo[1])) {
 			//Request for channel groups
-			responseJSON = new JSONObject(api.getChannelGroups(cID));
+			responseJSON = new JSONObject(api.getChannelGroups(channelID));
 		} else {
 			response.sendError(HttpServletResponse.SC_NOT_FOUND);
 			//responseJSON.put("status", HttpServletResponse.SC_NOT_FOUND);
