@@ -116,16 +116,16 @@ public class ChannelAPI {
 		return messageFactory.prepareChannelPermissions(channel);
     }
     
-    public MessagePayload getRankList (int cID) {
-        Channel channel = channelManager.getChannel(cID);
+    public MessagePayload getRankList (int channelID) {
+        Channel channel = channelManager.getChannel(channelID);
         if (channel == null) {
         	try {
-				channelManager.loadChannel(cID);
+				channelManager.loadChannel(channelID);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-        	channel = channelManager.getChannel(cID);
+        	channel = channelManager.getChannel(channelID);
         	if (channel == null) {
         		return null;
         	}
@@ -133,21 +133,21 @@ public class ChannelAPI {
         return messageFactory.createMemberList(channel, userManager);
     }
     
-    public JSONObject getBanList (int cID) {
-        Channel channel = channelManager.getChannel(cID);
+    public MessagePayload getBanList (int channelID) {
+        Channel channel = channelManager.getChannel(channelID);
         if (channel == null) {
         	try {
-				channelManager.loadChannel(cID);
+				channelManager.loadChannel(channelID);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-        	channel = channelManager.getChannel(cID);
+        	channel = channelManager.getChannel(channelID);
         	if (channel == null) {
         		return null;
         	}
         }
-        return messageFactory.prepareBanList(channel, userManager);
+        return messageFactory.createBanList(channel, userManager);
     }
     
     public JSONObject getChannelGroups (int cID) {

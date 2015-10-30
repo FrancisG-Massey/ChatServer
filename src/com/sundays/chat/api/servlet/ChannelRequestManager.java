@@ -234,7 +234,7 @@ public class ChannelRequestManager extends HttpServlet {
 			responseJSON = api.getPermissions(cID);
 		} else if ("bans".equalsIgnoreCase(requestInfo[1])) {
 			//Request for channel permissions
-			responseJSON = api.getBanList(cID);
+			responseJSON = new JSONObject(api.getBanList(cID));
 		} else if ("groups".equalsIgnoreCase(requestInfo[1])) {
 			//Request for channel groups
 			responseJSON = api.getChannelGroups(cID);

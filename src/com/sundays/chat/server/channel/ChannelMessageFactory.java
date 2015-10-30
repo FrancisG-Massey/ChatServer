@@ -202,7 +202,7 @@ public class ChannelMessageFactory {
      */
     public MessagePayload createChannelUserList (Channel channel) {
     	if (channel == null) {
-    		throw new IllegalArgumentException("'channel' must not be null.");
+    		throw new IllegalArgumentException("channel must not be null.");
     	}
     	MessagePayload message = new MessagePayload();
     	message.put("id", channel.getID());
@@ -272,14 +272,14 @@ public class ChannelMessageFactory {
     }
     
     /**
-     * Packs a {@link MessagePayload} containing data about all the users ranked in the channel
+     * Packs a {@link MessagePayload} containing data about all the channel members
      * @param channel The channel to retrieve data from
      * @param userLookup The user lookup service for the server
      * @return The payload of the new message.
      */
     public MessagePayload createMemberList (Channel channel, UserLookup userLookup) {
     	if (channel == null) {
-    		return null;
+    		throw new IllegalArgumentException("channel must not be null.");
     	}
     	MessagePayload message = new MessagePayload();
     	
@@ -368,40 +368,34 @@ public class ChannelMessageFactory {
 		return message;
     }
     
-    public JSONObject prepareBanList (Channel channel, UserLookup userManager) {
-        /**
-         * @param c, the channel to retrieve data from
-         * @description returns a JSONObject containing all the users permanently banned from the channel
-         */
+    /**
+     * Packs a {@link MessagePayload} containing data about all users permanently banned from the channel
+     * @param channel The channel to retrieve data from
+     * @param userManager The user manager for the server
+     * @return The payload of the new message.
+     */
+    public MessagePayload createBanList (Channel channel, UserLookup userManager) {
     	if (channel == null) {
-    		return null;
+    		throw new IllegalArgumentException("channel must not be null.");
     	}
-    	JSONObject responseJSON = new JSONObject();
+    	MessagePayload message = new MessagePayload();
+    	
     	Set<Integer> bans = channel.getBans();
-        try {
-			responseJSON.put("id", channel.getID());
-			responseJSON.put("totalBans", bans.size());
-			if (bans.size() > 0) {
-				JSONObject[] banList = new JSONObject[bans.size()];
-        		int i = 0;
-				for (int ban : bans) {
-					JSONObject banObject = new JSONObject();
-					banObject.put("userID", ban);
-					String un = userManager.getUsername(ban);
-					if (un == null) {
-	                    un = "[user not found]";
-	                }
-					banObject.put("username", un);
-					banList[i] = banObject;
-					i++;
-				}
-				responseJSON.put("bans", banList);
-			}
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+    	message.put("id", channel.getID());
+    	message.put("totalBans", bans.size());
+    	List<MessagePayload> banList = new ArrayList<>();
+		for (int ban : bans) {
+			MessagePayload banData = new MessagePayload();
+			banData.put("userID", ban);
+			String username = userManager.getUsername(ban);
+			if (username == null) {
+				username = "[user not found]";
+            }
+			banData.put("username", username);
+			banList.add(banData);
 		}
-		return responseJSON;
+		message.put("bans", (Serializable) banList);
+		return message;
     } 
     
     /**

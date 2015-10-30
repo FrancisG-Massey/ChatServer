@@ -204,6 +204,28 @@ public class MessageFactoryTest {
 		
 		assertEquals(102, message.get("userID"));
 	}
+	
+	@Test
+	public void testBanList () {
+		for (int i=0;i<10;i++) {
+			dummyChannel.addBan(110+i);
+			userLookup.nameLookup.put(110+i, "Test"+i);
+		}
+		assumeTrue(dummyChannel.getBans().size() == 10);//Assume all bans were added properly.
+		
+		MessagePayload message = factory.createBanList(dummyChannel, userLookup);
+		assertEquals(100, message.get("id"));
+		assertEquals(10, message.get("totalBans"));
+		
+		@SuppressWarnings("unchecked")
+		List<MessagePayload> memberList = (List<MessagePayload>) message.get("bans");
+		
+		for (MessagePayload memberMessage : memberList) {
+			//Get the user ID, since the order of the user list is not guaranteed
+			int i = ((Integer) memberMessage.get("userID"))-110;
+			assertEquals("Test"+i, memberMessage.get("username"));
+		}
+	}
 
 	@Test
 	public void testBanAddition() {
