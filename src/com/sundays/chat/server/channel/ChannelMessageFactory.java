@@ -321,7 +321,7 @@ public class ChannelMessageFactory {
     /**
      * Packs a {@link MessagePayload} containing data about all groups in the channel
      * @param channel The channel to retrieve data from
-     * @return
+     * @return The payload of the new message.
      */
     public MessagePayload createGroupList (Channel channel) {
     	if (channel == null) {

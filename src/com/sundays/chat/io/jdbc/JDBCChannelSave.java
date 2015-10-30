@@ -24,10 +24,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
@@ -125,12 +125,6 @@ public class JDBCChannelSave implements ChannelDataIO {
 			detailFetchQuery.execute();
 			ResultSet res = detailFetchQuery.getResultSet();
 			while (res.next()) {
-				Map<Integer, String> rankNames = null;
-				try {
-					rankNames = (res.getBytes(5) == null ? null : ChannelDataUpdater.decompressRankNamesV2(res.getBytes(5)));
-				} catch (IllegalArgumentException ex) {
-					logger.warn("Invalid rank names data for channel: " + channelID + ". Using default values instead.");
-				}
 				details = new ChannelDetails(res.getInt(1),// Channel ID
 						res.getString(2),// Channel Name
 						res.getString(6),// Opening Message
@@ -145,8 +139,8 @@ public class JDBCChannelSave implements ChannelDataIO {
 	}
 
 	@Override
-	public List<Integer> getChannelBans(int channelID) {
-		List<Integer> bans = new ArrayList<Integer>();
+	public Set<Integer> getChannelBans(int channelID) {
+		Set<Integer> bans = new HashSet<Integer>();
 		try {
 			if (banFetchQuery == null) {
 				banFetchQuery = dbCon.getConnection().prepareStatement("SELECT `user` FROM `" + BAN_TABLE_NAME + "` WHERE `channel` = ?");
@@ -186,8 +180,8 @@ public class JDBCChannelSave implements ChannelDataIO {
 	}
 
 	@Override
-	public List<ChannelGroupData> getChannelGroups(int channelID) {
-		List<ChannelGroupData> groups = new ArrayList<ChannelGroupData>();
+	public Set<ChannelGroupData> getChannelGroups(int channelID) {
+		Set<ChannelGroupData> groups = new HashSet<ChannelGroupData>();
 		try {
 			if (groupFetchQuery == null) {
 				groupFetchQuery = dbCon.getConnection().prepareStatement("SELECT `id`, `name`, `permissions`, `type`, `icon`," + " `overrides` FROM `"

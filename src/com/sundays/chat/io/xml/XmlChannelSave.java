@@ -20,11 +20,9 @@ package com.sundays.chat.io.xml;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -451,7 +449,7 @@ public final class XmlChannelSave implements ChannelDataIO {
 	}
 
 	@Override
-	public List<Integer> getChannelBans(int channelID) throws IOException {
+	public Set<Integer> getChannelBans(int channelID) throws IOException {
 		Document channelDoc;
 		synchronized (docCache) {
 			try {
@@ -468,7 +466,7 @@ public final class XmlChannelSave implements ChannelDataIO {
 				throw new IOException("Failed to compile ban lookup expression. This probably indicates a configuration or program error.", ex);
 			}
 		}
-		List<Integer> bans = new ArrayList<>();
+		Set<Integer> bans = new HashSet<>();
 		synchronized (channelDoc) {
 			NodeList bansList;
 			try {
@@ -528,7 +526,7 @@ public final class XmlChannelSave implements ChannelDataIO {
 	}
 
 	@Override
-	public List<ChannelGroupData> getChannelGroups(int channelID) throws IOException {
+	public Set<ChannelGroupData> getChannelGroups(int channelID) throws IOException {
 		Document channelDoc;
 		synchronized (docCache) {
 			try {
@@ -546,7 +544,7 @@ public final class XmlChannelSave implements ChannelDataIO {
 			}
 		}
 		
-		List<ChannelGroupData> groups = new ArrayList<>();
+		Set<ChannelGroupData> groups = new HashSet<>();
 		synchronized (channelDoc) {
 			NodeList groupsList;
 			try {

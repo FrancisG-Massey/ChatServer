@@ -21,8 +21,10 @@ package com.sundays.chat.server.channel.dummy;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelDetails;
@@ -95,9 +97,9 @@ public class DummyChannelDataIO implements ChannelDataIO {
 	}
 
 	@Override
-	public List<Integer> getChannelBans(int channelID) {
+	public Set<Integer> getChannelBans(int channelID) {
 		calls.add(new CallEvent("getChannelBans", channelID));
-		return new ArrayList<>();
+		return new HashSet<>();
 	}
 
 	@Override
@@ -107,9 +109,9 @@ public class DummyChannelDataIO implements ChannelDataIO {
 	}
 
 	@Override
-	public List<ChannelGroupData> getChannelGroups(int channelID) {
+	public Set<ChannelGroupData> getChannelGroups(int channelID) {
 		calls.add(new CallEvent("getChannelGroups", channelID));
-		return new ArrayList<>();
+		return new HashSet<>();
 	}
 
 	@Override

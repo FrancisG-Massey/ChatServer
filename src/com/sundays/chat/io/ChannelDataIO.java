@@ -19,8 +19,8 @@
 package com.sundays.chat.io;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This interface is used to communicate permanent channel data between the persistence layer and the application.
@@ -112,11 +112,11 @@ public interface ChannelDataIO extends AutoCloseable {
 	//Data retrieval
 	public ChannelDetails getChannelDetails (int channelID) throws IOException;
 	
-	public List<Integer> getChannelBans (int channelID) throws IOException;
+	public Set<Integer> getChannelBans (int channelID) throws IOException;
 	
 	public Map<Integer, Integer> getChannelMembers (int channelID) throws IOException;
 	
-	public List<ChannelGroupData> getChannelGroups (int channelID) throws IOException;
+	public Set<ChannelGroupData> getChannelGroups (int channelID) throws IOException;
 	
 	/**
 	 * Called regularly to notify the implementation that any pending changes should be saved to the persistance layer.<br />

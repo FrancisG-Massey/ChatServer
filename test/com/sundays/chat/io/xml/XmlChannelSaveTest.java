@@ -26,8 +26,8 @@ import static org.junit.Assume.assumeTrue;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.BasicConfigurator;
 import org.junit.After;
@@ -126,10 +126,10 @@ public class XmlChannelSaveTest {
 
 	@Test
 	public void testLoadBans() throws IOException {
-		List<Integer> bans = saveTest.getChannelBans(100);
+		Set<Integer> bans = saveTest.getChannelBans(100);
 		assertEquals(2, bans.size());
-		assertEquals(103, bans.get(0).intValue());
-		assertEquals(107, bans.get(1).intValue());		
+		assertTrue(bans.contains(Integer.valueOf(103)));
+		assertTrue(bans.contains(Integer.valueOf(107)));		
 	}
 
 	@Test
@@ -174,13 +174,13 @@ public class XmlChannelSaveTest {
 	@Test
 	public void testAddBan() throws IOException {
 		saveTest.addBan(100, 110);
-		List<Integer> bans = saveTest.getChannelBans(100);
+		Set<Integer> bans = saveTest.getChannelBans(100);
 		assertTrue(bans.contains(Integer.valueOf(110)));
 	}
 	
 	@Test
 	public void testRemoveBan() throws IOException {
-		List<Integer> bans = saveTest.getChannelBans(100);
+		Set<Integer> bans = saveTest.getChannelBans(100);
 		assertTrue(bans.contains(Integer.valueOf(103)));
 		saveTest.removeBan(100, 103);
 		

@@ -20,9 +20,9 @@ package com.sundays.chat.server.channel;
 
 import java.awt.Color;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +82,7 @@ public final class Channel {
     protected Channel (int id, ChannelDataIO io) {
     	this.id = id;
         this.io = io;
-    	this.groups = loadGroups(new ArrayList<ChannelGroupData>());
+    	this.groups = loadGroups(new HashSet<ChannelGroupData>());
     	this.permBans = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
     	this.members = new ConcurrentHashMap<>();
     }
@@ -255,7 +255,7 @@ public final class Channel {
     }    
     
     //Loading stages
-    private Map<Integer, ChannelGroup> loadGroups (List<ChannelGroupData> groupData) {
+    private Map<Integer, ChannelGroup> loadGroups (Set<ChannelGroupData> groupData) {
     	
     	Map<Integer, ChannelGroup> responseGroups = new HashMap<>(ChannelGroup.defaultGroups);    	
     	
@@ -315,7 +315,7 @@ public final class Channel {
     }
     
     private Set<Integer> loadBanList () throws IOException {
-    	List<Integer> bans = io.getChannelBans(id);//Load the bans from the back-end
+    	Set<Integer> bans = io.getChannelBans(id);//Load the bans from the back-end
     	/*for (int ban : bans) {
     		//Validates all entries, removing any names which are on the rank list
     		if (ranks.containsKey(ban)) {
