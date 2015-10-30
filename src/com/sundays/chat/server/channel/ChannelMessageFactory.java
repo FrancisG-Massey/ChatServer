@@ -22,11 +22,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.user.User;
@@ -324,37 +320,32 @@ public class ChannelMessageFactory {
 		return message;
     }
     
-    public JSONObject prepareGroupList (Channel c) {
-    	/**
-         * @param c, the channel to retrieve data from
-         * @description returns a JSONObject containing all the groups in the channel
-         */
-    	if (c == null) {
-    		return null;
+    /**
+     * Packs a {@link MessagePayload} containing data about all groups in the channel
+     * @param channel The channel to retrieve data from
+     * @return
+     */
+    public MessagePayload createGroupList (Channel channel) {
+    	if (channel == null) {
+    		throw new IllegalArgumentException("channel must not be null.");
     	}
-    	JSONObject responseJSON = new JSONObject();
-    	Map<Integer, ChannelGroup> channelGroups = c.getGroups();//Picks up the rank data for the channel
-        try {
-        	responseJSON.put("channelID", c.getID());
-        	responseJSON.put("totalGroups", channelGroups.size());
-        	if (channelGroups.size() > 0) {
-        		List<JSONObject> groups = new ArrayList<JSONObject>(channelGroups.size());
-        		
-        		for (Entry<Integer, ChannelGroup> g : channelGroups.entrySet()) {
-        			JSONObject group = new JSONObject();
-        			group.put("id", g.getKey());
-        			group.put("name", g.getValue().getName());
-        			group.put("permissions", JSONObject.NULL);
-        			group.put("iconUrl", (g.getValue().getIconUrl() == null ? JSONObject.NULL : g.getValue().getIconUrl()));
-        			group.put("type", g.getValue().groupType);
-        			groups.add(group);
-        		}
-        		responseJSON.put("groups", groups);
-        	}
-        } catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+    	MessagePayload message = new MessagePayload();
+
+    	Map<Integer, ChannelGroup> channelGroups = channel.getGroups();//Picks up the rank data for the channel
+    	message.put("id", channel.getID());
+    	message.put("totalGroups", channelGroups.size());
+    	
+    	List<MessagePayload> groupList = new ArrayList<>();		
+		for (ChannelGroup group : channelGroups.values()) {
+			MessagePayload groupData = new MessagePayload();
+			groupData.put("id", group.getId());
+			groupData.put("name", group.getName());
+			groupData.put("permissions", group.permissions);
+			groupData.put("iconUrl", group.getIconUrl());
+			groupData.put("type", group.groupType);
+			groupList.add(groupData);
 		}
-    	return responseJSON;
+		message.put("groups", (Serializable) groupList);
+    	return message;
     }
 }

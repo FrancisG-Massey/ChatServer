@@ -229,7 +229,7 @@ public class ChannelRequestManager extends HttpServlet {
 			responseJSON = new JSONObject(api.getBanList(cID));
 		} else if ("groups".equalsIgnoreCase(requestInfo[1])) {
 			//Request for channel groups
-			responseJSON = api.getChannelGroups(cID);
+			responseJSON = new JSONObject(api.getChannelGroups(cID));
 		} else {
 			response.sendError(HttpServletResponse.SC_NOT_FOUND);
 			//responseJSON.put("status", HttpServletResponse.SC_NOT_FOUND);

@@ -245,8 +245,6 @@ public class MessageFactoryTest {
 		MessagePayload message = factory.createBanListRemoval(102, dummyChannel);
 		
 		assertEquals(102, message.get("userID"));
-	}
-	
-	
+	}	
 
 }

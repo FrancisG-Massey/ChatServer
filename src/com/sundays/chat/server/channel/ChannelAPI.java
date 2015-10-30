@@ -113,18 +113,18 @@ public class ChannelAPI {
         return messageFactory.createBanList(channel, userManager);
     }
     
-    public JSONObject getChannelGroups (int cID) {
-    	Channel c = channelManager.getChannel(cID);
-        if (c == null) {
+    public MessagePayload getChannelGroups (int channelID) {
+    	Channel channel = channelManager.getChannel(channelID);
+        if (channel == null) {
         	try {
-				channelManager.loadChannel(cID);
+				channelManager.loadChannel(channelID);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-        	c = channelManager.getChannel(cID);
+        	channel = channelManager.getChannel(channelID);
         }
-    	return messageFactory.prepareGroupList(c);
+    	return messageFactory.createGroupList(channel);
     }
     
     /*

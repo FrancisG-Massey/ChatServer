@@ -156,16 +156,5 @@ public class ChannelGroup {
 		for (int i=0;i<permissions.length(); i++) {
 			this.permissions.add(ChannelPermission.valueOf(permissions.getString(i).toUpperCase()));
 		}
-	}	
-	
-	public JSONObject serialiseToJSON () throws JSONException {
-		JSONObject returnObject = new JSONObject();
-		returnObject.put("groupId", this.id);
-		returnObject.put("groupName", this.groupName);
-		returnObject.put("parentGroups", this.parentGroups);
-		returnObject.put("childGroups", this.childGroups);
-		returnObject.put("permissions", this.permissions);
-		System.out.println(returnObject);
-		return returnObject;
 	}
 }
