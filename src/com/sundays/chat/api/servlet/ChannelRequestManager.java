@@ -21,7 +21,6 @@ package com.sundays.chat.api.servlet;
 import java.awt.Color;
 import java.io.IOException;
 import java.util.List;
-import java.util.Locale;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -33,7 +32,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.sundays.chat.server.Permission;
 import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.channel.ChannelAPI;
 import com.sundays.chat.server.message.MessageWrapper;
@@ -223,15 +221,9 @@ public class ChannelRequestManager extends HttpServlet {
 		} else if ("userlist".equalsIgnoreCase(requestInfo[1])) {
 			//Request for channel list
 			responseJSON = new JSONObject(api.getChannelList(cID));	
-		} else if ("rankdetails".equalsIgnoreCase(requestInfo[1])) {
-			//Request for channel rank details
-			responseJSON = api.getRankNames(cID);
-		} else if ("ranks".equalsIgnoreCase(requestInfo[1])) {
-			//Request for channel rank list
-			responseJSON = new JSONObject(api.getRankList(cID));			
-		} else if ("permissions".equalsIgnoreCase(requestInfo[1])) {
-			//Request for channel permissions
-			responseJSON = api.getPermissions(cID);
+		} else if ("members".equalsIgnoreCase(requestInfo[1])) {
+			//Request for channel member list
+			responseJSON = new JSONObject(api.getRankList(cID));
 		} else if ("bans".equalsIgnoreCase(requestInfo[1])) {
 			//Request for channel permissions
 			responseJSON = new JSONObject(api.getBanList(cID));
@@ -282,52 +274,7 @@ public class ChannelRequestManager extends HttpServlet {
 					}
 				} else {
 					responseJSON.put("status", HttpServletResponse.SC_NO_CONTENT);
-				}
-			} else if ("permissions".equalsIgnoreCase(requestInfo[1]) && "change".equalsIgnoreCase(requestInfo[2])) {
-				//Request to change channel permissions
-				String permissionName = requestJSON.optString("permissionName", null);
-				int value = requestJSON.optInt("value", Byte.MIN_VALUE);
-				if (value == Byte.MIN_VALUE) {
-					responseJSON.put("status", HttpServletResponse.SC_BAD_REQUEST);
-					responseJSON.put("msgArgs", "arg=value,expected=byte,found=none");
-					responseJSON.put("msgCode", 177);
-					responseJSON.put("message", "Invalid or missing parameter for value; expected: byte, found: none."); 
-				} else {
-					Permission p;
-					try {
-						p = Permission.valueOf(permissionName.toUpperCase(Locale.ENGLISH));						
-					} catch (IllegalArgumentException e) {
-						responseJSON.put("status", 400);
-			        	responseJSON.put("msgCode", 175);
-			        	responseJSON.put("message", "The permission you have specified for this channel does not exist.");
-			        	return responseJSON;
-					} catch (NullPointerException e) {
-						responseJSON.put("status", HttpServletResponse.SC_BAD_REQUEST);
-						responseJSON.put("msgArgs", "arg=permissionName,expected=String,found=null");
-						responseJSON.put("msgCode", 177);
-						responseJSON.put("message", "Invalid or missing parameter for permissionName; expected: String, found: null."); 
-			        	return responseJSON;
-					}
-					responseJSON = api.updatePermission(u, cID, p, value);
-				}
-				
-			} else if ("rankdetails".equalsIgnoreCase(requestInfo[1]) && "changename".equalsIgnoreCase(requestInfo[2])) {
-				//Request to change channel permissions
-				int rank = requestJSON.optInt("rankID", Integer.MAX_VALUE);
-				String name = requestJSON.optString("rankName", null);
-				if (rank > Byte.MAX_VALUE || rank < Byte.MIN_VALUE) {
-					responseJSON.put("status", HttpServletResponse.SC_BAD_REQUEST);
-					responseJSON.put("msgArgs", "arg=rankID,expected=byte,found=null");
-					responseJSON.put("msgCode", 177);
-					responseJSON.put("message", "Invalid or missing parameter for rankID; expected: byte, found: null."); 
-				} else if (name == null) {
-					responseJSON.put("status", HttpServletResponse.SC_BAD_REQUEST);
-					responseJSON.put("msgArgs", "arg=rankName,expected=String,found=null");
-					responseJSON.put("msgCode", 177);
-					responseJSON.put("message", "Invalid or missing parameter for rankName; expected: String, found: null."); 
-				} else {
-					responseJSON = api.changeRankName(u, cID, (byte) rank, name);
-				}				
+				}	
 			} else if ("openingmessage".equalsIgnoreCase(requestInfo[1]) && "change".equalsIgnoreCase(requestInfo[2])) {
 				//Request to change channel permissions
 				String message = requestJSON.optString("message", null);

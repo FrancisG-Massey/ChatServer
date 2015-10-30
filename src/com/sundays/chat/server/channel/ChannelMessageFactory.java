@@ -20,9 +20,7 @@ package com.sundays.chat.server.channel;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -30,8 +28,6 @@ import java.util.Set;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.sundays.chat.server.Permission;
-import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.user.User;
 import com.sundays.chat.server.user.UserLookup;
@@ -49,62 +45,7 @@ public class ChannelMessageFactory {
 			instance = new ChannelMessageFactory();
 		}
 		return instance;
-	}    
-    
-    public JSONObject prepareChannelPermissions (Channel c) {
-        /**
-         * @param c, the channel object to retrieve permission data from
-         * @description prepares a JSON object containing the permission details for the specified channel
-         */
-    	JSONObject responseJSON = new JSONObject();
-    	if (c == null) {
-    		return null;
-    	}
-    	try {
-			responseJSON.put("permissionVersion", Settings.PERMISSION_VERSION);
-			Map<String, JSONObject> permissionArray = new HashMap<String, JSONObject>();
-			for (Permission p : Permission.values()) {
-        		JSONObject permission = new JSONObject();
-        		permission.put("permissionID", p.id());
-        		permission.put("name", p.toString().toLowerCase(Locale.ENGLISH));
-        		permission.put("value", c.getPermissionValue(p));
-        		permission.put("minValue", p.minValue());
-        		permission.put("maxValue", p.maxValue());
-        		permissionArray.put(p.toString().toLowerCase(Locale.ENGLISH), permission);
-        	}
-			responseJSON.put("permissions", permissionArray);
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return responseJSON;
-    }
-    
-    /**
-     * Creates a message containing the details for the specified permission (usually used to update data on a permission)
-     * 
-     * @param channel The channel to retrieve permission data from
-     * @param permission The permission to send an update notification
-     */
-    public MessagePayload createPermissionUpdate (Channel channel, Permission permission) {
-    	if (channel == null) {
-    		throw new IllegalArgumentException("channel must not be null.");
-    	}
-    	MessagePayload message = new MessagePayload();
-    	
-    	int permissionValue = channel.getPermissionValue(permission);
-    	if (permissionValue == -127) {
-    		return null;//Permission does not exist
-    	}
-
-		message.put("id", permission.id());
-		message.put("name", permission.toString());
-		message.put("value", permissionValue);
-		message.put("minValue", permission.minValue());
-		message.put("maxValue", permission.maxValue());
-		
-		return message;
-    }
+	}
     
     /**
      * Packs the basic details (name, openingMessage, owner) of a channel into a message.
@@ -126,57 +67,6 @@ public class ChannelMessageFactory {
     	owner.put("id", channel.getOwnerID());
     	owner.put("name", userManager.getUsername(channel.getOwnerID()));
     	message.put("owner", owner);
-    	
-        return message;
-    }
-    
-    @Deprecated
-    public JSONObject prepareRankNames (Channel c) {
-        /**
-         * @param c, the channel object to retrieve rank names from
-         * @description prepares a JSON object containing the rank names for the specified channel
-         */
-    	JSONObject responseJSON = new JSONObject();
-    	if (c == null) {
-    		return null;
-    	}
-        Map<Integer, String> rankNames = c.getRankNames();
-        try {
-        	responseJSON.put("notice", "This API method is deprecated. Please use /channel/[x]/groups instead.");
-        	responseJSON.put("numberRanks", rankNames.size());
-        	List<JSONObject> ranks = new ArrayList<JSONObject>(rankNames.size());
-        	for (Entry<Integer, String> name : rankNames.entrySet()) {
-        		JSONObject rank = new JSONObject();
-        		rank.put("rankID", name.getKey());
-        		rank.put("rankName",name.getValue());
-        		ranks.add(rank);
-        	}
-        	responseJSON.put("rankNames", ranks);
-        } catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-        return responseJSON;
-    }
-    
-    /**
-     * Creates a message updating the rank name of a specific rank for the specified channel.<br />
-     * NOTE: This method is deprecated. Use {@link #createGroupDetails(ChannelGroup)} instead.
-     * 
-     * @param channel The channel object to retrieve rank names from
-     * @param rank The ID of the rank to send an update notification for
-     * @return A message payload containing the rank name
-     */
-    @Deprecated
-    public MessagePayload createRankNameUpdate (Channel channel, int rank) {
-    	if (channel == null) {
-    		throw new IllegalArgumentException("channel must not be null.");
-    	}
-    	MessagePayload message = new MessagePayload();
-
-    	message.put("notice", "This API method is deprecated. Please use /channel/[x]/groups instead.");
-    	message.put("rankID", rank);
-    	message.put("rankName", channel.getRankNames().get(rank));
     	
         return message;
     }
