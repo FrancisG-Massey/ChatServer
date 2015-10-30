@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project>
 
-<project default="all" basedir=".">
+<project default="all" basedir="." xmlns:jacoco="antlib:org.jacoco.ant">
 	<property name="name" value="ChatServer" />
 	<property name="version" value="1.0" />
 	<property name="src.dir" value="src" />
@@ -10,6 +10,7 @@
 	<property name="build.lib" value="${build.dir}/lib" />
 	<property name="build.docs" value="${build.dir}/docs" />
 	<property name="build.docs.api" value="${build.docs}/api" />
+	<property name="build.tmp" value="${build.dir}/tmp" />
 	<property name="lib.dir" value="WebContent/WEB-INF/lib" />
 	<property name="qa.dir" value="${build.dir}/qa-reports" />
 	<property name="test.result.dir" value="${qa.dir}/tests" />
@@ -40,7 +41,7 @@
 		</copy>
 	</target>
 
-	<target name="all" description="Main target - compile, jar, docs and test" depends="tests,dependencyanalysis,javadocs">
+	<target name="all" description="Main target - compile, jar, docs and test" depends="dependencyanalysis,javadocs,jacoco">
 		<echo>Build finished!</echo>
 	</target>
 	
@@ -70,22 +71,24 @@
 	</target>
 	
 	<target name="tests" depends="compile" description="Tests the project">
-		<junit printsummary="yes" haltonfailure="no">
-		  	<classpath>
-		  	    <pathelement location="${build.classes}"/>
-		  	    <pathelement path="${java.class.path}" />
-				<fileset dir="${lib.dir}">
-					<include name="**/*.jar" />
-				</fileset>	
-  			</classpath>			
-  			<formatter type="xml"/>
-  			<batchtest todir="${test.result.dir}">
-			    <fileset dir="${build.classes}">
-         			<include name="**/*Test.class"/>
-         			<exclude name="**/package-info.class"/>
-      			</fileset>
-   			</batchtest>
-		</junit>
+	    <jacoco:coverage destfile="${build.tmp}/jacoco.exec">
+			<junit printsummary="yes" haltonfailure="no" fork="true" forkmode="once">
+			  	<classpath>
+			  	    <pathelement location="${build.classes}"/>
+			  	    <pathelement path="${java.class.path}" />
+					<fileset dir="${lib.dir}">
+						<include name="**/*.jar" />
+					</fileset>	
+	  			</classpath>			
+	  			<formatter type="xml"/>
+	  			<batchtest todir="${test.result.dir}">
+				    <fileset dir="${build.classes}">
+	         			<include name="**/*Test.class"/>
+	         			<exclude name="**/package-info.class"/>
+	      			</fileset>
+	   			</batchtest>
+			</junit>
+		</jacoco:coverage>
 	   	<junitreport todir="${qa.dir}">
 	   	    <fileset dir="${test.result.dir}">
 	   	        <include name="*.xml"/>
@@ -94,4 +97,19 @@
 	   	    </report>
 	   	</junitreport>
    </target>
+
+	<target name="jacoco" depends="tests" description="Coverage analysis with Jacoco">
+		<jacoco:report>
+			<executiondata>
+				<file file="${build.tmp}/jacoco.exec" />
+			</executiondata>
+
+			<structure name="Code Coverage">
+				<classfiles>
+					<fileset dir="${build.classes}" excludes="test/**"/>
+				</classfiles>
+			</structure>
+			<html destdir="${qa.dir}/coverage" />
+		</jacoco:report>
+	</target>
 </project>
