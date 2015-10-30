@@ -135,8 +135,6 @@ public class JDBCChannelSave implements ChannelDataIO {
 						res.getString(2),// Channel Name
 						res.getString(6),// Opening Message
 						res.getString(3),// Channel Abbreviation
-						ChannelDataUpdater.decompressPermissions(res.getBytes(4)),// Channel Permissions
-						rankNames,// Channel Rank Names
 						res.getBoolean(7),// Whether or not to track messages
 						res.getInt(8));// Channel owner userID
 			}

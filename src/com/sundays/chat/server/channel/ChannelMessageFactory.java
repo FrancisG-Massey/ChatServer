@@ -56,7 +56,7 @@ public class ChannelMessageFactory {
     	MessagePayload message = new MessagePayload();
     	
     	message.put("name", channel.getName());
-    	message.put("openingMessage", channel.getOpeningMessage());
+    	message.put("openingMessage", channel.getWelcomeMessage());
     	message.put("messageColour", channel.getOMColour().getRGB());
     	
     	MessagePayload owner = new MessagePayload();
@@ -74,10 +74,10 @@ public class ChannelMessageFactory {
      */
     public MessagePayload createGroupDetails (ChannelGroup group) {
     	MessagePayload message = new MessagePayload();
-    	message.put("id", group.getLegacyRank());
+    	message.put("id", group.getId());
     	message.put("name", group.getName());
     	message.put("icon", group.getIconUrl());
-    	message.put("type", group.groupType);
+    	message.put("type", group.getType());
     	return message;
     }
     
@@ -101,7 +101,6 @@ public class ChannelMessageFactory {
 			member.put("username", u1.getUsername());
 			ChannelGroup group = channel.getUserGroup(u1.getUserID());
 			member.put("group", createGroupDetails(group));
-			member.put("rank", group.getLegacyRank());
 			userData.add(member);
 		}
     	message.put("users", (Serializable) userData);
@@ -122,7 +121,6 @@ public class ChannelMessageFactory {
     	
     	ChannelGroup group = channel.getUserGroup(user.getUserID());
     	message.put("group", createGroupDetails(group));
-    	message.put("rank", group.getLegacyRank());//Rank of the user joining the channel
 		return message;            
     }
     
@@ -340,9 +338,9 @@ public class ChannelMessageFactory {
 			MessagePayload groupData = new MessagePayload();
 			groupData.put("id", group.getId());
 			groupData.put("name", group.getName());
-			groupData.put("permissions", group.permissions);
+			groupData.put("permissions", group.getPermissions().toString());
 			groupData.put("iconUrl", group.getIconUrl());
-			groupData.put("type", group.groupType);
+			groupData.put("type", group.getType());
 			groupList.add(groupData);
 		}
 		message.put("groups", (Serializable) groupList);

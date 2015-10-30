@@ -54,8 +54,8 @@ public class ChannelTest {
 
 	@Test
 	public void testMessage() {
-		channel.setOpeningMessage("Test Opening Message");
-		assertEquals("Test Opening Message", channel.getOpeningMessage());
+		channel.setWelcomeMessage("Test Opening Message");
+		assertEquals("Test Opening Message", channel.getWelcomeMessage());
 	}
 
 	@Test

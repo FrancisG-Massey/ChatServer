@@ -58,10 +58,9 @@ public final class Channel {
     private Color openingMessageColour = Color.BLACK;
     private String name = "Not in Channel";
     private String channelAbbr = "undefined";
-    private String openingMessage = "Not in Channel";
+    private String welcomeMessage = "Not in Channel";
     private final Map<Integer, Integer> members;
     private final Set<Integer> permBans;
-    private final Map<Integer, String> rankNames;
     private final EnumMap<Permission, Integer> permissions;
     private boolean trackMessages = false;
     private final Map<Integer, ChannelGroup> groups;
@@ -92,7 +91,6 @@ public final class Channel {
     	for (Permission p : Permission.values()) {
     		this.permissions.put(p, p.defaultValue());
     	}
-    	this.rankNames = new LinkedHashMap<>(Settings.defaultRanks);
     	this.groups = loadGroups(new ArrayList<ChannelGroupData>());
     	this.permBans = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
     	this.members = new ConcurrentHashMap<>();
@@ -103,10 +101,9 @@ public final class Channel {
         this.io = io;
         this.name = details.getName();
         this.ownerID = details.getOwner();
-        this.openingMessage = details.getWelcomeMessage();
+        this.welcomeMessage = details.getWelcomeMessage();
         this.channelAbbr = details.getAlias();
         this.permissions = validatePermissions(details.getPermissions());
-        this.rankNames = validateRankNames(details.getRankNames());
         this.trackMessages = details.isTrackMessages();
         this.groups = loadGroups(io.getChannelGroups(id));
         this.permBans = loadBanList();//Bans MUST be loaded before ranks. This ensures that people on the ban list take priority over people on the rank list
@@ -121,10 +118,6 @@ public final class Channel {
 	public int getID() {
 		return id;
 	}
-
-	/*
-     * Reads basic details (fully public methods, make sure you only return read-only variables which cannot be modified)
-     */
 	
 	/**
 	 * Gets the name of the channel
@@ -140,22 +133,24 @@ public final class Channel {
 	 */
 	protected void setName(String name) {
 		this.name = name;
+		this.flushRequired = true;
 	}
 
 	/**
 	 * Gets the message presented to users when joining the channel
 	 * @return The welcome message
 	 */
-	public String getOpeningMessage() {
-        return this.openingMessage;
+	public String getWelcomeMessage() {
+        return this.welcomeMessage;
     }
 
 	/**
 	 * Sets the message presented to users when joining the channel to the provided string
 	 * @param welcomeMessage The new opening message for the channel.
 	 */
-	protected void setOpeningMessage(String message) {
-		this.openingMessage = message;
+	protected void setWelcomeMessage(String welcomeMessage) {
+		this.welcomeMessage = welcomeMessage;
+		this.flushRequired = true;
 	}
     
     public Color getOMColour () {
@@ -184,48 +179,52 @@ public final class Channel {
 	 */
 	protected void setOwnerID(int ownerID) {
 		this.ownerID = ownerID;
+		this.flushRequired = true;
 	}
 
 	public int getUserCount() {
         return this.users.size();
     }
 
-    /*
-     * New grouping system
+    /**
+     * Checks whether the user has the specified permission
+     * @param user The user to check
+     * @param permission The permission to check
+     * @return True if the user holds the permission, false otherwise
      */
-    public boolean userHasPermission (User user, Permission p) {
-    	return userHasPermissionOld(user, p);
-        //return getUserGroup(user).permissions.contains(p);
-    }
-    
-    public boolean groupCanActionGroup (ChannelGroup source, ChannelGroup target) {    	
-    	return source.childGroups.contains(target.getId());
+    public boolean userHasPermission (User user, ChannelPermission permission) {
+    	return getUserGroup(user).hasPermission(permission);
     }
     
     protected ChannelGroup getUserGroup (User u) {
     	return getUserGroup(u.getUserID());
     }
     
-    protected ChannelGroup getUserGroup (int uID) {
+    protected ChannelGroup getGroup (int groupID) {
+    	return groups.get(groupID);
+    }
+    
+    protected ChannelGroup getUserGroup (int userID) {
     	ChannelGroup group = groups.get(Settings.GUEST_RANK);//Guest
-    	if (uID == ownerID) {
+    	if (userID == ownerID) {
     		group = groups.get(Settings.OWNER_RANK);
-    	} else if (members.containsKey(uID)) {
-        	group = groups.get(members.get(uID).intValue());//Manually selected group
-        } else if (permBans.contains(uID)) {
+    	} else if (members.containsKey(userID)) {
+        	group = groups.get(members.get(userID).intValue());//Manually selected group
+        } else if (permBans.contains(userID)) {
         	group = new ChannelGroup(Settings.systemGroups.get(53));//Permanently banned users
         }
     	return (group==null?new ChannelGroup(Settings.systemGroups.get(53)):group);
     	//Returns the "Unknown" group if no other group was found
     }
     
-    public EnumSet<ChannelPermission> getUserPermissions (User u) {
-    	return getUserGroup(u).permissions.clone();
-    }
-    
-    public String getGroupName (int gID) {
-    	if (rankNames.containsKey(gID)) {
-    		return rankNames.get(gID);
+    /**
+     * Gets the name of a channel group
+     * @param groupID The ID of the group
+     * @return The group name
+     */
+    public String getGroupName (int groupID) {
+    	if (groups.containsKey(groupID)) {
+    		return groups.get(groupID).getName();
     	} else {
     		throw new IllegalArgumentException("The requested group does not exist.");
     	}
@@ -234,6 +233,7 @@ public final class Channel {
     /*
      * Old grouping system
      */
+    @Deprecated
     public int getPermissionValue (Permission p) {
     	if (permissions.get(p) != null) {
     		return this.permissions.get(p);
@@ -242,17 +242,13 @@ public final class Channel {
     	}
     }
 
-    @Deprecated
-    public boolean userHasPermissionOld (User user, Permission p) {
-        return getUserRank(user) >= getPermissionValue(p);
-    }
-
     /**
      * Returns the rank held by the user within this channel.<br />
      * NOTE: This method is deprecated. Use {@link #getUserGroup(User)} instead.
      * @param user The user to find the rank of.
      * @return The rank the user holds in the channel (0 for guest).
      */
+    @Deprecated
     public int getUserRank (User user) {
         return getUserRank(user.getUserID());
     }
@@ -263,6 +259,7 @@ public final class Channel {
      * @param userID The ID of the user to find the rank of.
      * @return The rank the user holds in the channel (0 for guest).
      */
+    @Deprecated
     public int getUserRank (int userID) {
     	int rank = 0;
     	if (userID == ownerID) {
@@ -275,14 +272,6 @@ public final class Channel {
         return rank;
     }
     
-    public String getRankName (int rID) {
-    	if (rankNames.containsKey(rID)) {
-    		return rankNames.get(rID);
-    	} else {
-    		throw new IllegalArgumentException("The requested rank does not exist.");
-    	}
-    }
-    
     public boolean isUserBanned (int uID) {
         return permBans.contains(uID);
     }    
@@ -290,26 +279,13 @@ public final class Channel {
     //Loading stages
     private Map<Integer, ChannelGroup> loadGroups (List<ChannelGroupData> groupData) {
     	
-    	Map<Integer, ChannelGroup> responseGroups = new ConcurrentHashMap<Integer, ChannelGroup>();
-    	//ChannelGroup unknGroup = new ChannelGroup(50, 53);
-    	//unknGroup.setName("Unknown");
-    	//responseGroups.put(-2, unknGroup);
+    	Map<Integer, ChannelGroup> responseGroups = new HashMap<>(Settings.defaultGroups);    	
+    	
     	for (ChannelGroupData rawGroupData : groupData) {
     		//Loop through each group found, placing them in the responseGroups variable
-    		//responseGroups.put(rawGroupData.groupID, new ChannelGroup(rawGroupData));
     		
     		//Temporary method, whereby group data overrides the existing groups. This will be used until group adding/removing/modifying is implemented
     		responseGroups.put(rawGroupData.getGroupID(), new ChannelGroup(rawGroupData));
-    	}
-    	//Temporary override method:
-    	for (Entry<Integer, String> rankName : rankNames.entrySet()) {
-    		if (!responseGroups.containsKey(rankName.getKey())) {
-    			ChannelGroup newGroup = new ChannelGroup(id, rankName.getKey(), rankName.getKey().byteValue());
-    			newGroup.setName(rankName.getValue());
-    			//newGroup.overrides = rankName.getKey();
-    			newGroup.setIconUrl("images/ranks/rank"+rankName.getKey()+".png");
-    			responseGroups.put(rankName.getKey().intValue(), newGroup);
-    		}
     	}
     	
 		return responseGroups;    	
@@ -374,39 +350,6 @@ public final class Channel {
     	return banSet;//Make a concurrent version
     }
 
-    private Map<Integer, String> validateRankNames (Map<Integer, String> names) {
-    	//Merges the custom rank names for the channel with the default rank names, checking that each name is valid
-    	Map<Integer, String> rankNamesArray = new LinkedHashMap<>(Settings.defaultRanks);
-    	if (names == null || names.size() == 0) {
-    		//If no names were sent, log a message and use defaults.
-    		logger.warn("Invalid rank names sent for channel "+id+"; using defaults.");
-    	} else {
-    		/*if (names.size() < rankNamesArray.size()) {
-    			//If the sent names are less than the total number of ranks, log a warning that missing names will use defaults
-    			Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Rank names received for channel "+channelID+" hold only "+names.size()+" names, " +
-    					"while there are "+rankNamesArray.size()+" rank names in total. Missing names will use the default values.");
-    		}*/
-    		for (Entry<Integer, String> nameMapping : names.entrySet()) {
-    			//For each additional name, check it's validility.
-    			String name = nameMapping.getValue();
-    			int rID = nameMapping.getKey();
-    			if (rID > Settings.OWNER_RANK || rID < Settings.GUEST_RANK) {
-    				//Custom rank names cannot override the names for global ranks (ranks above owner). Also, any ranks below 'guest' will not be able to enter the channel, and thus are irrelevant.
-    				logger.warn("Name for rank id="+rID+" in the retrieved rank names specifies a name for a system rank, which is not allowed. Using default name.");
-    				continue;
-    			} else if (name == null || name.length() < Settings.rankNameMin || name.length() > Settings.rankNameMax) {
-    				//Names cannot be null, nor can they be shorter than the minimum or longer than the maximum length specified
-    				logger.warn("Name for rank id="+rID+" in the retrieved rank names is invalid or missing. Using default name.");
-    				continue;
-    			} else {
-    				//If all the checks pass, put the name into the rank name table (overriding the default if applicable).
-    				rankNamesArray.put(rID, name);
-    			}
-    		}
-    	}
-		return rankNamesArray;
-    }
-
     private EnumMap<Permission, Integer> validatePermissions (Integer[] permissions) {
     	//Converts the permission int[] into an EnumMap object, and verifies that all permissions are valid.
     	EnumMap<Permission, Integer> permissionArray = new EnumMap<Permission, Integer>(Permission.class);
@@ -444,15 +387,9 @@ public final class Channel {
     }
 
     //Saving stages
-    protected ChannelDetails getChannelDetails () {
-    	Integer[] permissionsArray = new Integer[permissions.size()];
-    	permissionsArray = permissions.values().toArray(permissionsArray);
-    	
-    	/*String[] rankNamesArray = new String[rankNames.size()];
-    	rankNamesArray = rankNames.values().toArray(rankNamesArray);*/
-    	
-    	return new ChannelDetails(id, name, openingMessage,
-    			channelAbbr, permissionsArray, rankNames, trackMessages, ownerID);
+    protected ChannelDetails getChannelDetails () {    	
+    	return new ChannelDetails(id, name, welcomeMessage,
+    			channelAbbr, trackMessages, ownerID);
     }
     
     //Alter temporary data
@@ -514,36 +451,11 @@ public final class Channel {
 	    	messageCache.addLast(messageObject);
     	}
     }
-    
-    //Alter permanent data
-    protected boolean setPermission(Permission p, int value) {
-    	boolean successful;
-        if (value > p.maxValue()) {
-        	successful = false;//No change, as value is too large
-        } else if (value < p.minValue()) {
-        	successful = false;//No change, as value is too small
-        } else/* if (permID > Settings.defaultPermissions.size()) {
-        	successful = false;//Permission does not exist
-        } else*/ if (this.permissions.get(p) != null && value == this.permissions.get(p)) {        	
-        	successful = true;//Value is identical to current value, no change required
-        } else {
-        	this.permissions.put(p, value);//.set(p, value);        	
-        	successful = true;
-        	this.flushRequired = true;//Notifies the auto-save thread that the channel data requires flushing
-        	//this.flushPermissions();//If an auto-save thread does not exist, manually flush details each time [removed if auto clean-up thread is created]
-        }
-        return successful;
-    }
 
     protected void setOpeningMessage(String message, Color c) {
-        this.openingMessage = message;
+        this.welcomeMessage = message;
         this.openingMessageColour = c;
         this.flushRequired = true;//Notifies the auto-save thread that the channel data requires flushing
-    }
-
-    protected void setRankName (int rank, String name) {
-    	this.rankNames.put(rank, name);
-    	this.flushRequired = true;
     }
     
     /**
@@ -653,10 +565,6 @@ public final class Channel {
     //Retrieve channel data
     protected Set<User> getUsers() {
         return Collections.unmodifiableSet(this.users);
-    }
-
-    protected Map<Integer, String> getRankNames() {
-        return this.rankNames;
     }
 
     protected Map<Integer, Integer> getMembers() {

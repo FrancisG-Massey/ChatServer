@@ -60,12 +60,12 @@ public class MessageFactoryTest {
 	@Test
 	public void testDetailMessage () {
 		dummyChannel.setName("Test Channel");
-		dummyChannel.setOpeningMessage("Test Message");
+		dummyChannel.setWelcomeMessage("Test Message");
 		dummyChannel.setOwnerID(102);
 		userLookup.nameLookup.put(102, "Test");
 		
 		assumeTrue("Test Channel".equals(dummyChannel.getName()));		
-		assumeTrue("Test Message".equals(dummyChannel.getOpeningMessage()));
+		assumeTrue("Test Message".equals(dummyChannel.getWelcomeMessage()));
 		assumeTrue(102 == dummyChannel.getOwnerID());
 		
 		MessagePayload message = factory.createDetailsMessage(dummyChannel, userLookup);
@@ -80,7 +80,8 @@ public class MessageFactoryTest {
 	
 	@Test
 	public void testGroupMessage () {
-		ChannelGroup group = new ChannelGroup(100, 1, "Member", "http://example.com/icon.png", ChannelGroupType.NORMAL);
+		ChannelGroup group = new ChannelGroup(100, 1, "Member", ChannelGroupType.NORMAL);
+		group.setIconUrl("http://example.com/icon.png");
 		MessagePayload message = factory.createGroupDetails(group);
 		assertEquals("Member", message.get("name"));
 		assertEquals("http://example.com/icon.png", message.get("icon"));

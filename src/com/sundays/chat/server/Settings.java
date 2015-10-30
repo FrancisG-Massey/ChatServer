@@ -31,8 +31,8 @@ import com.sundays.chat.server.channel.ChannelGroup;
 import com.sundays.chat.utils.GeneralTools;
 
 public class Settings {	
-	   
-    public static final Map<Integer, String> defaultRanks = new HashMap<>(12);
+	
+    public static final Map<Integer, ChannelGroup> defaultGroups = new HashMap<>(12);
     public static final Map<Integer, ChannelGroup> systemGroups = new HashMap<Integer, ChannelGroup>();
     public static final int rankNameMax = 25, rankNameMin = 2;
     public static final short TOTAL_RANKS, PERMISSION_VERSION = 2, RANK_NAME_VERSION = 2;
@@ -137,24 +137,24 @@ public class Settings {
     }
     
     static {       
-    	defaultRanks.clear();
-        defaultRanks.put(GUEST_RANK, "Guest");
-        defaultRanks.put(DEFAULT_RANK, "Rank one");
-        defaultRanks.put(2, "Rank two");
-        defaultRanks.put(3, "Rank three");
-        defaultRanks.put(4, "Rank four");
-        defaultRanks.put(MOD_RANK, "Moderator");
-        defaultRanks.put(6, "Rank six");
-        defaultRanks.put(7, "Rank seven");
-        defaultRanks.put(8, "Rank eight");
-        defaultRanks.put(ADMIN_RANK, "Administrator");
-        defaultRanks.put(10, "Rank ten");
-        defaultRanks.put(OWNER_RANK, "Owner");
-		TOTAL_RANKS = (short) defaultRanks.size();
+    	defaultGroups.clear();
+    	defaultGroups.put(GUEST_RANK, new ChannelGroup(-1, GUEST_RANK, "Guest", ChannelGroupType.NORMAL));
+    	defaultGroups.put(DEFAULT_RANK, new ChannelGroup(-1, DEFAULT_RANK, "Rank one", ChannelGroupType.NORMAL));
+    	defaultGroups.put(2, new ChannelGroup(-1, 2, "Rank two", ChannelGroupType.NORMAL));
+        defaultGroups.put(3, new ChannelGroup(-1, 3, "Rank three", ChannelGroupType.NORMAL));
+        defaultGroups.put(4, new ChannelGroup(-1, 4, "Rank four", ChannelGroupType.NORMAL));
+        defaultGroups.put(MOD_RANK, new ChannelGroup(-1, MOD_RANK, "Moderator", ChannelGroupType.MODERATOR));
+        defaultGroups.put(6, new ChannelGroup(-1, 6, "Rank six", ChannelGroupType.MODERATOR));
+        defaultGroups.put(7, new ChannelGroup(-1, 7, "Rank seven", ChannelGroupType.MODERATOR));
+        defaultGroups.put(8, new ChannelGroup(-1, 8, "Rank eight", ChannelGroupType.MODERATOR));
+        defaultGroups.put(ADMIN_RANK, new ChannelGroup(-1, ADMIN_RANK, "Administrator", ChannelGroupType.ADMINISTRATOR));
+        defaultGroups.put(10, new ChannelGroup(-1, 10, "Rank ten", ChannelGroupType.ADMINISTRATOR));
+        defaultGroups.put(OWNER_RANK, new ChannelGroup(-1, OWNER_RANK, "Owner", ChannelGroupType.OWNER));
+		TOTAL_RANKS = (short) defaultGroups.size();
     }
     
     static {       
     	systemGroups.clear();
-    	systemGroups.put(53, new ChannelGroup(50, -2, "Unknown", null, ChannelGroupType.NORMAL));
+    	systemGroups.put(53, new ChannelGroup(50, -2, "Unknown", ChannelGroupType.NORMAL));
     }
 }

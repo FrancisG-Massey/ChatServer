@@ -18,50 +18,36 @@
  *******************************************************************************/
 package com.sundays.chat.server.channel;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.apache.log4j.Logger;
 
 import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.io.ChannelGroupType;
 
 public class ChannelGroup {
 	
-	public final List<Integer> parentGroups = new ArrayList<Integer>();
-	public final List<Integer> childGroups = new ArrayList<Integer>();
-	public final EnumSet<ChannelPermission> permissions = EnumSet.noneOf(ChannelPermission.class);
-	private String groupName, groupIconUrl;
+	private static final Logger logger = Logger.getLogger(ChannelGroup.class);
+	
+	private final Set<ChannelPermission> permissions = EnumSet.noneOf(ChannelPermission.class);
+	private String name;
+	private String iconUrl;
 	private final int id;
 	private final int channelID;
-	public ChannelGroupType groupType = ChannelGroupType.NORMAL;
-	
-	private byte legacyRank;
+	private ChannelGroupType type = ChannelGroupType.NORMAL;
 	
 	public ChannelGroup (int channelID, int groupID) {
 		this.id = groupID;
 		this.channelID = channelID;
 	}
 	
-	public ChannelGroup (int channelID, int groupID, byte legacyRank) {
+	public ChannelGroup (int channelID, int groupID, String name, ChannelGroupType type) {
 		this.id = groupID;
 		this.channelID = channelID;
-		this.legacyRank = legacyRank;
-	}
-	
-	public ChannelGroup (int channelID, int groupID, String name, String url, ChannelGroupType type) {
-		this.id = groupID;
-		this.channelID = channelID;
-		this.groupName = name;
-		this.groupIconUrl = url;
-		this.groupType = type;
+		this.name = name;
+		this.type = type;
 	}
 	
 	public ChannelGroup (ChannelGroupData data) {
@@ -70,27 +56,26 @@ public class ChannelGroup {
 		this.channelID = data.getChannelID();
 		
 		//Variable simple fields
-		this.groupName = data.getName();
-		this.groupIconUrl = data.groupIconUrl;
-		this.groupType = data.getType();
+		this.name = data.getName();
+		this.iconUrl = data.groupIconUrl;
+		this.type = data.getType();
 		
 		//Group permissions
 		boolean hasAllPermissions = false;
-		for (String permission : data.getPermissions()) {
-			ChannelPermission p = ChannelPermission.valueOf(permission.toUpperCase().replace("\"", "").trim());
-			if (p == ChannelPermission.ALL) {
+		for (String permissionName : data.getPermissions()) {
+			ChannelPermission permission = ChannelPermission.getByName(permissionName.trim());
+			if (permission == ChannelPermission.ALL) {
 				permissions.addAll(EnumSet.allOf(ChannelPermission.class));
 				hasAllPermissions = true;
 				break;
 			}
-			permissions.add(p);		
+			permissions.add(permission);		
 		}
-		for (ChannelPermission p : permissions) {
-			if (!p.canHavePermission(groupType)) {
-				permissions.remove(p);
+		for (ChannelPermission permission : permissions) {
+			if (!permission.canHold(type)) {
+				permissions.remove(permission);
 				if (!hasAllPermissions) {
-					Logger.getLogger(this.getClass().getName()).log(Level.WARNING, 
-						"Group "+id+" (of channel "+channelID+") cannot hold permission: "+p.toString()+". It has been removed from the group.");
+					logger.warn("Group "+id+" (of channel "+channelID+") cannot hold permission: "+permission.toString()+". It has been removed from the group.");
 				}				
 			}
 		}
@@ -99,9 +84,9 @@ public class ChannelGroup {
 	public ChannelGroup (ChannelGroup oldGroup) {
 		this.id = oldGroup.id;
 		this.channelID = oldGroup.channelID;
-		this.groupName = oldGroup.groupName;
-		this.groupIconUrl = oldGroup.groupIconUrl;
-		this.groupType = oldGroup.groupType;
+		this.name = oldGroup.name;
+		this.iconUrl = oldGroup.iconUrl;
+		this.type = oldGroup.type;
 	}
 
 	public int getId() {
@@ -109,52 +94,34 @@ public class ChannelGroup {
 	}
 
 	public String getName () {
-		return this.groupName;
+		return this.name;
+	}
+
+	public ChannelGroupType getType() {
+		return type;
 	}
 	
 	public String getIconUrl () {
-		return this.groupIconUrl;
+		return this.iconUrl;
+	}
+	
+	public boolean hasPermission (ChannelPermission permission) {
+		return permissions.contains(permission);
+	}
+	
+	public Set<ChannelPermission> getPermissions () {
+		return Collections.unmodifiableSet(permissions);
 	}
 	
 	protected void setName (String newName) {
-		this.groupName = newName;
+		this.name = newName;
 	}
 	
 	protected void setIconUrl (String iconUrl) {
-		this.groupIconUrl = iconUrl;
+		this.iconUrl = iconUrl;
 	}
 	
-	public int getLegacyRank () {
-		return legacyRank;
-	}
-	
-	public ChannelGroupData encode () {
-		Set<String> permissions = new HashSet<>();
-		return new ChannelGroupData(channelID, id, groupName, 
-				permissions, groupType, groupIconUrl);
-	}
-	
-	/*
-	 * Initialises the channel group using data from a JSONObject
-	 * If the object is missing data, an exception is thrown
-	 * Example format: {"groupName" : "Rank One", "groupId" : 1, "permissions" : [talk, join, kick], parentGroups : [1, 3, 7], childGroups : [2]}
-	 */
-	
-	public ChannelGroup (JSONObject groupDetails) throws JSONException {
-		this.id = groupDetails.getInt("groupId");
-		this.channelID = 0;
-		this.groupName = groupDetails.getString("groupName");
-		JSONArray parentGroups = groupDetails.getJSONArray("parentGroups");
-		for (int i=0;i<parentGroups.length(); i++) {
-			this.parentGroups.add(parentGroups.getInt(i));
-		}
-		JSONArray childGroups = groupDetails.getJSONArray("childGroups");
-		for (int i=0;i<childGroups.length(); i++) {
-			this.childGroups.add(childGroups.getInt(i));
-		}
-		JSONArray permissions = groupDetails.getJSONArray("permissions");
-		for (int i=0;i<permissions.length(); i++) {
-			this.permissions.add(ChannelPermission.valueOf(permissions.getString(i).toUpperCase()));
-		}
+	protected void setType(ChannelGroupType type) {
+		this.type = type;
 	}
 }

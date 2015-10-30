@@ -46,15 +46,12 @@ public class ChannelDetails {
 	}
 	
 	public ChannelDetails (int id, String name, String openingMessage, 
-			String abbreviation, Integer[] permissions, Map<Integer, String> rankNames, 
-			boolean trackMessages, int owner) {
+			String abbreviation, boolean trackMessages, int owner) {
 		//Full constructor used when data can be added all at once
 		this.id = id;
 		this.name = name;
 		this.welcomeMessage = openingMessage;
 		this.alias = abbreviation;
-		this.permissions = permissions;
-		this.rankNames = rankNames;
 		this.trackMessages = trackMessages;
 		this.owner = owner;
 	}
