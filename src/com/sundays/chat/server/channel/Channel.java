@@ -22,10 +22,7 @@ import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +35,6 @@ import org.apache.log4j.Logger;
 import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
-import com.sundays.chat.server.Permission;
 import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.user.User;
@@ -61,7 +57,6 @@ public final class Channel {
     private String welcomeMessage = "Not in Channel";
     private final Map<Integer, Integer> members;
     private final Set<Integer> permBans;
-    private final EnumMap<Permission, Integer> permissions;
     private boolean trackMessages = false;
     private final Map<Integer, ChannelGroup> groups;
     
@@ -87,10 +82,6 @@ public final class Channel {
     protected Channel (int id, ChannelDataIO io) {
     	this.id = id;
         this.io = io;
-    	this.permissions = new EnumMap<Permission, Integer>(Permission.class);
-    	for (Permission p : Permission.values()) {
-    		this.permissions.put(p, p.defaultValue());
-    	}
     	this.groups = loadGroups(new ArrayList<ChannelGroupData>());
     	this.permBans = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
     	this.members = new ConcurrentHashMap<>();
@@ -103,7 +94,6 @@ public final class Channel {
         this.ownerID = details.getOwner();
         this.welcomeMessage = details.getWelcomeMessage();
         this.channelAbbr = details.getAlias();
-        this.permissions = validatePermissions(details.getPermissions());
         this.trackMessages = details.isTrackMessages();
         this.groups = loadGroups(io.getChannelGroups(id));
         this.permBans = loadBanList();//Bans MUST be loaded before ranks. This ensures that people on the ban list take priority over people on the rank list
@@ -205,9 +195,9 @@ public final class Channel {
     }
     
     protected ChannelGroup getUserGroup (int userID) {
-    	ChannelGroup group = groups.get(Settings.GUEST_RANK);//Guest
+    	ChannelGroup group = groups.get(ChannelGroup.GUEST_GROUP);//Guest
     	if (userID == ownerID) {
-    		group = groups.get(Settings.OWNER_RANK);
+    		group = groups.get(ChannelGroup.OWNER_GROUP);
     	} else if (members.containsKey(userID)) {
         	group = groups.get(members.get(userID).intValue());//Manually selected group
         } else if (permBans.contains(userID)) {
@@ -227,18 +217,6 @@ public final class Channel {
     		return groups.get(groupID).getName();
     	} else {
     		throw new IllegalArgumentException("The requested group does not exist.");
-    	}
-    }
-    
-    /*
-     * Old grouping system
-     */
-    @Deprecated
-    public int getPermissionValue (Permission p) {
-    	if (permissions.get(p) != null) {
-    		return this.permissions.get(p);
-    	} else {
-    		return -127;
     	}
     }
 
@@ -263,7 +241,7 @@ public final class Channel {
     public int getUserRank (int userID) {
     	int rank = 0;
     	if (userID == ownerID) {
-    		rank = Settings.OWNER_RANK;
+    		rank = ChannelGroup.OWNER_GROUP;
     	} else if (members.containsKey(userID)) {
         	rank = members.get(userID);
         } else if (permBans.contains(userID)) {
@@ -279,7 +257,7 @@ public final class Channel {
     //Loading stages
     private Map<Integer, ChannelGroup> loadGroups (List<ChannelGroupData> groupData) {
     	
-    	Map<Integer, ChannelGroup> responseGroups = new HashMap<>(Settings.defaultGroups);    	
+    	Map<Integer, ChannelGroup> responseGroups = new HashMap<>(ChannelGroup.defaultGroups);    	
     	
     	for (ChannelGroupData rawGroupData : groupData) {
     		//Loop through each group found, placing them in the responseGroups variable
@@ -313,24 +291,24 @@ public final class Channel {
         		
         		members.remove(member.getKey());
         		io.removeMember(id, member.getKey());
-        	} else if (member.getValue() < 1 || member.getValue() > Settings.TOTAL_RANKS) {
+        	} else if (member.getValue() < 1 || member.getValue() > ChannelGroup.TOTAL_RANKS) {
         		//Rank was found to contain an invalid value. Convert to the default rank.
         		logger.warn("User "+member.getKey()+" from channel "+id+" belongs to an invalid group of "+member.getValue()+"." +
-        				" Swapping to the default group of: "+Settings.DEFAULT_RANK+".");
+        				" Swapping to the default group of: "+ChannelGroup.DEFAULT_GROUP+".");
         		
-        		member.setValue(Settings.DEFAULT_RANK);
-        		io.updateMember(id, member.getKey(), Settings.DEFAULT_RANK);
-        	} else if (member.getValue() == Settings.OWNER_RANK && member.getKey() != ownerID) {
+        		member.setValue(ChannelGroup.DEFAULT_GROUP);
+        		io.updateMember(id, member.getKey(), ChannelGroup.DEFAULT_GROUP);
+        	} else if (member.getValue() == ChannelGroup.OWNER_GROUP && member.getKey() != ownerID) {
         		logger.warn("User "+member.getKey()+" from channel "+id+" belongs to the owner group, but is not specified as the channel owner." +
-        				" Swapping to the default group of: "+Settings.DEFAULT_RANK+".");
+        				" Swapping to the default group of: "+ChannelGroup.DEFAULT_GROUP+".");
         		
-        		member.setValue(Settings.DEFAULT_RANK);
-        		io.updateMember(id, member.getKey(), Settings.DEFAULT_RANK);
+        		member.setValue(ChannelGroup.DEFAULT_GROUP);
+        		io.updateMember(id, member.getKey(), ChannelGroup.DEFAULT_GROUP);
         	}
         }
-        if (!members.containsKey(ownerID) || members.get(ownerID) != Settings.OWNER_RANK) {
+        if (!members.containsKey(ownerID) || members.get(ownerID) != ChannelGroup.OWNER_GROUP) {
         	logger.warn("Channel "+id+" owner "+ownerID+" is not in the member list; adding.");
-        	members.put(ownerID, Settings.OWNER_RANK);
+        	members.put(ownerID, ChannelGroup.OWNER_GROUP);
         }
     	logger.info(members.size() + " member(s) found for this channel.");
     	return new HashMap<>(members);
@@ -348,42 +326,6 @@ public final class Channel {
     	Set<Integer> banSet = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
     	banSet.addAll(bans);
     	return banSet;//Make a concurrent version
-    }
-
-    private EnumMap<Permission, Integer> validatePermissions (Integer[] permissions) {
-    	//Converts the permission int[] into an EnumMap object, and verifies that all permissions are valid.
-    	EnumMap<Permission, Integer> permissionArray = new EnumMap<Permission, Integer>(Permission.class);
-    	if (permissions == null) {
-    		//If there are no permissions sent at all, throw an exception
-    		throw new NullPointerException("permissions[] arg of Channel.validatePermissions() cannot be null.");
-    	}
-    	
-    	for (Permission p : Permission.values()) {
-    		int value = p.defaultValue();//Set the value to the default from the start
-    		if (permissions.length > p.id()) {
-    			if (permissions[p.id()] == null) {
-    				//If the specified permission does not exist, log a warning then use the default value
-    				logger.warn("The "+p.toString()+" permission in the retrieved permissions " +
-    						"is not available. Defaulting to: "+value);
-    			} else if (permissions[p.id()] > p.maxValue()) {
-    				//If the permission is above the maximum value allowed, log a warning then use the default value
-    				logger.warn("The "+p.toString()+" permission in the retrieved permissions " +
-    						"(of value "+permissions[p.id()]+") is above the maximum allowed value. Defaulting to: "+value);
-    			} else if (permissions[p.id()] < p.minValue()) {
-    				//If the permission is below the minimum value allowed, log a warning then use the default value
-    				logger.warn("The "+p.toString()+" permission in the retrieved permissions " +
-    						"(of value "+permissions[p.id()]+") is below the minimum allowed value. Defaulting to: "+value);
-    			} else {
-    				value = permissions[p.id()];
-    			}    			
-    		} else {
-    			//If the permission is not in the array, log a warning about the permission missing and use the default value.
-    			logger.warn("The "+p.toString()+
-    					" permission was not found in the retrieved permissions. Defaulting to: "+value);
-    		}
-    		permissionArray.put(p, value);//Place the permission in the final map
-    	}
-		return permissionArray;
     }
 
     //Saving stages
@@ -473,12 +415,12 @@ public final class Channel {
 	            return false;
 	        }
 	        try {
-				io.addMember(id, userID, Settings.DEFAULT_RANK);
+				io.addMember(id, userID, ChannelGroup.DEFAULT_GROUP);
 			} catch (IOException ex) {
 				logger.error("Failed to add member "+userID, ex);
 				return false;
 			}
-	        members.put(userID, Settings.DEFAULT_RANK);
+	        members.put(userID, ChannelGroup.DEFAULT_GROUP);
     	}
         return true;
     }

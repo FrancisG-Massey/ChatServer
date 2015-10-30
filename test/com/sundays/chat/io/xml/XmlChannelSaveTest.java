@@ -18,7 +18,10 @@
  *******************************************************************************/
 package com.sundays.chat.io.xml;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
 import java.io.File;
@@ -34,7 +37,7 @@ import org.junit.Test;
 
 import com.google.common.io.Files;
 import com.sundays.chat.io.ChannelDetails;
-import com.sundays.chat.server.Settings;
+import com.sundays.chat.server.channel.ChannelGroup;
 
 public class XmlChannelSaveTest {
 	
@@ -141,10 +144,10 @@ public class XmlChannelSaveTest {
 	
 	@Test
 	public void testAddMember() throws IOException {
-		saveTest.addMember(100, 109, Settings.DEFAULT_RANK);
+		saveTest.addMember(100, 109, ChannelGroup.DEFAULT_GROUP);
 		Map<Integer, Integer> members = saveTest.getChannelMembers(100);
 		assertTrue(members.containsKey(109));
-		assertEquals(Settings.DEFAULT_RANK, members.get(109).byteValue());
+		assertEquals(ChannelGroup.DEFAULT_GROUP, members.get(109).byteValue());
 	}
 	
 	@Test

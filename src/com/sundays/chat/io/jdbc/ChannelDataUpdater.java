@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import com.sundays.chat.io.ChannelDetails;
-import com.sundays.chat.server.Permission;
+import com.sundays.chat.server.channel.ChannelPermission;
 import com.sundays.chat.server.Settings;
 import com.sundays.chat.utils.ByteArrayBuilder;
 import com.sundays.chat.utils.ByteArrayExtractor;
@@ -45,7 +45,7 @@ public class ChannelDataUpdater {
 	public static final String CHANNEL_TABLE_NAME = JDBCChannelSave.DETAIL_TABLE_NAME;
 
 	public static Integer[] decompressPermissions (byte[] permissions) {
-		Integer[] permissionArray = new Integer[Permission.values().length];
+		Integer[] permissionArray = new Integer[ChannelPermission.values().length];
 		try {
 			ByteArrayExtractor extractor = new ByteArrayExtractor(permissions);
 			extractor.getByte();//Reads the number of permissions (irrelevant)

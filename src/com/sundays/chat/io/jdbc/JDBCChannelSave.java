@@ -35,7 +35,7 @@ import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.io.ChannelGroupType;
-import com.sundays.chat.server.Settings;
+import com.sundays.chat.server.channel.ChannelGroup;
 
 public class JDBCChannelSave implements ChannelDataIO {
 
@@ -235,7 +235,7 @@ public class JDBCChannelSave implements ChannelDataIO {
 			statement = con.prepareStatement("INSERT INTO `"+MEMBER_TABLE_NAME+"` SET `channel` = ?, `user` = ?, `rank` = ?");
 			statement.setInt(1, channelID);
 			statement.setInt(2, details.getOwner());
-			statement.setInt(3, Settings.OWNER_RANK);
+			statement.setInt(3, ChannelGroup.OWNER_GROUP);
 			statement.execute();//Add the owner to the member list
 			
 			con.commit();

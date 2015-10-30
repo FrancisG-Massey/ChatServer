@@ -32,8 +32,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.channel.ChannelAPI;
+import com.sundays.chat.server.channel.ChannelGroup;
 import com.sundays.chat.server.message.MessageWrapper;
 import com.sundays.chat.server.user.User;
 import com.sundays.chat.utils.HttpRequestTools;
@@ -434,7 +434,7 @@ public class ChannelRequestManager extends HttpServlet {
 				}
 			} else if ("lock".equalsIgnoreCase(requestInfo[1])) {
 				//Request to lock the channel down, preventing new people of a certain rank from entering while keeping all existing members with that rank
-				int rank = requestJSON.optInt("rank", Settings.GUEST_RANK);
+				int rank = requestJSON.optInt("rank", ChannelGroup.GUEST_GROUP);
 				int durationMins = requestJSON.optInt("duration", 15);
 				//If no parameters (or invalid parameters) are supplied, default to locking out new guests for 15 minutes.
 				responseJSON = api.lockChannel(u, cID, rank, durationMins);

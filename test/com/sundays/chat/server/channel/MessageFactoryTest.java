@@ -18,8 +18,8 @@
  *******************************************************************************/
 package com.sundays.chat.server.channel;
 
-import static org.junit.Assert.*;
-import static org.junit.Assume.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assume.assumeTrue;
 
 import java.util.List;
 
@@ -29,7 +29,6 @@ import org.junit.Test;
 
 import com.sundays.chat.io.ChannelGroupType;
 import com.sundays.chat.io.UserDetails;
-import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.channel.dummy.DummyChannelDataIO;
 import com.sundays.chat.server.channel.dummy.DummyUserManager;
 import com.sundays.chat.server.message.MessagePayload;
@@ -107,7 +106,7 @@ public class MessageFactoryTest {
 			//Get the user ID, since the order of the user list is not guaranteed
 			int i = ((Integer) userMessage.get("userID"))-110;
 			assertEquals("Test"+i, userMessage.get("username"));
-			assertEquals(Settings.GUEST_RANK, userMessage.get("rank"));
+			assertEquals(ChannelGroup.GUEST_GROUP, userMessage.get("rank"));
 		}
 	}
 
@@ -121,7 +120,7 @@ public class MessageFactoryTest {
 		
 		assertEquals(102, message.get("userID"));
 		assertEquals("Test", message.get("username"));
-		assertEquals(Settings.GUEST_RANK, message.get("rank"));
+		assertEquals(ChannelGroup.GUEST_GROUP, message.get("rank"));
 	}
 
 	@Test
@@ -134,7 +133,7 @@ public class MessageFactoryTest {
 		
 		assertEquals(102, message.get("userID"));
 		assertEquals("Test", message.get("username"));
-		assertEquals(Settings.GUEST_RANK, message.get("rank"));
+		assertEquals(ChannelGroup.GUEST_GROUP, message.get("rank"));
 	}
 
 	@Test
@@ -164,7 +163,7 @@ public class MessageFactoryTest {
 			//Get the user ID, since the order of the user list is not guaranteed
 			int i = ((Integer) memberMessage.get("userID"))-110;
 			assertEquals("Test"+i, memberMessage.get("username"));
-			assertEquals(Settings.DEFAULT_RANK, memberMessage.get("rank"));
+			assertEquals(ChannelGroup.DEFAULT_GROUP, memberMessage.get("rank"));
 		}
 	}
 
@@ -173,30 +172,30 @@ public class MessageFactoryTest {
 		dummyChannel.addMember(102);
 		userLookup.nameLookup.put(102, "Test");
 		
-		assumeTrue(dummyChannel.getUserRank(102) == Settings.DEFAULT_RANK);
+		assumeTrue(dummyChannel.getUserRank(102) == ChannelGroup.DEFAULT_GROUP);
 		
 		
 		MessagePayload message = factory.createRankListAddition(102, dummyChannel, userLookup);
 		
 		assertEquals(102, message.get("userID"));
 		assertEquals("Test", message.get("username"));
-		assertEquals(Settings.DEFAULT_RANK, message.get("rank"));
+		assertEquals(ChannelGroup.DEFAULT_GROUP, message.get("rank"));
 	}
 
 	@Test
 	public void testMemberUpdate() {
 		dummyChannel.addMember(102);
-		dummyChannel.setMemberGroup(102, Settings.ADMIN_RANK);
+		dummyChannel.setMemberGroup(102, ChannelGroup.ADMIN_GROUP);
 		userLookup.nameLookup.put(102, "Test");
 		
-		assumeTrue(dummyChannel.getUserRank(102) == Settings.ADMIN_RANK);
+		assumeTrue(dummyChannel.getUserRank(102) == ChannelGroup.ADMIN_GROUP);
 		
 		
 		MessagePayload message = factory.createRankListUpdate(102, dummyChannel, userLookup);
 		
 		assertEquals(102, message.get("userID"));
 		assertEquals("Test", message.get("username"));
-		assertEquals(Settings.ADMIN_RANK, message.get("rank"));
+		assertEquals(ChannelGroup.ADMIN_GROUP, message.get("rank"));
 	}
 
 	@Test

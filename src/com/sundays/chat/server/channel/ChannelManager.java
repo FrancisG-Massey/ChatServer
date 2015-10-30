@@ -34,7 +34,6 @@ import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.server.Launcher;
-import com.sundays.chat.server.Permission;
 import com.sundays.chat.server.TaskScheduler;
 import com.sundays.chat.server.TaskScheduler.TaskPriority;
 import com.sundays.chat.server.Settings;
@@ -212,7 +211,7 @@ public class ChannelManager {
     	} else {
     		response.put("isLoaded", true);
     		response.put("memberCount", channel.getUserCount());
-    		response.put("guestsCanJoin", (channel.getPermissionValue(Permission.JOIN) <= Settings.GUEST_RANK));
+    		response.put("guestsCanJoin", channel.getGroup(ChannelGroup.GUEST_GROUP).hasPermission(ChannelPermission.JOIN));
     		response.put("details", ChannelMessageFactory.getInstance().createDetailsMessage(channel, server.getUserManager()));
     	}    	
     	return response;

@@ -18,14 +18,14 @@
  *******************************************************************************/
 package com.sundays.chat.server.channel;
 
-import static org.junit.Assert.*;
-import static org.junit.Assume.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.channel.dummy.CallEvent;
 import com.sundays.chat.server.channel.dummy.DummyChannelDataIO;
 
@@ -49,7 +49,7 @@ public class ChannelSyncTest {
 	@Test
 	public void testAddMember() {
 		channel.addMember(102);
-		assumeTrue(channel.getUserRank(102) == Settings.DEFAULT_RANK);//Assume the addition succeeded
+		assumeTrue(channel.getUserRank(102) == ChannelGroup.DEFAULT_GROUP);//Assume the addition succeeded
 		
 		CallEvent call = channelIO.calls.get(0);
 		assertEquals("addRank", call.getMethod());
@@ -60,26 +60,26 @@ public class ChannelSyncTest {
 	@Test
 	public void testUpdateMember() {
 		channel.addMember(102);
-		assumeTrue(channel.getUserRank(102) == Settings.DEFAULT_RANK);
+		assumeTrue(channel.getUserRank(102) == ChannelGroup.DEFAULT_GROUP);
 		channelIO.calls.clear();//Remove the "addRank" event, as this is tested in a different test case
 		
-		channel.setMemberGroup(102, Settings.MOD_RANK);
-		assumeTrue(channel.getUserRank(102) == Settings.MOD_RANK);//Assume the change succeeded
+		channel.setMemberGroup(102, ChannelGroup.MOD_GROUP);
+		assumeTrue(channel.getUserRank(102) == ChannelGroup.MOD_GROUP);//Assume the change succeeded
 		CallEvent call = channelIO.calls.get(0);
 		assertEquals("changeRank", call.getMethod());
 		assertEquals("channelID in io call does not match actual channel ID! Found: "+call.getArg(0), 100, call.getArg(0));
 		assertEquals("userID in io call does not match actual user ID! Found: "+call.getArg(1), 102, call.getArg(1));
-		assertEquals("rankID in io call does not match actual rank ID! Found: "+call.getArg(2), Settings.MOD_RANK, ((Integer) call.getArg(2)).intValue());
+		assertEquals("rankID in io call does not match actual rank ID! Found: "+call.getArg(2), ChannelGroup.MOD_GROUP, ((Integer) call.getArg(2)).intValue());
 	}
 
 	@Test
 	public void testRemoveMember() {
 		channel.addMember(102);
-		assumeTrue(channel.getUserRank(102) == Settings.DEFAULT_RANK);
+		assumeTrue(channel.getUserRank(102) == ChannelGroup.DEFAULT_GROUP);
 		channelIO.calls.clear();//Remove the "addRank" event, as this is tested in a different test case
 		
 		channel.removeMember(102);
-		assumeTrue(channel.getUserRank(102) == Settings.GUEST_RANK);//Assume the removal succeeded
+		assumeTrue(channel.getUserRank(102) == ChannelGroup.GUEST_GROUP);//Assume the removal succeeded
 		CallEvent call = channelIO.calls.get(0);
 		assertEquals("removeRank", call.getMethod());
 		assertEquals("channelID in io call does not match actual channel ID! Found: "+call.getArg(0), 100, call.getArg(0));

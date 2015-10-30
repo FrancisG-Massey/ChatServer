@@ -18,7 +18,10 @@
  *******************************************************************************/
 package com.sundays.chat.server.channel;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
 import org.junit.After;
@@ -27,7 +30,6 @@ import org.junit.Test;
 
 import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.UserDetails;
-import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.channel.dummy.DummyChannelDataIO;
 import com.sundays.chat.server.user.User;
 
@@ -61,23 +63,23 @@ public class ChannelTest {
 	@Test
 	public void testAddMember() {
 		channel.addMember(100);
-		assertEquals(channel.getUserRank(100), Settings.DEFAULT_RANK);
+		assertEquals(channel.getUserRank(100), ChannelGroup.DEFAULT_GROUP);
 	}
 
 	@Test
 	public void testRemoveMember() {
 		channel.addMember(100);
-		assumeTrue(channel.getUserRank(100) == Settings.DEFAULT_RANK);
+		assumeTrue(channel.getUserRank(100) == ChannelGroup.DEFAULT_GROUP);
 		channel.removeMember(100);
-		assertEquals(Settings.GUEST_RANK, channel.getUserRank(100));
+		assertEquals(ChannelGroup.GUEST_GROUP, channel.getUserRank(100));
 	}
 
 	@Test
 	public void testUpdateMember() {
 		channel.addMember(100);
-		assumeTrue(channel.getUserRank(100) == Settings.DEFAULT_RANK);
-		channel.setMemberGroup(100, Settings.ADMIN_RANK);
-		assertEquals(Settings.ADMIN_RANK, channel.getUserRank(100));
+		assumeTrue(channel.getUserRank(100) == ChannelGroup.DEFAULT_GROUP);
+		channel.setMemberGroup(100, ChannelGroup.ADMIN_GROUP);
+		assertEquals(ChannelGroup.ADMIN_GROUP, channel.getUserRank(100));
 	}
 
 	@Test

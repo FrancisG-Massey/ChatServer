@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Joiner;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import com.sundays.chat.io.ChannelGroupData;
-import com.sundays.chat.server.Settings;
+import com.sundays.chat.server.channel.ChannelGroup;
 
 public class GroupDataUpdater {
 	
@@ -64,7 +64,7 @@ public class GroupDataUpdater {
 		if (memberRemovals.contains(rankAdditionKey)) {
 			//Rank removal was queued beforehand. The addition request cancels this out. Replace with a request to 
 			memberRemovals.remove(rankAdditionKey);
-			changeRank(channelID, userID, Settings.DEFAULT_RANK);
+			changeRank(channelID, userID, ChannelGroup.DEFAULT_GROUP);
 			return;
 		}		
 		memberAdditions.add(rankAdditionKey);//Place the user in the addition queues

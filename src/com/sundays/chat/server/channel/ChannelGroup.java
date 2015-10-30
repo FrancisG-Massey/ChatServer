@@ -20,6 +20,8 @@ package com.sundays.chat.server.channel;
 
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -30,6 +32,34 @@ import com.sundays.chat.io.ChannelGroupType;
 public class ChannelGroup {
 	
 	private static final Logger logger = Logger.getLogger(ChannelGroup.class);
+	
+    public static final Map<Integer, ChannelGroup> defaultGroups = new HashMap<>(12);
+	
+	public static final int DEFAULT_GROUP = 1;//The group that all users will be automatically assigned when they are added as a channel member
+    public static final int GUEST_GROUP = 0;//The group that any users who are not on the channel's member list will receive
+    public static final int MOD_GROUP = 5;//A system group for the position of 'channel moderator'. This holds moderative permissions by default, but can be changed in each channel
+    public static final int ADMIN_GROUP = 9;//A system group for the position of 'channel administrator'. Holds administrative permissions by default, but this can be changed in each channel
+    public static final int OWNER_GROUP = 11;//The highest channel-specific group available. Can only be held by a single person at a time, and holds all available permissions.
+    
+    public static final int TOTAL_RANKS;
+    
+    static {       
+    	defaultGroups.clear();
+    	defaultGroups.put(GUEST_GROUP, new ChannelGroup(-1, GUEST_GROUP, "Guest", ChannelGroupType.NORMAL));
+    	defaultGroups.put(DEFAULT_GROUP, new ChannelGroup(-1, DEFAULT_GROUP, "Rank one", ChannelGroupType.NORMAL));
+    	defaultGroups.put(2, new ChannelGroup(-1, 2, "Rank two", ChannelGroupType.NORMAL));
+        defaultGroups.put(3, new ChannelGroup(-1, 3, "Rank three", ChannelGroupType.NORMAL));
+        defaultGroups.put(4, new ChannelGroup(-1, 4, "Rank four", ChannelGroupType.NORMAL));
+        defaultGroups.put(MOD_GROUP, new ChannelGroup(-1, MOD_GROUP, "Moderator", ChannelGroupType.MODERATOR));
+        defaultGroups.put(6, new ChannelGroup(-1, 6, "Rank six", ChannelGroupType.MODERATOR));
+        defaultGroups.put(7, new ChannelGroup(-1, 7, "Rank seven", ChannelGroupType.MODERATOR));
+        defaultGroups.put(8, new ChannelGroup(-1, 8, "Rank eight", ChannelGroupType.MODERATOR));
+        defaultGroups.put(ADMIN_GROUP, new ChannelGroup(-1, ADMIN_GROUP, "Administrator", ChannelGroupType.ADMINISTRATOR));
+        defaultGroups.put(10, new ChannelGroup(-1, 10, "Rank ten", ChannelGroupType.ADMINISTRATOR));
+        defaultGroups.put(OWNER_GROUP, new ChannelGroup(-1, OWNER_GROUP, "Owner", ChannelGroupType.OWNER));
+		TOTAL_RANKS = (short) defaultGroups.size();
+    }
+	
 	
 	private final Set<ChannelPermission> permissions = EnumSet.noneOf(ChannelPermission.class);
 	private String name;

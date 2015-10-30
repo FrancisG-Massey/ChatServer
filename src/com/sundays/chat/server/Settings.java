@@ -31,11 +31,8 @@ import com.sundays.chat.server.channel.ChannelGroup;
 import com.sundays.chat.utils.GeneralTools;
 
 public class Settings {	
-	
-    public static final Map<Integer, ChannelGroup> defaultGroups = new HashMap<>(12);
     public static final Map<Integer, ChannelGroup> systemGroups = new HashMap<Integer, ChannelGroup>();
-    public static final int rankNameMax = 25, rankNameMin = 2;
-    public static final short TOTAL_RANKS, PERMISSION_VERSION = 2, RANK_NAME_VERSION = 2;
+    public static final short PERMISSION_VERSION = 2, RANK_NAME_VERSION = 2;
     public static final String VERSION_NAME = "0.36";
     public static final int VERSION_NUMBER = 25;
     public static final int channelCleanupThreadFrequency = 60;//Runs channel management tasks once every minute
@@ -52,17 +49,13 @@ public class Settings {
     /*Integer parameters*/
     public enum IntParam {
     	CHANNEL_CLEANUP_FREQUENCY (100),
-    	RANK_NAME_MAX (25), 
-    	RANK_NAME_MIN (2),
     	CHANNEL_CACHE_SIZE1 (100);
     	public int def;
     	IntParam (int def) { this.def = def; }
     }
     
-    public int CHANNEL_CLEANUP_FREQUENCY,
-	RANK_NAME_MAX, 
-	RANK_NAME_MIN,
-	CHANNEL_CACHE_SIZE1;
+    public int CHANNEL_CLEANUP_FREQUENCY;
+	public int CHANNEL_CACHE_SIZE1;
     
     public EnumMap<IntParam, Integer> intParams = new EnumMap<IntParam, Integer>(IntParam.class);
     
@@ -73,20 +66,6 @@ public class Settings {
 		} else { 
 			Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Invalid or missing parameter given for 'channel_cleanup_frequency'. Expected positive integer.");
 			CHANNEL_CLEANUP_FREQUENCY = 100; 
-		}
-    	
-    	if (p.containsKey(ipn[1]) && GeneralTools.isPositiveInteger(p.getProperty(ipn[1]))) {
-    		RANK_NAME_MAX = Integer.parseInt(p.getProperty(ipn[1]));
-		} else { 
-			Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Invalid or missing parameter given for 'rank_name_max'. Expected positive integer.");
-			RANK_NAME_MAX = 25; 
-		}
-    	
-    	if (p.containsKey(ipn[2]) && GeneralTools.isPositiveInteger(p.getProperty(ipn[2])) && Integer.parseInt(p.getProperty(ipn[2])) <= RANK_NAME_MAX) {
-    		RANK_NAME_MIN = Integer.parseInt(p.getProperty(ipn[2]));
-		} else {
-			Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Invalid or missing parameter given for 'rank_name_min'. Expected positive integer less than 'rank_name_max'.");
-			RANK_NAME_MIN = 2; 
 		}
     	
     	if (p.containsKey(ipn[3]) && GeneralTools.isPositiveInteger(p.getProperty(ipn[3]))) {
@@ -123,34 +102,13 @@ public class Settings {
     	protected void setValue (byte value) { this.id = value; }
     	
     	@Override
-    	public String toString () { return id+""; }
+    	public String toString () { return Integer.toString(id); }
     }
-    public static final int DEFAULT_RANK = 1;//The rank that all users will be automatically assigned when they are added to the channel's rank data
-    public static final int GUEST_RANK = 0;//The rank that any users who are not in the channel's rank data will receive
-    public static final int MOD_RANK = 5;//A system rank for the position of 'channel moderator'. This holds moderative permissions by default, but can be changed in each channel
-    public static final int ADMIN_RANK = 9;//A system rank for the position of 'channel administrator'. Holds administrative permissions by default, but this can be changed in each channel
-    public static final int OWNER_RANK = 11;//The highest channel-specific rank available. Can only be held by a single person at a time, and holds all available permissions.
+    
 
     public enum ReportTypes {
     	CHANNEL,
     	USER
-    }
-    
-    static {       
-    	defaultGroups.clear();
-    	defaultGroups.put(GUEST_RANK, new ChannelGroup(-1, GUEST_RANK, "Guest", ChannelGroupType.NORMAL));
-    	defaultGroups.put(DEFAULT_RANK, new ChannelGroup(-1, DEFAULT_RANK, "Rank one", ChannelGroupType.NORMAL));
-    	defaultGroups.put(2, new ChannelGroup(-1, 2, "Rank two", ChannelGroupType.NORMAL));
-        defaultGroups.put(3, new ChannelGroup(-1, 3, "Rank three", ChannelGroupType.NORMAL));
-        defaultGroups.put(4, new ChannelGroup(-1, 4, "Rank four", ChannelGroupType.NORMAL));
-        defaultGroups.put(MOD_RANK, new ChannelGroup(-1, MOD_RANK, "Moderator", ChannelGroupType.MODERATOR));
-        defaultGroups.put(6, new ChannelGroup(-1, 6, "Rank six", ChannelGroupType.MODERATOR));
-        defaultGroups.put(7, new ChannelGroup(-1, 7, "Rank seven", ChannelGroupType.MODERATOR));
-        defaultGroups.put(8, new ChannelGroup(-1, 8, "Rank eight", ChannelGroupType.MODERATOR));
-        defaultGroups.put(ADMIN_RANK, new ChannelGroup(-1, ADMIN_RANK, "Administrator", ChannelGroupType.ADMINISTRATOR));
-        defaultGroups.put(10, new ChannelGroup(-1, 10, "Rank ten", ChannelGroupType.ADMINISTRATOR));
-        defaultGroups.put(OWNER_RANK, new ChannelGroup(-1, OWNER_RANK, "Owner", ChannelGroupType.OWNER));
-		TOTAL_RANKS = (short) defaultGroups.size();
     }
     
     static {       
