@@ -15,6 +15,7 @@
 	<property name="qa.dir" value="${build.dir}/qa-reports" />
 	<property name="test.result.dir" value="${qa.dir}/tests" />
 	<property name="test.dir" value="test" />
+	<property name="test.classes" value="${build.dir}/test-classes" />
 	
 	<path id="build.classpath">
 		<fileset dir="/usr/share/tomcat7/lib">
@@ -23,19 +24,29 @@
 		<fileset dir="${lib.dir}">
 			<include name="**/*.jar" />
 		</fileset>
+		<fileset dir="${build.dir}">
+			<include name="**/*.class" />
+		</fileset>
 	</path>
 	
 	<target name="prepare">
+		<delete dir="${build.dir}"/>
 		<mkdir dir="${build.dir}" />
 		<mkdir dir="${build.classes}" />
+		<mkdir dir="${test.classes}" />
 		<mkdir dir="${build.lib}" />
 		<mkdir dir="${qa.dir}" />
-		<delete dir="${test.result.dir}"/>
 		<mkdir dir="${test.result.dir}" />
 	</target>
 	
 	<target name="compile" depends="prepare" description="Compile the whole project">
-		<javac destdir="${build.classes}" debug="${debug}" deprecation="on" optimize="off" srcdir="${src.dir}" classpathref="build.classpath" includes="com/sundays/chat/**/*.java" />
+		<javac destdir="${build.classes}" debug="${debug}" deprecation="on" optimize="off" classpathref="build.classpath" includes="com/sundays/chat/**/*.java" excludes="**/package-info.java">
+		    <src path="${src.dir}"/>
+		</javac>
+		<javac destdir="${test.classes}" debug="${debug}" deprecation="on" optimize="off" classpathref="build.classpath" includes="com/sundays/chat/**/*.java" excludes="**/package-info.java">
+		    <src path="${test.dir}"/>
+		    <classpath path="${build.classes}"/>
+		</javac>
 		<copy todir="${build.classes}">
 			<fileset dir="${src.dir}" includes="**/*.properties" />
 		</copy>
@@ -75,6 +86,7 @@
 			<junit printsummary="yes" haltonfailure="no" fork="true" forkmode="once">
 			  	<classpath>
 			  	    <pathelement location="${build.classes}"/>
+			  	    <pathelement location="${test.classes}"/>
 			  	    <pathelement path="${java.class.path}" />
 					<fileset dir="${lib.dir}">
 						<include name="**/*.jar" />
@@ -82,7 +94,7 @@
 	  			</classpath>			
 	  			<formatter type="xml"/>
 	  			<batchtest todir="${test.result.dir}">
-				    <fileset dir="${build.classes}">
+				    <fileset dir="${test.classes}">
 	         			<include name="**/*Test.class"/>
 	         			<exclude name="**/package-info.class"/>
 	      			</fileset>

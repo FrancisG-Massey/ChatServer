@@ -106,7 +106,7 @@ public class MessageFactoryTest {
 			//Get the user ID, since the order of the user list is not guaranteed
 			int i = ((Integer) userMessage.get("userID"))-110;
 			assertEquals("Test"+i, userMessage.get("username"));
-			assertEquals(ChannelGroup.GUEST_GROUP, userMessage.get("rank"));
+			assertEquals(ChannelGroup.GUEST_GROUP, ((MessagePayload) userMessage.get("group")).get("id"));
 		}
 	}
 
@@ -120,7 +120,7 @@ public class MessageFactoryTest {
 		
 		assertEquals(102, message.get("userID"));
 		assertEquals("Test", message.get("username"));
-		assertEquals(ChannelGroup.GUEST_GROUP, message.get("rank"));
+		assertEquals(ChannelGroup.GUEST_GROUP, ((MessagePayload) message.get("group")).get("id"));
 	}
 
 	@Test
@@ -172,7 +172,7 @@ public class MessageFactoryTest {
 		dummyChannel.addMember(102);
 		userLookup.nameLookup.put(102, "Test");
 		
-		assumeTrue(dummyChannel.getUserRank(102) == ChannelGroup.DEFAULT_GROUP);
+		assumeTrue(dummyChannel.getUserGroup(102).getId() == ChannelGroup.DEFAULT_GROUP);
 		
 		
 		MessagePayload message = factory.createRankListAddition(102, dummyChannel, userLookup);
@@ -188,7 +188,7 @@ public class MessageFactoryTest {
 		dummyChannel.setMemberGroup(102, ChannelGroup.ADMIN_GROUP);
 		userLookup.nameLookup.put(102, "Test");
 		
-		assumeTrue(dummyChannel.getUserRank(102) == ChannelGroup.ADMIN_GROUP);
+		assumeTrue(dummyChannel.getUserGroup(102).getId() == ChannelGroup.ADMIN_GROUP);
 		
 		
 		MessagePayload message = factory.createRankListUpdate(102, dummyChannel, userLookup);
