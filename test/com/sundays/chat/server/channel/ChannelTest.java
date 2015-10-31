@@ -18,11 +18,8 @@
  *******************************************************************************/
 package com.sundays.chat.server.channel;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.Assert.*;
+import static org.junit.Assume.*;
 
 import org.junit.After;
 import org.junit.Before;
@@ -49,6 +46,29 @@ public class ChannelTest {
 	}
 
 	@Test
+	public void testId() {
+		assertEquals(100, channel.getID());
+	}
+
+	@Test
+	public void testOwner() {
+		channel.setOwnerID(102);
+		assertEquals(102, channel.getOwnerID());
+	}
+
+	@Test
+	public void testOwnerGroup() {
+		channel.setOwnerID(102);
+		assertEquals(ChannelGroup.OWNER_GROUP, channel.getUserGroup(102).getId());
+	}
+
+	@Test
+	public void testGuestGroup() {
+		assumeFalse(channel.getMembers().containsKey(103));
+		assertEquals(ChannelGroup.GUEST_GROUP, channel.getUserGroup(103).getId());
+	}
+
+	@Test
 	public void testName() {
 		channel.setName("Test Name");
 		assertEquals("Test Name", channel.getName());
@@ -56,30 +76,30 @@ public class ChannelTest {
 
 	@Test
 	public void testMessage() {
-		channel.setWelcomeMessage("Test Opening Message");
-		assertEquals("Test Opening Message", channel.getWelcomeMessage());
+		channel.setWelcomeMessage("Test Welcome Message");
+		assertEquals("Test Welcome Message", channel.getWelcomeMessage());
 	}
 
 	@Test
 	public void testAddMember() {
 		channel.addMember(100);
-		assertEquals(channel.getUserRank(100), ChannelGroup.DEFAULT_GROUP);
+		assertEquals(ChannelGroup.DEFAULT_GROUP, channel.getUserGroup(100).getId());
 	}
 
 	@Test
 	public void testRemoveMember() {
 		channel.addMember(100);
-		assumeTrue(channel.getUserRank(100) == ChannelGroup.DEFAULT_GROUP);
+		assumeTrue(channel.getUserGroup(100).getId() == ChannelGroup.DEFAULT_GROUP);
 		channel.removeMember(100);
-		assertEquals(ChannelGroup.GUEST_GROUP, channel.getUserRank(100));
+		assertEquals(ChannelGroup.GUEST_GROUP, channel.getUserGroup(100).getId());
 	}
 
 	@Test
 	public void testUpdateMember() {
 		channel.addMember(100);
-		assumeTrue(channel.getUserRank(100) == ChannelGroup.DEFAULT_GROUP);
+		assumeTrue(channel.getUserGroup(100).getId() == ChannelGroup.DEFAULT_GROUP);
 		channel.setMemberGroup(100, ChannelGroup.ADMIN_GROUP);
-		assertEquals(ChannelGroup.ADMIN_GROUP, channel.getUserRank(100));
+		assertEquals(ChannelGroup.ADMIN_GROUP, channel.getUserGroup(100).getId());
 	}
 
 	@Test

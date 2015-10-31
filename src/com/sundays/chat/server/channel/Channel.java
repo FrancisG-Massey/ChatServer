@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
@@ -61,8 +60,15 @@ public final class Channel {
     private final Map<Integer, ChannelGroup> groups;
     
     /*Instanced data*/
-    private transient final Map<Integer, Long> tempBans = new ConcurrentHashMap<Integer, Long>();
-    private transient final Set<User> users = Collections.newSetFromMap(new ConcurrentHashMap<User, Boolean>());
+    /**
+     * Represents the users who are temporarily blocked from joining this channel, and the time (as milliseconds since the Unix epoch) their ban will be lifted.
+     */
+    private transient final Map<Integer, Long> tempBans = new HashMap<Integer, Long>();
+    
+    /**
+     * Represents the users who are currently in the channel.
+     */
+    private transient final Set<User> users = new HashSet<User>();
     private transient final LinkedList<MessagePayload> messageCache = new LinkedList<>();
     //Contains a specified number of recent messages from the channel (global system and normal messages)
     protected boolean unloadInitialised = false;
@@ -72,6 +78,10 @@ public final class Channel {
     private int lockRank = -100;
     private int ownerID;
     private long lockExpires = 0L;
+    
+    /**
+     * The link to the persistence layer for channel data. Used for loading and saving data.
+     */
     private transient final ChannelDataIO io;
     
     /**
@@ -83,8 +93,8 @@ public final class Channel {
     	this.id = id;
         this.io = io;
     	this.groups = loadGroups(new HashSet<ChannelGroupData>());
-    	this.permBans = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
-    	this.members = new ConcurrentHashMap<>();
+    	this.permBans = new HashSet<>();
+    	this.members = new HashMap<>();
     }
 
     protected Channel(int id, ChannelDetails details, ChannelDataIO io) throws IOException {
@@ -199,12 +209,11 @@ public final class Channel {
     	if (userID == ownerID) {
     		group = groups.get(ChannelGroup.OWNER_GROUP);
     	} else if (members.containsKey(userID)) {
-        	group = groups.get(members.get(userID).intValue());//Manually selected group
+        	group = groups.get(members.get(userID));//Manually selected group
         } else if (permBans.contains(userID)) {
         	group = new ChannelGroup(Settings.systemGroups.get(53));//Permanently banned users
         }
-    	return (group==null?new ChannelGroup(Settings.systemGroups.get(53)):group);
-    	//Returns the "Unknown" group if no other group was found
+    	return group;
     }
     
     /**
@@ -250,8 +259,8 @@ public final class Channel {
         return rank;
     }
     
-    public boolean isUserBanned (int uID) {
-        return permBans.contains(uID);
+    public boolean isUserBanned (int userID) {
+        return permBans.contains(userID);
     }    
     
     //Loading stages
@@ -291,8 +300,8 @@ public final class Channel {
         		
         		members.remove(member.getKey());
         		io.removeMember(id, member.getKey());
-        	} else if (member.getValue() < 1 || member.getValue() > ChannelGroup.TOTAL_RANKS) {
-        		//Rank was found to contain an invalid value. Convert to the default rank.
+        	} else if (!groups.containsKey(member.getValue())) {
+        		//Member was found to belong to an invalid group. Convert to the default group.
         		logger.warn("User "+member.getKey()+" from channel "+id+" belongs to an invalid group of "+member.getValue()+"." +
         				" Swapping to the default group of: "+ChannelGroup.DEFAULT_GROUP+".");
         		
@@ -315,17 +324,12 @@ public final class Channel {
     }
     
     private Set<Integer> loadBanList () throws IOException {
-    	Set<Integer> bans = io.getChannelBans(id);//Load the bans from the back-end
-    	/*for (int ban : bans) {
-    		//Validates all entries, removing any names which are on the rank list
-    		if (ranks.containsKey(ban)) {
-    			bans.remove((Object) ban);
-    		}
-    	}*/
-    	logger.info(bans.size() + " permanent ban(s) found for this channel.");
+    	return io.getChannelBans(id);//Load the bans from the back-end
+    	
+    	/*logger.info(bans.size() + " permanent ban(s) found for this channel.");
     	Set<Integer> banSet = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
     	banSet.addAll(bans);
-    	return banSet;//Make a concurrent version
+    	return banSet;//Make a concurrent version*/
     }
 
     //Saving stages
@@ -367,16 +371,12 @@ public final class Channel {
     	this.lockRank = -100;    	
     }
 
-    protected void addUser(User u) {
-        if (!users.contains(u)) {
-            users.add(u);
-        }
+    protected void addUser(User user) {
+    	users.add(user);
     }
 
-    protected void removeUser(User u) {
-        if (users.contains(u)) {
-            users.remove(u);
-        }
+    protected void removeUser(User user) {
+    	users.remove(user);
     }
     
     /**
@@ -392,12 +392,6 @@ public final class Channel {
 	    	}
 	    	messageCache.addLast(messageObject);
     	}
-    }
-
-    protected void setOpeningMessage(String message, Color c) {
-        this.welcomeMessage = message;
-        this.openingMessageColour = c;
-        this.flushRequired = true;//Notifies the auto-save thread that the channel data requires flushing
     }
     
     /**
@@ -471,34 +465,46 @@ public final class Channel {
         return true;
     }
     
-    protected boolean addBan (Integer uID) {
+    /**
+     * Adds the user to the channel's ban list.
+     * If the request to add the ban in the persistence layer fails, no changes will be made to the channel.
+     * @param userID The user ID of the ban to add
+     * @return true if the ban was added, false if the ban could not be added (either due to an error or because the user is already banned).
+     */
+    protected boolean addBan (int userID) {
     	synchronized (permBans) {//Make sure only one thread is trying to modify permanent bans at a time
-	        if (permBans.contains(uID)) {
+	        if (permBans.contains(userID)) {
 	            return false;
-	        }        
+	        }
 	        try {
-				io.addBan(id, uID);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				io.addBan(id, userID);
+			} catch (IOException ex) {
+				logger.error("Failed to add ban "+userID, ex);
+				return false;
 			}
-	        permBans.add(uID);
+	        permBans.add(userID);
     	}
         return true;
     }
     
-    protected boolean removeBan (Integer uID) {
+    /**
+     * Removes the user from the channel's ban list.
+     * If the request to remove the ban in the persistence layer fails, no changes will be made to the channel.
+     * @param userID The user ID of the ban to remove
+     * @return true if the ban was removed, false if the ban could not be removed (either due to an error or because the user is not banned).
+     */
+    protected boolean removeBan (int userID) {
     	synchronized (permBans) {//Make sure only one thread is trying to modify permanent bans at a time
-		    if (!permBans.contains(uID)) {
+		    if (!permBans.contains(userID)) {
 		        return false;
 		    }
 		    try {
-				io.removeBan(id, uID);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				io.removeBan(id, userID);
+			} catch (IOException ex) {
+				logger.error("Failed to remove ban "+userID, ex);
+				return false;
 			}
-		    permBans.remove(uID);
+		    permBans.remove(userID);
     	}
         return true;
     }
@@ -509,6 +515,11 @@ public final class Channel {
         return Collections.unmodifiableSet(this.users);
     }
 
+    /**
+     * Gets an unmodifiable map containing the user IDs of all users who are members in the channel, and the IDs of the groups they belong to.
+     * NOTE: The map returned by this method is <em>not thread safe</em>, so external synchronisation is required. 
+     * @return An unmodifiable map containing user IDs as keys and group IDs as values
+     */
     protected Map<Integer, Integer> getMembers() {
         return Collections.unmodifiableMap(this.members);
     }
@@ -517,6 +528,11 @@ public final class Channel {
     	return Collections.unmodifiableSet(this.permBans);
     }
     
+    /**
+     * Gets an unmodifiable map containing the user IDs of all users who are temporarily banned from the channel, and the time their bans will be lifted.
+     * NOTE: The map returned by this method is <em>not thread safe</em>, so external synchronisation is required. 
+     * @return An unmodifiable map containing user IDs as keys and ban expire times as values
+     */
     protected Map<Integer, Long> getTempBans () {
     	return Collections.unmodifiableMap(this.tempBans);
     }

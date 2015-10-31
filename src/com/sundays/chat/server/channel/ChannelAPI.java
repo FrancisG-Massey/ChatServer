@@ -475,7 +475,7 @@ public class ChannelAPI {
             return response;
         }
         //Add additional checks (such as removing/encoding special characters, filtering bad language, etc) here
-        channel.setOpeningMessage(message, Color.BLACK);//Changes the opening message in the temporarily loaded version of the channel, sets the colour to black (default)
+        channel.setWelcomeMessage(message);//Changes the opening message in the temporarily loaded version of the channel, sets the colour to black (default)
         channel.flushRequired = true;
         //c.flushChannelDetails();//Applies the message change to the channel database
         MessagePayload messagePayload = messageFactory.createDetailsMessage(channel, userManager);

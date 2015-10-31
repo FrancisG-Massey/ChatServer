@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import com.sundays.chat.api.UserSession;
 import com.sundays.chat.io.UserDetails;
 import com.sundays.chat.server.channel.Channel;
 import com.sundays.chat.server.message.MessagePayload;
@@ -38,7 +37,7 @@ import com.sundays.chat.server.message.MessageWrapper;
 public class User {
     private final int userID;
     private Channel currentChannel;
-    private UserSession session;
+    //private UserSession session;
     private String sessionID;
     private ConcurrentHashMap<Integer, List<MessageWrapper>> queuedMessages = new ConcurrentHashMap<>();
     public Boolean connected = true;
