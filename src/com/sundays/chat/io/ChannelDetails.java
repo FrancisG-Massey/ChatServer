@@ -18,9 +18,6 @@
  *******************************************************************************/
 package com.sundays.chat.io;
 
-import java.util.Arrays;
-import java.util.Map;
-
 /**
  * Used to communicate channel details between the persistence layer and the application layer.
  * 
@@ -37,8 +34,6 @@ public class ChannelDetails {
 	private String alias;
 	private String description;
 	private int owner;
-	private Integer[] permissions;//Channel permissions
-	private Map<Integer, String> rankNames;//Channel rank names (these replace the default "Rank One", "Rank Two", etc)
 	private boolean trackMessages;
 	
 	public ChannelDetails () {
@@ -132,7 +127,6 @@ public class ChannelDetails {
 	@Override
 	public String toString() {
 		return "ChannelDetails [id=" + id + ", name=" + name + ", welcomeMessage=" + welcomeMessage + ", alias=" + alias + ", description="
-				+ description + ", owner=" + owner + ", permissions=" + Arrays.toString(permissions) + ", rankNames=" + rankNames
-				+ ", trackMessages=" + trackMessages + "]";
+				+ description + ", owner=" + owner + ", trackMessages=" + trackMessages + "]";
 	}
 }

@@ -18,6 +18,8 @@
  *******************************************************************************/
 package com.sundays.chat.server.user;
 
+import com.sundays.chat.server.channel.ChannelUser;
+
 /**
  * An object which resolves usernames from user IDs and vice versa.
  * 
@@ -28,7 +30,7 @@ package com.sundays.chat.server.user;
  */
 public interface UserLookup {
 	
-	public User getUser (int userID);
+	public ChannelUser getUser (int userID);
 	
 	public String getUsername (int userID);
 	

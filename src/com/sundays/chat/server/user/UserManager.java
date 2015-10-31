@@ -42,6 +42,7 @@ import com.sundays.chat.io.GuestDetails;
 import com.sundays.chat.io.UserDataIO;
 import com.sundays.chat.io.UserDetails;
 import com.sundays.chat.server.Launcher;
+import com.sundays.chat.server.channel.ChannelUser;
 
 /**
  *
@@ -92,7 +93,7 @@ public final class UserManager implements UserLookup {
     }
     
     @Override
-    public User getUser (int userID) {
+    public ChannelUser getUser (int userID) {
     	return connectedUsers.get(userID);
     }
     
@@ -231,7 +232,7 @@ public final class UserManager implements UserLookup {
         int currentChannel = 0;
         if (u.getChannel() != null) {
         	//If the user is in a channel, make them leave it
-            currentChannel = u.getChannel().getID();
+            currentChannel = u.getChannel().getId();
             try {
             	server.getChannelAPI().leaveChannel(u);
 			} catch (JSONException e) {

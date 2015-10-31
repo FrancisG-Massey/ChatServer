@@ -36,7 +36,6 @@ import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.message.MessagePayload;
-import com.sundays.chat.server.user.User;
 
 /**
  * Represents a chat channel on the server.
@@ -52,7 +51,7 @@ public final class Channel {
 	/*Permanent data*/
     private Color openingMessageColour = Color.BLACK;
     private String name = "Not in Channel";
-    private String channelAbbr = "undefined";
+    private String alias = "undefined";
     private String welcomeMessage = "Not in Channel";
     private final Map<Integer, Integer> members;
     private final Set<Integer> permBans;
@@ -68,7 +67,7 @@ public final class Channel {
     /**
      * Represents the users who are currently in the channel.
      */
-    private transient final Set<User> users = new HashSet<User>();
+    private transient final Set<ChannelUser> users = new HashSet<>();
     private transient final LinkedList<MessagePayload> messageCache = new LinkedList<>();
     //Contains a specified number of recent messages from the channel (global system and normal messages)
     protected boolean unloadInitialised = false;
@@ -103,7 +102,7 @@ public final class Channel {
         this.name = details.getName();
         this.ownerID = details.getOwner();
         this.welcomeMessage = details.getWelcomeMessage();
-        this.channelAbbr = details.getAlias();
+        this.alias = details.getAlias();
         this.trackMessages = details.isTrackMessages();
         this.groups = loadGroups(io.getChannelGroups(id));
         this.permBans = loadBanList();//Bans MUST be loaded before ranks. This ensures that people on the ban list take priority over people on the rank list
@@ -115,7 +114,7 @@ public final class Channel {
      * Gets the ID for this channel
 	 * @return the channel ID
 	 */
-	public int getID() {
+	public int getId() {
 		return id;
 	}
 	
@@ -134,6 +133,22 @@ public final class Channel {
 	protected void setName(String name) {
 		this.name = name;
 		this.flushRequired = true;
+	}
+	
+	
+
+	/**
+	 * @return the alias
+	 */
+	public String getAlias() {
+		return alias;
+	}
+
+	/**
+	 * @param alias the alias to set
+	 */
+	public void setAlias(String alias) {
+		this.alias = alias;
 	}
 
 	/**
@@ -192,11 +207,11 @@ public final class Channel {
      * @param permission The permission to check
      * @return True if the user holds the permission, false otherwise
      */
-    public boolean userHasPermission (User user, ChannelPermission permission) {
+    public boolean userHasPermission (ChannelUser user, ChannelPermission permission) {
     	return getUserGroup(user).hasPermission(permission);
     }
     
-    protected ChannelGroup getUserGroup (User u) {
+    protected ChannelGroup getUserGroup (ChannelUser u) {
     	return getUserGroup(u.getUserID());
     }
     
@@ -231,12 +246,12 @@ public final class Channel {
 
     /**
      * Returns the rank held by the user within this channel.<br />
-     * NOTE: This method is deprecated. Use {@link #getUserGroup(User)} instead.
+     * NOTE: This method is deprecated. Use {@link #getUserGroup(ChannelUser)} instead.
      * @param user The user to find the rank of.
      * @return The rank the user holds in the channel (0 for guest).
      */
     @Deprecated
-    public int getUserRank (User user) {
+    public int getUserRank (ChannelUser user) {
         return getUserRank(user.getUserID());
     }
 
@@ -335,7 +350,7 @@ public final class Channel {
     //Saving stages
     protected ChannelDetails getChannelDetails () {    	
     	return new ChannelDetails(id, name, welcomeMessage,
-    			channelAbbr, trackMessages, ownerID);
+    			alias, trackMessages, ownerID);
     }
     
     //Alter temporary data
@@ -371,26 +386,26 @@ public final class Channel {
     	this.lockRank = -100;    	
     }
 
-    protected void addUser(User user) {
+    protected void addUser(ChannelUser user) {
     	users.add(user);
     }
 
-    protected void removeUser(User user) {
+    protected void removeUser(ChannelUser user) {
     	users.remove(user);
     }
     
     /**
-     * Adds the specified JSONObject to the recent messages cache. 
+     * Adds the specified message to the recent messages cache. 
      * If the cache is currently full (above the maximum size), removes the oldest message from the cache.
      * 
-     * @param messageObject the message to add to the cache.
+     * @param message the message to add to the cache.
      */
-    protected void addToMessageCache (MessagePayload messageObject) {
+    protected void addToMessageCache (MessagePayload message) {
     	synchronized (messageCache) {
 	    	if (messageCache.size() >= Settings.CHANNEL_CACHE_SIZE) {
 	    		messageCache.removeFirst();
 	    	}
-	    	messageCache.addLast(messageObject);
+	    	messageCache.addLast(message);
     	}
     }
     
@@ -511,7 +526,7 @@ public final class Channel {
 
     
     //Retrieve channel data
-    protected Set<User> getUsers() {
+    protected Set<ChannelUser> getUsers() {
         return Collections.unmodifiableSet(this.users);
     }
 

@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.sundays.chat.io.UserDetails;
+import com.sundays.chat.server.channel.ChannelUser;
 import com.sundays.chat.server.user.User;
 import com.sundays.chat.server.user.UserLookup;
 
@@ -39,7 +40,7 @@ public class DummyUserManager implements UserLookup {
 	}
 
 	@Override
-	public User getUser(int userID) {
+	public ChannelUser getUser(int userID) {
 		calls.add(new CallEvent("getUser", userID));
 		return new User(userID, new UserDetails());
 	}

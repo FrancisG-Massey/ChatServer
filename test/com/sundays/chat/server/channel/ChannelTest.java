@@ -47,7 +47,7 @@ public class ChannelTest {
 
 	@Test
 	public void testId() {
-		assertEquals(100, channel.getID());
+		assertEquals(100, channel.getId());
 	}
 
 	@Test
@@ -118,14 +118,14 @@ public class ChannelTest {
 
 	@Test
 	public void testAddUser() {
-		User u = new User(102, new UserDetails());
+		ChannelUser u = new User(102, new UserDetails());
 		channel.addUser(u);
 		assertTrue(channel.getUsers().contains(u));
 	}
 
 	@Test
 	public void testRemoveUser() {
-		User u = new User(102, new UserDetails());
+		ChannelUser u = new User(102, new UserDetails());
 		channel.addUser(u);
 		assumeTrue(channel.getUsers().contains(u));
 		channel.removeUser(u);

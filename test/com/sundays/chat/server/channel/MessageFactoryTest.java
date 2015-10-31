@@ -38,7 +38,7 @@ public class MessageFactoryTest {
 	
 	ChannelMessageFactory factory;
 	Channel dummyChannel;
-	User testUser;
+	ChannelUser testUser;
 	DummyUserManager userLookup;
 
 	@Before

@@ -25,6 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.sundays.chat.io.UserDetails;
 import com.sundays.chat.server.channel.Channel;
+import com.sundays.chat.server.channel.ChannelUser;
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.message.MessageType;
 import com.sundays.chat.server.message.MessageWrapper;
@@ -34,7 +35,7 @@ import com.sundays.chat.server.message.MessageWrapper;
  * 
  * @author Francis
  */
-public class User {
+public class User implements ChannelUser {
     private final int userID;
     private Channel currentChannel;
     //private UserSession session;
@@ -57,11 +58,19 @@ public class User {
     	return nextOrderID;
     }  
     
-    public String getUsername () {
+    /* (non-Javadoc)
+	 * @see com.sundays.chat.server.user.ChannelUser#getUsername()
+	 */
+    @Override
+	public String getUsername () {
         return this.username;
     }
     
-    public int getUserID () {
+    /* (non-Javadoc)
+	 * @see com.sundays.chat.server.user.ChannelUser#getUserID()
+	 */
+    @Override
+	public int getUserID () {
         return this.userID;
     }
     
@@ -73,11 +82,19 @@ public class User {
     	this.sessionID = sessionID;
     }
     
-    public Channel getChannel () {
+    /* (non-Javadoc)
+	 * @see com.sundays.chat.server.user.ChannelUser#getChannel()
+	 */
+    @Override
+	public Channel getChannel () {
         return this.currentChannel;
     }
     
-    public void setChannel (Channel newchannel) {
+    /* (non-Javadoc)
+	 * @see com.sundays.chat.server.user.ChannelUser#setChannel(com.sundays.chat.server.channel.Channel)
+	 */
+    @Override
+	public void setChannel (Channel newchannel) {
         this.currentChannel = newchannel;
         if (!connected) {
             return;
@@ -86,21 +103,18 @@ public class User {
         	//Disconnect from channel. Now handled in the ChannelManager.leaveChannel() method 
         } else {
         	//Connected to channel
-        	if (this.queuedMessages.get(newchannel.getID()) == null) {
+        	if (this.queuedMessages.get(newchannel.getId()) == null) {
         		//If there is no message queue for this channel, create it.
-        		this.queuedMessages.put(newchannel.getID(), new ArrayList<MessageWrapper>());
+        		this.queuedMessages.put(newchannel.getId(), new ArrayList<MessageWrapper>());
         	}
         }                
     }
     
-    /**
-     * Sends a message to the user. 
-     * Depending on how the user is connected, this message will either be sent immediately to the user or added to their message queue.
-     * @param type The type of message being sent.
-     * @param channelID The ID of the channel the message is from.
-     * @param payload The payload data for the message.
-     */
-    public void sendMessage (MessageType type, int channelID, MessagePayload payload) {
+    /* (non-Javadoc)
+	 * @see com.sundays.chat.server.user.ChannelUser#sendMessage(com.sundays.chat.server.message.MessageType, int, com.sundays.chat.server.message.MessagePayload)
+	 */
+    @Override
+	public void sendMessage (MessageType type, int channelID, MessagePayload payload) {
     	MessageWrapper wrapper = new MessageWrapper(getOrderID(), type, System.currentTimeMillis(), this.userID, payload);
     	
     	List<MessageWrapper> queuedMessages = this.queuedMessages.get(channelID);
@@ -150,10 +164,18 @@ public class User {
     	this.queuedMessages.replace(channelID, new CopyOnWriteArrayList<MessageWrapper>());
     }
 
+	/* (non-Javadoc)
+	 * @see com.sundays.chat.server.user.ChannelUser#getDefaultChannel()
+	 */
+	@Override
 	public int getDefaultChannel() {
 		return defaultChannel;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.sundays.chat.server.user.ChannelUser#setDefaultChannel(int)
+	 */
+	@Override
 	public void setDefaultChannel(int defaultChannel) {
 		this.defaultChannel = defaultChannel;
 	}

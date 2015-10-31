@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Set;
 
 import com.sundays.chat.server.message.MessagePayload;
-import com.sundays.chat.server.user.User;
 import com.sundays.chat.server.user.UserLookup;
 
 /**
@@ -91,11 +90,11 @@ public class ChannelMessageFactory {
     		throw new IllegalArgumentException("channel must not be null.");
     	}
     	MessagePayload message = new MessagePayload();
-    	message.put("id", channel.getID());
+    	message.put("id", channel.getId());
     	message.put("totalUsers", channel.getUserCount());
     	
     	List<MessagePayload> userData = new ArrayList<>();
-    	for (User u1 : channel.getUsers()) {
+    	for (ChannelUser u1 : channel.getUsers()) {
     		MessagePayload member = new MessagePayload();
 			member.put("userID", u1.getUserID());
 			member.put("username", u1.getUsername());
@@ -113,7 +112,7 @@ public class ChannelMessageFactory {
      * @param channel The channel to retrieve data from
      * @return The payload of the new message.
      */
-    public MessagePayload createChannelUserAddition (User user, Channel channel) {
+    public MessagePayload createChannelUserAddition (ChannelUser user, Channel channel) {
     	MessagePayload message = new MessagePayload();
     	
     	message.put("userID", user.getUserID());//User ID of the user joining the channel
@@ -130,7 +129,7 @@ public class ChannelMessageFactory {
      * @param channel The channel to retrieve data from
      * @return The payload of the new message.
      */
-    public MessagePayload createChannelUserRemoval (User user, Channel channel) {
+    public MessagePayload createChannelUserRemoval (ChannelUser user, Channel channel) {
     	MessagePayload message = new MessagePayload();
     	
     	message.put("userID", user.getUserID());
@@ -143,7 +142,7 @@ public class ChannelMessageFactory {
      * @param channel The channel to retrieve data from
      * @return The payload of the new message.
      */
-    public MessagePayload createChannelUserUpdate (User user, Channel channel) {
+    public MessagePayload createChannelUserUpdate (ChannelUser user, Channel channel) {
     	MessagePayload message = new MessagePayload();
     	
 		message.put("userID", user.getUserID());
@@ -169,7 +168,7 @@ public class ChannelMessageFactory {
     	
     	Map<Integer, Integer> ranksList = channel.getMembers();//Picks up the rank data for the channel
     	
-    	message.put("id", channel.getID());
+    	message.put("id", channel.getId());
     	message.put("totalUsers", ranksList.size());
     	
     	List<MessagePayload> memberData = new ArrayList<>();
@@ -265,7 +264,7 @@ public class ChannelMessageFactory {
     	MessagePayload message = new MessagePayload();
     	
     	Set<Integer> bans = channel.getBans();
-    	message.put("id", channel.getID());
+    	message.put("id", channel.getId());
     	message.put("totalBans", bans.size());
     	List<MessagePayload> banList = new ArrayList<>();
 		for (int ban : bans) {
@@ -330,7 +329,7 @@ public class ChannelMessageFactory {
     	MessagePayload message = new MessagePayload();
 
     	Map<Integer, ChannelGroup> channelGroups = channel.getGroups();//Picks up the rank data for the channel
-    	message.put("id", channel.getID());
+    	message.put("id", channel.getId());
     	message.put("totalGroups", channelGroups.size());
     	
     	List<MessagePayload> groupList = new ArrayList<>();		

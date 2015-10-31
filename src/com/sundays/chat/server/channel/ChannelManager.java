@@ -39,7 +39,6 @@ import com.sundays.chat.server.TaskScheduler.TaskPriority;
 import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.message.MessageType;
-import com.sundays.chat.server.user.User;
 
 /**
  * Java chat server Channel Manager
@@ -138,7 +137,7 @@ public class ChannelManager {
 				for (Channel c : channels.values()) {
 					if (c.getUserCount() == 0) {
 						//Unloads any empty channels that were not automatically unloaded
-						queueChannelUnload(c.getID());
+						queueChannelUnload(c.getId());
 						/*try {
 							unloadChannel(c);
 						} catch (JSONException e) {
@@ -157,7 +156,7 @@ public class ChannelManager {
 							//If the channel data is required to be flushed, flush the details for the channel.
 							//c.flushPermissions();
 							try {
-								permDataUpdater.updateDetails(c.getID(), c.getChannelDetails());
+								permDataUpdater.updateDetails(c.getId(), c.getChannelDetails());
 							} catch (IOException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
@@ -256,11 +255,11 @@ public class ChannelManager {
     private void unloadChannel (Channel c) throws JSONException {    
         if (c != null) {
 	    	c.unloadInitialised = true;
-            for (User u : c.getUsers()) {
-            	this.sendChannelLocalMessage(u, "You have been removed from the channel.", 155, c.getID(), Color.RED);
+            for (ChannelUser u : c.getUsers()) {
+            	this.sendChannelLocalMessage(u, "You have been removed from the channel.", 155, c.getId(), Color.RED);
             	server.getChannelAPI().leaveChannel(u);
             }            
-            channels.remove(c.getID());
+            channels.remove(c.getId());
             System.out.println("Channel '"+c.getName()+"' has been unloaded from the server.");
         }
     }
@@ -294,7 +293,7 @@ public class ChannelManager {
     	
         channel.addToMessageCache(messagePayload);
         
-        for (User u1 : channel.getUsers()) {
+        for (ChannelUser u1 : channel.getUsers()) {
         	u1.sendMessage(MessageType.CHANNEL_SYSTEM_GLOBAL, channelID, messagePayload);
         }
     }
@@ -307,7 +306,7 @@ public class ChannelManager {
      * @param messageCode	The numerical code linked to the message being sent (allows for localisation on the receiving device)
      * @param channelID		The ID for the channel for which this message is related to.
      */ 
-    protected void sendChannelLocalMessage (User user, String message, int messageCode, int channelID) {
+    protected void sendChannelLocalMessage (ChannelUser user, String message, int messageCode, int channelID) {
     	this.sendChannelLocalMessage(user, message, messageCode, channelID, Color.BLACK);
     }
     
@@ -320,7 +319,7 @@ public class ChannelManager {
      * @param channelID The ID for the channel for which this message is related to.
      * @param msgColour The colour for the message
      */
-    protected void sendChannelLocalMessage (User user, String message, int messageCode, int channelID, Color msgColour) {
+    protected void sendChannelLocalMessage (ChannelUser user, String message, int messageCode, int channelID, Color msgColour) {
     	Channel channel = channels.get(channelID);
         if (channel == null) {
             return;
@@ -335,7 +334,7 @@ public class ChannelManager {
     }
     
     
-    protected void logChannelAction (int channelID, User reporter, String message) throws JSONException {
+    protected void logChannelAction (int channelID, ChannelUser reporter, String message) throws JSONException {
 
     }
 }
