@@ -113,40 +113,6 @@ public class ChannelDetails {
 	}
 
 	/**
-	 * Gets the permissions for this channel.
-	 * NOTE: This method is deprecated and will be removed in later versions. Use groups instead.
-	 * @return An integer array containing the permissions for this channel, where the key is the permission ID and the value is the minimum rank the permission is assigned to.
-	 */
-	@Deprecated
-	public Integer[] getPermissions() {
-		return permissions;
-	}
-
-	/**
-	 * @param permissions the permissions to set
-	 */
-	@Deprecated
-	public void setPermissions(Integer[] permissions) {
-		this.permissions = permissions;
-	}
-
-	/**
-	 * @return the rankNames
-	 */
-	@Deprecated
-	public Map<Integer, String> getRankNames() {
-		return rankNames;
-	}
-
-	/**
-	 * @param rankNames the rankNames to set
-	 */
-	@Deprecated
-	public void setRankNames(Map<Integer, String> rankNames) {
-		this.rankNames = rankNames;
-	}
-
-	/**
 	 * @return the trackMessages
 	 */
 	public boolean isTrackMessages() {
