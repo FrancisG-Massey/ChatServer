@@ -49,7 +49,7 @@ public class ChannelSyncTest {
 	@Test
 	public void testAddMember() {
 		channel.addMember(102);
-		assumeTrue(channel.getUserRank(102) == ChannelGroup.DEFAULT_GROUP);//Assume the addition succeeded
+		assumeTrue(channel.getUserGroup(102).getId() == ChannelGroup.DEFAULT_GROUP);//Assume the addition succeeded
 		
 		CallEvent call = channelIO.calls.get(0);
 		assertEquals("addRank", call.getMethod());
@@ -60,11 +60,11 @@ public class ChannelSyncTest {
 	@Test
 	public void testUpdateMember() {
 		channel.addMember(102);
-		assumeTrue(channel.getUserRank(102) == ChannelGroup.DEFAULT_GROUP);
+		assumeTrue(channel.getUserGroup(102).getId() == ChannelGroup.DEFAULT_GROUP);
 		channelIO.calls.clear();//Remove the "addRank" event, as this is tested in a different test case
 		
 		channel.setMemberGroup(102, ChannelGroup.MOD_GROUP);
-		assumeTrue(channel.getUserRank(102) == ChannelGroup.MOD_GROUP);//Assume the change succeeded
+		assumeTrue(channel.getUserGroup(102).getId() == ChannelGroup.MOD_GROUP);//Assume the change succeeded
 		CallEvent call = channelIO.calls.get(0);
 		assertEquals("changeRank", call.getMethod());
 		assertEquals("channelID in io call does not match actual channel ID! Found: "+call.getArg(0), 100, call.getArg(0));
@@ -75,11 +75,11 @@ public class ChannelSyncTest {
 	@Test
 	public void testRemoveMember() {
 		channel.addMember(102);
-		assumeTrue(channel.getUserRank(102) == ChannelGroup.DEFAULT_GROUP);
+		assumeTrue(channel.getUserGroup(102).getId() == ChannelGroup.DEFAULT_GROUP);
 		channelIO.calls.clear();//Remove the "addRank" event, as this is tested in a different test case
 		
 		channel.removeMember(102);
-		assumeTrue(channel.getUserRank(102) == ChannelGroup.GUEST_GROUP);//Assume the removal succeeded
+		assumeTrue(channel.getUserGroup(102).getId() == ChannelGroup.GUEST_GROUP);//Assume the removal succeeded
 		CallEvent call = channelIO.calls.get(0);
 		assertEquals("removeRank", call.getMethod());
 		assertEquals("channelID in io call does not match actual channel ID! Found: "+call.getArg(0), 100, call.getArg(0));

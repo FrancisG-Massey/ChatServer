@@ -18,22 +18,37 @@
  *******************************************************************************/
 package com.sundays.chat.server.channel;
 
-import static org.junit.Assert.*;
-import static org.junit.Assume.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
+import static org.mockito.Mockito.*;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.log4j.BasicConfigurator;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.UserDetails;
-import com.sundays.chat.server.channel.dummy.DummyChannelDataIO;
 import com.sundays.chat.server.user.User;
 
 public class ChannelTest {
 	
-	private ChannelDataIO channelIO = new DummyChannelDataIO();
+	private ChannelDataIO channelIO = mock(ChannelDataIO.class);
 	private Channel channel;
+	
+	@BeforeClass
+	public static void setUpBeforeClass() throws Exception {
+		BasicConfigurator.configure();//Initialise logging
+	}
 
 	@Before
 	public void setUp() throws Exception {
@@ -57,6 +72,24 @@ public class ChannelTest {
 	}
 
 	@Test
+	public void testName() {
+		channel.setName("Test Name");
+		assertEquals("Test Name", channel.getName());
+	}
+
+	@Test
+	public void testAlias() {
+		channel.setAlias("Test Name");
+		assertEquals("Test Name", channel.getAlias());
+	}
+
+	@Test
+	public void testMessage() {
+		channel.setWelcomeMessage("Test Welcome Message");
+		assertEquals("Test Welcome Message", channel.getWelcomeMessage());
+	}
+
+	@Test
 	public void testOwnerGroup() {
 		channel.setOwnerID(102);
 		assertEquals(ChannelGroup.OWNER_GROUP, channel.getUserGroup(102).getId());
@@ -69,15 +102,44 @@ public class ChannelTest {
 	}
 
 	@Test
-	public void testName() {
-		channel.setName("Test Name");
-		assertEquals("Test Name", channel.getName());
+	public void testMemberBanRemove() throws IOException {
+		Map<Integer, Integer> members = new HashMap<>();
+		members.put(103, ChannelGroup.DEFAULT_GROUP);
+		when(channelIO.getChannelMembers(100)).thenReturn(members);
+		channel.addBan(103);
+		members = channel.loadMembers();
+		assertFalse(members.containsKey(103));
 	}
 
 	@Test
-	public void testMessage() {
-		channel.setWelcomeMessage("Test Welcome Message");
-		assertEquals("Test Welcome Message", channel.getWelcomeMessage());
+	public void testMemberOwnerAdd() throws IOException {
+		Map<Integer, Integer> members = new HashMap<>();
+		when(channelIO.getChannelMembers(100)).thenReturn(members);
+		channel.setOwnerID(102);
+		members = channel.loadMembers();
+		assertTrue(members.containsKey(102));
+		assertEquals(ChannelGroup.OWNER_GROUP, members.get(102).intValue());
+	}
+
+	@Test
+	public void testFakeOwnerReset() throws IOException {
+		Map<Integer, Integer> members = new HashMap<>();
+		members.put(103, ChannelGroup.OWNER_GROUP);
+		when(channelIO.getChannelMembers(100)).thenReturn(members);
+		channel.setOwnerID(102);
+		members = channel.loadMembers();
+		assertNotEquals(ChannelGroup.OWNER_GROUP, members.get(103).intValue());
+	}
+
+	@Test
+	public void testFakeGroupReset() throws IOException {
+		Map<Integer, Integer> members = new HashMap<>();
+		members.put(103, 999);
+		assumeFalse(channel.getGroups().containsKey(999));
+		
+		when(channelIO.getChannelMembers(100)).thenReturn(members);
+		members = channel.loadMembers();
+		assertNotEquals(999, members.get(103).intValue());
 	}
 
 	@Test
@@ -136,6 +198,16 @@ public class ChannelTest {
 	public void testTempBan () {
 		channel.setTempBan(102, 20_000);
 		assertNotEquals(0L, channel.getBanExpireTime(102));
+	}
+	
+	@Test
+	public void testTempBanReset () {
+		channel.setTempBan(102, 20_000);
+		long oldExpires = channel.getBanExpireTime(102);
+		assumeFalse(0L == oldExpires);
+		
+		channel.setTempBan(102, 20_100);
+		assertTrue("New ban has not replaced old ban. New="+channel.getBanExpireTime(102)+", old="+oldExpires, channel.getBanExpireTime(102) > oldExpires);
 	}
 	
 	@Test

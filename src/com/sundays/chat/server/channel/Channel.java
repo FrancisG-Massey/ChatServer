@@ -111,6 +111,14 @@ public final class Channel {
     }
         
     /**
+     * Indicates whether the channel details need to be sent to the persistence layer for an update.
+	 * @return true if a flush of channel details is required, false otherwise
+	 */
+	public boolean isFlushRequired() {
+		return flushRequired;
+	}
+
+	/**
      * Gets the ID for this channel
 	 * @return the channel ID
 	 */
@@ -133,9 +141,7 @@ public final class Channel {
 	protected void setName(String name) {
 		this.name = name;
 		this.flushRequired = true;
-	}
-	
-	
+	}	
 
 	/**
 	 * @return the alias
@@ -149,6 +155,7 @@ public final class Channel {
 	 */
 	public void setAlias(String alias) {
 		this.alias = alias;
+		this.flushRequired = true;
 	}
 
 	/**
@@ -306,7 +313,7 @@ public final class Channel {
      * @return a {@link Map} matching the user IDs of channel members to their groups
      * @throws IOException If an error occurs while loading the members of the channel
      */
-    private Map<Integer, Integer> loadMembers() throws IOException {
+    protected Map<Integer, Integer> loadMembers() throws IOException {
     	Map<Integer, Integer> members = io.getChannelMembers(id);
         for (Entry<Integer, Integer> member : members.entrySet()) {
         	//Run through the members, removing any invalid sets
@@ -330,7 +337,7 @@ public final class Channel {
         		io.updateMember(id, member.getKey(), ChannelGroup.DEFAULT_GROUP);
         	}
         }
-        if (!members.containsKey(ownerID) || members.get(ownerID) != ChannelGroup.OWNER_GROUP) {
+        if (ownerID != 0 && (!members.containsKey(ownerID) || members.get(ownerID) != ChannelGroup.OWNER_GROUP)) {
         	logger.warn("Channel "+id+" owner "+ownerID+" is not in the member list; adding.");
         	members.put(ownerID, ChannelGroup.OWNER_GROUP);
         }
@@ -355,9 +362,6 @@ public final class Channel {
     
     //Alter temporary data
     protected void setTempBan(int userID, long timeMillis) {
-        if (tempBans.containsKey(userID)) {
-            tempBans.remove(userID);
-        }
         //Sets the expires time to current time plus offset given
         tempBans.put(userID, System.currentTimeMillis()+timeMillis);//Places the ban in the tempBans map
     }
@@ -370,9 +374,6 @@ public final class Channel {
     }
 
     protected void removeTempBan(int userID) {
-        if (!tempBans.containsKey(userID)) {
-            return;
-        }
         tempBans.remove(userID);
     }
     
