@@ -42,7 +42,7 @@ import com.sundays.chat.server.user.User;
 
 public class ChannelTest {
 	
-	private ChannelDataIO channelIO = mock(ChannelDataIO.class);
+	private ChannelDataIO channelIO;
 	private Channel channel;
 	
 	@BeforeClass
@@ -52,6 +52,7 @@ public class ChannelTest {
 
 	@Before
 	public void setUp() throws Exception {
+		channelIO = mock(ChannelDataIO.class);
 		channel = new Channel(100, channelIO);
 	}
 
@@ -166,16 +167,51 @@ public class ChannelTest {
 
 	@Test
 	public void testAddBan() {
-		channel.addBan(100);
+		assertTrue(channel.addBan(100));
 		assertTrue(channel.isUserBanned(100));
+	}
+
+	@Test
+	public void testAddBanDuplicate() {
+		channel.addBan(100);
+		assumeTrue(channel.isUserBanned(100));
+		
+		assertFalse(channel.addBan(100));
+	}
+
+	@Test
+	public void testAddBanException() throws IOException {
+		doThrow(new IOException()).when(channelIO).addBan(100, 100);
+		
+		assertFalse(channel.addBan(100));//The addition should fail
+		assertFalse(channel.getBans().contains(100));//And the ban should not have been added
 	}
 
 	@Test
 	public void testRemoveBan() {
 		channel.addBan(100);
 		assumeTrue(channel.isUserBanned(100));
-		channel.removeBan(100);
+		
+		assertTrue(channel.removeBan(100));//The removal should succeed
 		assertFalse(channel.isUserBanned(100));
+	}
+
+	@Test
+	public void testRemoveNonBan() {
+		assumeFalse(channel.isUserBanned(100));
+		
+		assertFalse(channel.removeBan(100));
+	}
+
+	@Test
+	public void testRemoveBanException() throws IOException {
+		doThrow(new IOException()).when(channelIO).removeBan(100, 100);
+		
+		channel.addBan(100);
+		assumeTrue(channel.isUserBanned(100));
+		
+		assertFalse(channel.removeBan(100));//The removal should fail
+		assertTrue(channel.getBans().contains(100));//And the ban should still apply
 	}
 
 	@Test

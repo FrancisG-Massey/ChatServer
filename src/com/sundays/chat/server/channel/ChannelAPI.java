@@ -65,7 +65,7 @@ public class ChannelAPI {
         return messageFactory.createDetailsMessage(channel, userManager);
     }
     
-    public MessagePayload getChannelList (int channelID) throws JSONException {
+    public MessagePayload getUserList (int channelID) {
     	Channel channel = channelManager.getChannel(channelID);
         MessagePayload channelList;
         if (channel == null) {
@@ -78,7 +78,7 @@ public class ChannelAPI {
         return channelList;
     }
     
-    public MessagePayload getRankList (int channelID) {
+    public MessagePayload getMemberList (int channelID) {
         Channel channel = channelManager.getChannel(channelID);
         if (channel == null) {
         	try {

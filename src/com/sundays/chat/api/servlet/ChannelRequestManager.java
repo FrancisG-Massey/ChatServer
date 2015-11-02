@@ -28,23 +28,33 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.sundays.chat.server.channel.ChannelAPI;
 import com.sundays.chat.server.channel.ChannelGroup;
+import com.sundays.chat.server.channel.ChannelManager;
 import com.sundays.chat.server.message.MessageWrapper;
 import com.sundays.chat.server.user.User;
+import com.sundays.chat.server.user.UserManager;
 import com.sundays.chat.utils.HttpRequestTools;
 
 /**
  * Servlet implementation class ChannelManager
  */
 public class ChannelRequestManager extends HttpServlet {
-	private static final long serialVersionUID = 1L;
 	
-	private ServletLauncher server;
+	private static final long serialVersionUID = 5326141926392670401L;
+
+	private static final Logger logger = Logger.getLogger(ChannelRequestManager.class);
+	
+	private ServletLauncher launcher;
+	
+	private ChannelManager channelManager;
+	
+	private UserManager userManager;
        
     /**
      * @see HttpServlet#HttpServlet()
@@ -56,83 +66,63 @@ public class ChannelRequestManager extends HttpServlet {
     @Override
     public void init (ServletConfig config) throws ServletException {
     	super.init(config);
-    	server = ServletLauncher.getInstance();
-    	if (!server.initalised) {
-    		server.init(config);
+    	launcher = ServletLauncher.getInstance();
+    	if (!launcher.initalised) {
+    		launcher.init(config);
     	}
-    	/*System.out.println("Testing properties file retrieval");
-    	InputStream is = config.getServletContext().getResourceAsStream("/WEB-INF/default.properties");
-    	Properties p = new Properties();
-    	try {
-			p.load(is);
-		} catch (IOException e) {
-			config.getServletContext().log("Problem loading application configuration file: ", e);
-		}
-    	System.out.println(p.getProperty("test"));*/
+    	channelManager = launcher.getChannelManager();
     }
     
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		if (request.getPathInfo() == null) {
-			//No channel ID specified
+		if (request.getPathInfo() == null) {//No channel ID specified
 			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No channel ID specified");
 			return;
 		}
 		String[] requestInfo = request.getPathInfo().substring(1).split("/");
-		if (requestInfo.length == 0) {
-			//No channel ID specified
+		if (requestInfo.length == 0) {//No channel ID specified
 			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No channel ID specified");
 			return;
 		}
 		int channelID = 0;
 		try {
 			channelID = Integer.parseInt(requestInfo[0]);
-		} catch (NumberFormatException e) {
-			//Channel ID is not a number
+		} catch (NumberFormatException e) {//Channel ID is not a number
 			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid channel ID specified");
 			return;
 		}
-		JSONObject responseJSON = new JSONObject();
-		ChannelAPI cm = server.getChannelAPI();
-		if (!server.getChannelManager().channelExists(channelID)) {
-			try {
-				responseJSON.put("status", HttpServletResponse.SC_BAD_REQUEST);
-				responseJSON.put("message", "Channel not found.");		
-				HttpRequestTools.sendResponseJSON(response, responseJSON);
-			} catch (JSONException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		JSONObject responseMessage = new JSONObject();
+		ChannelAPI cm = launcher.getChannelAPI();
+		if (!channelManager.channelExists(channelID)) {
+			response.sendError(HttpServletResponse.SC_NOT_FOUND, "Channel not found: "+channelID);
 			return;
 		}
 		
 		try {
-			responseJSON = processGetRequest(requestInfo, channelID, cm, response);
-		} catch (JSONException e1) {
-			e1.printStackTrace();
+			responseMessage = processGetRequest(requestInfo, channelID, cm, response);
+		} catch (JSONException ex) {
+			logger.error("Failed to process request.", ex);
 			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			return;
 		}
 		
 		try {
-			if (responseJSON == null) {
-				responseJSON = new JSONObject();
-				responseJSON.put("status", HttpServletResponse.SC_NOT_FOUND);
-			} else if (responseJSON.length() == 0) {
-				responseJSON.put("status", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			} else if (!responseJSON.has("status")) {
-				responseJSON.put("status", HttpServletResponse.SC_OK);
+			if (responseMessage == null) {
+				responseMessage = new JSONObject();
+				responseMessage.put("status", HttpServletResponse.SC_NOT_FOUND);
+			} else if (responseMessage.length() == 0) {
+				responseMessage.put("status", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			} else if (!responseMessage.has("status")) {
+				responseMessage.put("status", HttpServletResponse.SC_OK);
 			}				
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (JSONException ex) {
+			logger.error("Failed to pack response for channel request "+channelID, ex);
+			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			return;
 		}
-		HttpRequestTools.sendResponseJSON(response, responseJSON);
+		HttpRequestTools.sendResponseJSON(response, responseMessage);
 		return;
 	}
 
@@ -140,41 +130,28 @@ public class ChannelRequestManager extends HttpServlet {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		if (request.getPathInfo() == null) {
-			//No channel ID specified
+		if (request.getPathInfo() == null) {//No channel ID specified
 			response.sendError(HttpServletResponse.SC_BAD_REQUEST);
 			return;
 		}
-		String[] requestInfo = request.getPathInfo().substring(1).split("/");
-		if (requestInfo.length == 0) {
-			//No channel ID specified
+		String[] requestParams = request.getPathInfo().substring(1).split("/");
+		if (requestParams.length == 0) {//No channel ID specified
 			response.sendError(HttpServletResponse.SC_BAD_REQUEST);
 			return;
 		}
 		int channelID = 0;
 		try {
-			channelID = Integer.parseInt(requestInfo[0]);
-		} catch (NumberFormatException e) {
-			//Channel ID is not a number
+			channelID = Integer.parseInt(requestParams[0]);
+		} catch (NumberFormatException e) {//Channel ID is not a number
 			response.sendError(HttpServletResponse.SC_BAD_REQUEST);
 			return;
 		}
-		JSONObject responseJSON = new JSONObject();
-		if (!server.getChannelManager().channelExists(channelID)) {
-			try {
-				responseJSON.put("status", HttpServletResponse.SC_BAD_REQUEST);
-				responseJSON.put("message", "Channel not found.");		
-				HttpRequestTools.sendResponseJSON(response, responseJSON);
-			} catch (JSONException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		JSONObject responseMessage = new JSONObject();
+		if (!channelManager.channelExists(channelID)) {
+			response.sendError(HttpServletResponse.SC_NOT_FOUND, "Channel not found: "+channelID);
 			return;
 		}
-		if (requestInfo.length == 1) {
+		if (requestParams.length == 1) {
 			//Request for channel details
 			doGet(request, response);//Relays the request as a get request			
 		} else if (request.getContentType().split(";")[0].equals("application/json")) {	
@@ -185,26 +162,25 @@ public class ChannelRequestManager extends HttpServlet {
 				response.sendError(HttpServletResponse.SC_BAD_REQUEST);
 			}
 			try {				
-				User u = server.getUserManager().getUserSession(requestJSON.optString("session", null));
+				User u = userManager.getUserSession(requestJSON.optString("session", null));
 				if (u == null) {
 					//User string does not match a valid, currently logged in user
-					responseJSON.put("status", HttpServletResponse.SC_FORBIDDEN);
-					responseJSON.put("message", "You must be logged in to use this method,");
+					responseMessage.put("status", HttpServletResponse.SC_FORBIDDEN);
+					responseMessage.put("message", "You must be logged in to use this method,");
 				} else {
-					responseJSON = processPostRequest(requestInfo, channelID, u, requestJSON, response);
+					responseMessage = processPostRequest(requestParams, channelID, u, requestJSON, response);
 				}
-				if (responseJSON == null) {
-					responseJSON = new JSONObject();
-					responseJSON.put("status", HttpServletResponse.SC_NOT_FOUND);
-				} else if (responseJSON.length() == 0) {
-					responseJSON.put("status", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				} else if (!responseJSON.has("status")) {
-					responseJSON.put("status", HttpServletResponse.SC_OK);
+				if (responseMessage == null) {
+					return;
+				} else if (responseMessage.length() == 0) {
+					responseMessage.put("status", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				} else if (!responseMessage.has("status")) {
+					responseMessage.put("status", HttpServletResponse.SC_OK);
 				}
-				HttpRequestTools.sendResponseJSON(response, responseJSON);	
+				HttpRequestTools.sendResponseJSON(response, responseMessage);	
 				
-			} catch (JSONException e) {
-				e.printStackTrace();
+			} catch (JSONException ex) {
+				logger.error("Failed to pack response for channel request "+channelID, ex);
 				response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				return;
 			}
@@ -213,53 +189,54 @@ public class ChannelRequestManager extends HttpServlet {
 		}
 	}
 	
-	private JSONObject processGetRequest (String[] requestInfo, int channelID, ChannelAPI api, HttpServletResponse response) throws JSONException, IOException {
-		JSONObject responseJSON = new JSONObject();
-		if (requestInfo.length == 1) {
+	private JSONObject processGetRequest (String[] requestParams, int channelID, ChannelAPI api, HttpServletResponse response) throws JSONException, IOException {
+		JSONObject responseMessage = new JSONObject();
+		if (requestParams.length == 1) {
 			//Request for channel details
-			responseJSON = new JSONObject(api.getChannelDetails(channelID));			
-		} else if ("userlist".equalsIgnoreCase(requestInfo[1])) {
+			responseMessage = new JSONObject(api.getChannelDetails(channelID));			
+		} else if ("users".equalsIgnoreCase(requestParams[1])) {
 			//Request for channel list
-			responseJSON = new JSONObject(api.getChannelList(channelID));	
-		} else if ("members".equalsIgnoreCase(requestInfo[1])) {
+			responseMessage = new JSONObject(api.getUserList(channelID));	
+		} else if ("members".equalsIgnoreCase(requestParams[1])) {
 			//Request for channel member list
-			responseJSON = new JSONObject(api.getRankList(channelID));
-		} else if ("bans".equalsIgnoreCase(requestInfo[1])) {
+			responseMessage = new JSONObject(api.getMemberList(channelID));
+		} else if ("bans".equalsIgnoreCase(requestParams[1])) {
 			//Request for channel permissions
-			responseJSON = new JSONObject(api.getBanList(channelID));
-		} else if ("groups".equalsIgnoreCase(requestInfo[1])) {
+			responseMessage = new JSONObject(api.getBanList(channelID));
+		} else if ("groups".equalsIgnoreCase(requestParams[1])) {
 			//Request for channel groups
-			responseJSON = new JSONObject(api.getChannelGroups(channelID));
+			responseMessage = new JSONObject(api.getChannelGroups(channelID));
 		} else {
 			response.sendError(HttpServletResponse.SC_NOT_FOUND);
-			//responseJSON.put("status", HttpServletResponse.SC_NOT_FOUND);
 		}
-		return responseJSON;
+		return responseMessage;
 	}
 	
-	private JSONObject processPostRequest (String[] requestInfo, int cID, User u, JSONObject requestJSON, HttpServletResponse response) throws ServletException, JSONException, IOException {
-		JSONObject responseJSON = new JSONObject();
-		ChannelAPI api = server.getChannelAPI();
-		
-		if (requestInfo.length > 2) {//Process any double-parameter requests first
-			if ("messages".equalsIgnoreCase(requestInfo[1]) && "send".equalsIgnoreCase(requestInfo[2])) {
-					//Request to send a message in the channel
-				String message = requestJSON.optString("message", null);
+	private boolean processMessageRequest (String[] requestParams, JSONObject requestMessage, int channelID, User user, HttpServletResponse response) throws IOException {
+		if (requestParams.length < 3) {
+			return false;
+		}
+		JSONObject responseMessage = new JSONObject();
+		ChannelAPI api = launcher.getChannelAPI();
+		try {
+			if ("send".equalsIgnoreCase(requestParams[2])) {
+				//Request to send a message in the channel
+				String message = requestMessage.optString("message", null);
 				if (message == null) {
-					responseJSON.put("status", HttpServletResponse.SC_BAD_REQUEST);
-					responseJSON.put("msgArgs", "arg=message,expected=String,found=null");
-					responseJSON.put("msgCode", 177);
-					responseJSON.put("message", "Invalid or missing parameter for message; expected: String, found: null."); 
+					responseMessage.put("status", HttpServletResponse.SC_BAD_REQUEST);
+					responseMessage.put("msgArgs", "arg=message,expected=String,found=null");
+					responseMessage.put("msgCode", 177);
+					responseMessage.put("message", "Invalid or missing parameter for message; expected: String, found: null."); 
 				} else {
-					responseJSON = api.sendMessage(u, message);
+					responseMessage = api.sendMessage(user, message);
 				}
-			} else if ("messages".equalsIgnoreCase(requestInfo[1]) && "get".equalsIgnoreCase(requestInfo[2])) {
+			} else if ("get".equalsIgnoreCase(requestParams[2])) {
 				//Request to collect cued messages (NOTE: This will remove everything currently in the cue)
-				if (u.hasCuedMessages(cID)) {
-					responseJSON.put("status", HttpServletResponse.SC_OK);
-					List<MessageWrapper> messages = u.getQueuedMessages(cID, true);
+				if (user.hasCuedMessages(channelID)) {
+					responseMessage.put("status", HttpServletResponse.SC_OK);
+					List<MessageWrapper> messages = user.getQueuedMessages(channelID, true);
 					if (messages == null) {
-						responseJSON.put("messages", JSONObject.NULL);
+						responseMessage.put("messages", JSONObject.NULL);
 					} else {
 						JSONArray packedMessages = new JSONArray();
 						JSONObject jsonObject;
@@ -270,12 +247,184 @@ public class ChannelRequestManager extends HttpServlet {
 							jsonObject.put("timestamp", message.getTimestamp());
 							packedMessages.put(jsonObject);
 						}
-						responseJSON.put("messages", packedMessages);
+						responseMessage.put("messages", packedMessages);
 					}
 				} else {
-					responseJSON.put("status", HttpServletResponse.SC_NO_CONTENT);
-				}	
-			} else if ("openingmessage".equalsIgnoreCase(requestInfo[1]) && "change".equalsIgnoreCase(requestInfo[2])) {
+					responseMessage.put("status", HttpServletResponse.SC_NO_CONTENT);
+				}
+			} else {
+				return false;
+			}
+			HttpRequestTools.sendResponseJSON(response, responseMessage);;
+			return true;
+		} catch (JSONException ex) {
+			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			return true;
+		}
+	}
+	
+	/**
+	 * Processes a request relating to the channel member list.
+	 * 
+	 * @param requestParams A string array containing the request arguments (0=channelID, 1=arg1, 2=arg2)
+	 * @param requestMessage A JSON object containing the POST request body
+	 * @param channelID The channel ID
+	 * @param user The user who commited the request
+	 * @param response A {@link HttpServletResponse} object used for sending the reply to the user 
+	 * @return True if the the request was handled (even if an error occured), false otherwise
+	 * @throws IOException If the response could not be sent due to an error.
+	 */
+	private boolean processMemberRequest (String[] requestParams, JSONObject requestMessage, int channelID, User user, HttpServletResponse response) throws IOException {
+		if (requestParams.length < 3) {
+			return false;
+		}
+		JSONObject responseMessage = new JSONObject();
+		ChannelAPI api = launcher.getChannelAPI();
+		try {
+			if ("add".equalsIgnoreCase(requestParams[2])) {
+				//Request to add a rank to the rank list
+				int uID = requestMessage.optInt("user", 0);//Tries to extract the user ID. If no userID is found, returns 0
+				if (uID == 0) {
+					//If no user ID was specified, checks for a username.
+					String un = requestMessage.optString("username", null);
+					if (un != null) {
+						//If a username was specified, attempt to resolve it to an ID
+						uID = launcher.getUserManager().getUserID(un);
+						if (uID != 0) {
+							//If a userID was found, use the specified ID
+							responseMessage = api.addRank(user, channelID, uID);
+						} else {
+							responseMessage.put("status", 404);
+							responseMessage.put("msgCode", 159);
+							responseMessage.put("message", "The user you have attempted to rank was not found.");
+						}
+					} else {
+						//If no userID or username was specified, send back an error message.
+						responseMessage.put("status", HttpServletResponse.SC_BAD_REQUEST);
+						responseMessage.put("msgArgs", "arg=userID OR username,expected=Integer OR String,found=neither");
+						responseMessage.put("msgCode", 177);
+						responseMessage.put("message", "Invalid or missing parameter for userID OR username; expected: Integer OR String, found: neither.");
+					}
+				} else {
+					responseMessage = api.addRank(user, channelID, uID);
+				}
+			} else if ("remove".equalsIgnoreCase(requestParams[2])) {
+				//Request to add a rank to the rank list
+				int uID = requestMessage.optInt("user", 0);
+				if (uID == 0) {
+					responseMessage.put("status", HttpServletResponse.SC_BAD_REQUEST);
+					responseMessage.put("msgArgs", "arg=userID,expected=Integer,found=null");
+					responseMessage.put("msgCode", 177);
+					responseMessage.put("message", "Invalid or missing parameter for userID; expected: Integer, found: null."); 
+				} else {
+					responseMessage = api.removeRank(user, channelID, uID);
+				}					
+			} else if ("update".equalsIgnoreCase(requestParams[2])) {
+				//Request to add a rank to the rank list
+				int uID = requestMessage.optInt("user", 0);
+				int groupID = requestMessage.optInt("group", Integer.MAX_VALUE);
+				if (uID == 0) {
+					responseMessage.put("status", HttpServletResponse.SC_BAD_REQUEST);
+					responseMessage.put("msgArgs", "arg=userID,expected=Integer,found=null");
+					responseMessage.put("msgCode", 177);
+					responseMessage.put("message", "Invalid or missing parameter for userID; expected: Integer, found: null."); 
+				} else if (groupID > Byte.MAX_VALUE || groupID < Byte.MIN_VALUE) {
+					responseMessage.put("status", HttpServletResponse.SC_BAD_REQUEST);
+					responseMessage.put("msgArgs", "arg=rankID,expected=byte,found=null");
+					responseMessage.put("msgCode", 177);
+					responseMessage.put("message", "Invalid or missing parameter for rankID; expected: byte, found: null."); 
+				} else {
+					responseMessage = api.updateRank(user, channelID, uID, (byte) groupID);
+				}
+				
+			} else {
+				return false;
+			}
+			HttpRequestTools.sendResponseJSON(response, responseMessage);
+			return true;
+		} catch (JSONException ex) {
+			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			return true;
+		}
+	}
+	
+	private boolean processBanRequest (String[] requestParams, JSONObject requestMessage, int channelID, User user, HttpServletResponse response) throws IOException {
+		if (requestParams.length < 3) {
+			return false;
+		}
+		JSONObject responseMessage = new JSONObject();
+		ChannelAPI api = launcher.getChannelAPI();
+		try {
+			if ("add".equalsIgnoreCase(requestParams[2])) {
+				//Request to add a rank to the rank list
+				int uID = requestMessage.optInt("user", 0);//Tries to extract the user ID. If no userID is found, returns 0
+				if (uID == 0) {
+					//If no user ID was specified, checks for a username.
+					String un = requestMessage.optString("username", null);
+					if (un != null) {
+						//If a username was specified, attempt to resolve it to an ID
+						uID = launcher.getUserManager().getUserID(un);
+						if (uID != 0) {
+							//If a userID was found, use the specified ID
+							responseMessage = api.addBan(user, channelID, uID);
+						} else {
+							responseMessage.put("status", 404);
+							responseMessage.put("msgCode", 160);
+							responseMessage.put("message", "The user you have attempted to ban was not found.");
+						}
+					} else {
+						//If no userID or username was specified, send back an error message.
+						responseMessage.put("status", HttpServletResponse.SC_BAD_REQUEST);
+						responseMessage.put("msgArgs", "arg=userID OR username,expected=Integer OR String,found=neither");
+						responseMessage.put("msgCode", 177);
+						responseMessage.put("message", "Invalid or missing parameter for userID OR username; expected: Integer OR String, found: neither.");
+					}
+				} else {
+					responseMessage = api.addBan(user, channelID, uID);
+				}
+			} else if ("remove".equalsIgnoreCase(requestParams[2])) {
+				//Request to add a rank to the rank list
+				int uID = requestMessage.optInt("user", 0);
+				if (uID == 0) {
+					responseMessage.put("status", HttpServletResponse.SC_BAD_REQUEST);
+					responseMessage.put("msgArgs", "arg=userID,expected=Integer,found=null");
+					responseMessage.put("msgCode", 177);
+					responseMessage.put("message", "Invalid or missing parameter for userID; expected: Integer, found: null."); 
+				} else {
+					responseMessage = api.removeBan(user, channelID, uID);
+				}
+			
+			} else {
+				return false;
+			}
+			HttpRequestTools.sendResponseJSON(response, responseMessage);
+			return true;
+		} catch (JSONException ex) {
+			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			return true;
+		}
+	}
+	
+	private JSONObject processPostRequest (String[] requestParams, int channelID, User user, JSONObject requestJSON, HttpServletResponse response) throws ServletException, JSONException, IOException {
+		JSONObject responseJSON = new JSONObject();
+		ChannelAPI api = launcher.getChannelAPI();
+		
+		if ("messages".equalsIgnoreCase(requestParams[1])) {
+			if (processMessageRequest(requestParams, requestJSON, channelID, user, response)) {
+				return null;
+			}
+		} else if ("members".equalsIgnoreCase(requestParams[1])) {
+			if (processMemberRequest(requestParams, requestJSON, channelID, user, response)) {
+				return null;
+			}
+		} else if ("bans".equalsIgnoreCase(requestParams[1])) {
+			if (processBanRequest(requestParams, requestJSON, channelID, user, response)) {
+				return null;
+			}
+		}
+		
+		if (requestParams.length > 2) {//Process any double-parameter requests first
+			if ("openingmessage".equalsIgnoreCase(requestParams[1]) && "change".equalsIgnoreCase(requestParams[2])) {
 				//Request to change channel permissions
 				String message = requestJSON.optString("message", null);
 				if (message == null) {
@@ -284,116 +433,22 @@ public class ChannelRequestManager extends HttpServlet {
 					responseJSON.put("msgCode", 177);
 					responseJSON.put("message", "Invalid or missing parameter for message; expected: String, found: null."); 
 				} else {
-					responseJSON = api.chageOpeningMessage(u, cID, message, Color.black);
-				}				
-			} else if ("ranks".equalsIgnoreCase(requestInfo[1]) && "add".equalsIgnoreCase(requestInfo[2])) {
-				//Request to add a rank to the rank list
-				int uID = requestJSON.optInt("userID", 0);//Tries to extract the user ID. If no userID is found, returns 0
-				if (uID == 0) {
-					//If no user ID was specified, checks for a username.
-					String un = requestJSON.optString("username", null);
-					if (un != null) {
-						//If a username was specified, attempt to resolve it to an ID
-						uID = server.getUserManager().getUserID(un);
-						if (uID != 0) {
-							//If a userID was found, use the specified ID
-							responseJSON = api.addRank(u, cID, uID);
-						} else {
-							responseJSON.put("status", 404);
-							responseJSON.put("msgCode", 159);
-							responseJSON.put("message", "The user you have attempted to rank was not found.");
-						}
-					} else {
-						//If no userID or username was specified, send back an error message.
-						responseJSON.put("status", HttpServletResponse.SC_BAD_REQUEST);
-						responseJSON.put("msgArgs", "arg=userID OR username,expected=Integer OR String,found=neither");
-						responseJSON.put("msgCode", 177);
-						responseJSON.put("message", "Invalid or missing parameter for userID OR username; expected: Integer OR String, found: neither.");
-					}
-				} else {
-					responseJSON = api.addRank(u, cID, uID);
+					responseJSON = api.chageOpeningMessage(user, channelID, message, Color.black);
 				}
-			} else if ("ranks".equalsIgnoreCase(requestInfo[1]) && "remove".equalsIgnoreCase(requestInfo[2])) {
-				//Request to add a rank to the rank list
-				int uID = requestJSON.optInt("userID", 0);
-				if (uID == 0) {
-					responseJSON.put("status", HttpServletResponse.SC_BAD_REQUEST);
-					responseJSON.put("msgArgs", "arg=userID,expected=Integer,found=null");
-					responseJSON.put("msgCode", 177);
-					responseJSON.put("message", "Invalid or missing parameter for userID; expected: Integer, found: null."); 
-				} else {
-					responseJSON = api.removeRank(u, cID, uID);
-				}					
-			} else if ("ranks".equalsIgnoreCase(requestInfo[1]) && "update".equalsIgnoreCase(requestInfo[2])) {
-				//Request to add a rank to the rank list
-				int uID = requestJSON.optInt("userID", 0);
-				int rankID = requestJSON.optInt("rankID", Integer.MAX_VALUE);
-				if (uID == 0) {
-					responseJSON.put("status", HttpServletResponse.SC_BAD_REQUEST);
-					responseJSON.put("msgArgs", "arg=userID,expected=Integer,found=null");
-					responseJSON.put("msgCode", 177);
-					responseJSON.put("message", "Invalid or missing parameter for userID; expected: Integer, found: null."); 
-				} else if (rankID > Byte.MAX_VALUE || rankID < Byte.MIN_VALUE) {
-					responseJSON.put("status", HttpServletResponse.SC_BAD_REQUEST);
-					responseJSON.put("msgArgs", "arg=rankID,expected=byte,found=null");
-					responseJSON.put("msgCode", 177);
-					responseJSON.put("message", "Invalid or missing parameter for rankID; expected: byte, found: null."); 
-				} else {
-					responseJSON = api.updateRank(u, cID, uID, (byte) rankID);
-				}
-				
-			} else if ("bans".equalsIgnoreCase(requestInfo[1]) && "add".equalsIgnoreCase(requestInfo[2])) {
-				//Request to add a rank to the rank list
-				int uID = requestJSON.optInt("userID", 0);//Tries to extract the user ID. If no userID is found, returns 0
-				if (uID == 0) {
-					//If no user ID was specified, checks for a username.
-					String un = requestJSON.optString("username", null);
-					if (un != null) {
-						//If a username was specified, attempt to resolve it to an ID
-						uID = server.getUserManager().getUserID(un);
-						if (uID != 0) {
-							//If a userID was found, use the specified ID
-							responseJSON = api.addBan(u, cID, uID);
-						} else {
-							responseJSON.put("status", 404);
-							responseJSON.put("msgCode", 160);
-							responseJSON.put("message", "The user you have attempted to ban was not found.");
-						}
-					} else {
-						//If no userID or username was specified, send back an error message.
-						responseJSON.put("status", HttpServletResponse.SC_BAD_REQUEST);
-						responseJSON.put("msgArgs", "arg=userID OR username,expected=Integer OR String,found=neither");
-						responseJSON.put("msgCode", 177);
-						responseJSON.put("message", "Invalid or missing parameter for userID OR username; expected: Integer OR String, found: neither.");
-					}
-				} else {
-					responseJSON = api.addBan(u, cID, uID);
-				}
-			} else if ("bans".equalsIgnoreCase(requestInfo[1]) && "remove".equalsIgnoreCase(requestInfo[2])) {
-				//Request to add a rank to the rank list
-				int uID = requestJSON.optInt("userID", 0);
-				if (uID == 0) {
-					responseJSON.put("status", HttpServletResponse.SC_BAD_REQUEST);
-					responseJSON.put("msgArgs", "arg=userID,expected=Integer,found=null");
-					responseJSON.put("msgCode", 177);
-					responseJSON.put("message", "Invalid or missing parameter for userID; expected: Integer, found: null."); 
-				} else {
-					responseJSON = api.removeBan(u, cID, uID);
-				}				
 			} else {
-				responseJSON = processGetRequest(requestInfo, cID, api, response);//Relays the request as a get request
+				responseJSON = processGetRequest(requestParams, channelID, api, response);//Relays the request as a get request
 			} 
-		} else if (requestInfo.length > 1) {
-			if ("join".equalsIgnoreCase(requestInfo[1])) {
+		} else if (requestParams.length > 1) {
+			if ("join".equalsIgnoreCase(requestParams[1])) {
 				//Request to join channel
-				responseJSON = api.joinChannel(u, cID);			
-			} else if ("leave".equalsIgnoreCase(requestInfo[1])) {
+				responseJSON = api.joinChannel(user, channelID);			
+			} else if ("leave".equalsIgnoreCase(requestParams[1])) {
 				//Request to leave channel
-				responseJSON = api.leaveChannel(u);
-			} else if ("reset".equalsIgnoreCase(requestInfo[1])) {
+				responseJSON = api.leaveChannel(user);
+			} else if ("reset".equalsIgnoreCase(requestParams[1])) {
 				//Request to reset the channel
-				responseJSON = api.resetChannel(u, cID);
-			} else if ("kick".equalsIgnoreCase(requestInfo[1])) {
+				responseJSON = api.resetChannel(user, channelID);
+			} else if ("kick".equalsIgnoreCase(requestParams[1])) {
 				//Request to kick a user from the channel (also applies a 60 second ban)
 				int kUID = requestJSON.optInt("userID", 0);
 				if (kUID == 0) {
@@ -402,9 +457,9 @@ public class ChannelRequestManager extends HttpServlet {
 					responseJSON.put("msgCode", 177);
 					responseJSON.put("message", "Invalid or missing parameter for userID; expected: Integer, found: null."); 
 				} else {
-					responseJSON = api.kickUser(u, cID, kUID);
+					responseJSON = api.kickUser(user, channelID, kUID);
 				}					
-			} else if ("tempban".equalsIgnoreCase(requestInfo[1])) {
+			} else if ("tempban".equalsIgnoreCase(requestParams[1])) {
 				//Request to temporarily ban a user from the channel
 				int uID = requestJSON.optInt("userID", 0),//Tries to extract the user ID. If no userID is found, returns 0
 					duration = requestJSON.getInt("duration");
@@ -413,10 +468,10 @@ public class ChannelRequestManager extends HttpServlet {
 					String un = requestJSON.optString("username", null);
 					if (un != null) {
 						//If a username was specified, attempt to resolve it to an ID
-						uID = server.getUserManager().getUserID(un);
+						uID = launcher.getUserManager().getUserID(un);
 						if (uID != 0) {
 							//If a userID was found, use the specified ID
-							responseJSON = api.tempBanUser(u, cID, uID, duration);
+							responseJSON = api.tempBanUser(user, channelID, uID, duration);
 						} else {
 							//Send an error message otherwise
 							responseJSON.put("status", 404);
@@ -430,19 +485,19 @@ public class ChannelRequestManager extends HttpServlet {
 						responseJSON.put("message", "Invalid or missing parameter for userID OR username; expected: Integer OR String, found: neither."); 
 					}
 				} else {
-					responseJSON = api.tempBanUser(u, cID, uID, duration);
+					responseJSON = api.tempBanUser(user, channelID, uID, duration);
 				}
-			} else if ("lock".equalsIgnoreCase(requestInfo[1])) {
+			} else if ("lock".equalsIgnoreCase(requestParams[1])) {
 				//Request to lock the channel down, preventing new people of a certain rank from entering while keeping all existing members with that rank
 				int rank = requestJSON.optInt("rank", ChannelGroup.GUEST_GROUP);
 				int durationMins = requestJSON.optInt("duration", 15);
 				//If no parameters (or invalid parameters) are supplied, default to locking out new guests for 15 minutes.
-				responseJSON = api.lockChannel(u, cID, rank, durationMins);
+				responseJSON = api.lockChannel(user, channelID, rank, durationMins);
 			} else {
-				responseJSON = processGetRequest(requestInfo, cID, api, response);//Relays the request as a get request
+				responseJSON = processGetRequest(requestParams, channelID, api, response);//Relays the request as a get request
 			}
 		} else {
-			responseJSON = processGetRequest(requestInfo, cID, api, response);//Relays the request as a get request
+			responseJSON = processGetRequest(requestParams, channelID, api, response);//Relays the request as a get request
 		}		
 		return responseJSON;
 	}
