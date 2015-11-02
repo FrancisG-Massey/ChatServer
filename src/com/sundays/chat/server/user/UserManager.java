@@ -234,7 +234,7 @@ public final class UserManager implements UserLookup {
         	//If the user is in a channel, make them leave it
             currentChannel = u.getChannel().getId();
             try {
-            	server.getChannelAPI().leaveChannel(u);
+            	server.getChannelManager().leaveChannel(u);
 			} catch (JSONException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

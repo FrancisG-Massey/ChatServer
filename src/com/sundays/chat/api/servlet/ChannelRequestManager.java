@@ -33,7 +33,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.sundays.chat.server.channel.ChannelAPI;
 import com.sundays.chat.server.channel.ChannelGroup;
 import com.sundays.chat.server.channel.ChannelManager;
 import com.sundays.chat.server.message.MessageWrapper;
@@ -94,14 +93,13 @@ public class ChannelRequestManager extends HttpServlet {
 			return;
 		}
 		JSONObject responseMessage = new JSONObject();
-		ChannelAPI cm = launcher.getChannelAPI();
 		if (!channelManager.channelExists(channelID)) {
 			response.sendError(HttpServletResponse.SC_NOT_FOUND, "Channel not found: "+channelID);
 			return;
 		}
 		
 		try {
-			responseMessage = processGetRequest(requestInfo, channelID, cm, response);
+			responseMessage = processGetRequest(requestInfo, channelID, response);
 		} catch (JSONException ex) {
 			logger.error("Failed to process request.", ex);
 			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -189,23 +187,23 @@ public class ChannelRequestManager extends HttpServlet {
 		}
 	}
 	
-	private JSONObject processGetRequest (String[] requestParams, int channelID, ChannelAPI api, HttpServletResponse response) throws JSONException, IOException {
+	private JSONObject processGetRequest (String[] requestParams, int channelID, HttpServletResponse response) throws JSONException, IOException {
 		JSONObject responseMessage = new JSONObject();
 		if (requestParams.length == 1) {
 			//Request for channel details
-			responseMessage = new JSONObject(api.getChannelDetails(channelID));			
+			responseMessage = new JSONObject(channelManager.getChannelDetails(channelID));			
 		} else if ("users".equalsIgnoreCase(requestParams[1])) {
 			//Request for channel list
-			responseMessage = new JSONObject(api.getUserList(channelID));	
+			responseMessage = new JSONObject(channelManager.getUserList(channelID));	
 		} else if ("members".equalsIgnoreCase(requestParams[1])) {
 			//Request for channel member list
-			responseMessage = new JSONObject(api.getMemberList(channelID));
+			responseMessage = new JSONObject(channelManager.getMemberList(channelID));
 		} else if ("bans".equalsIgnoreCase(requestParams[1])) {
 			//Request for channel permissions
-			responseMessage = new JSONObject(api.getBanList(channelID));
+			responseMessage = new JSONObject(channelManager.getBanList(channelID));
 		} else if ("groups".equalsIgnoreCase(requestParams[1])) {
 			//Request for channel groups
-			responseMessage = new JSONObject(api.getChannelGroups(channelID));
+			responseMessage = new JSONObject(channelManager.getChannelGroups(channelID));
 		} else {
 			response.sendError(HttpServletResponse.SC_NOT_FOUND);
 		}
@@ -217,7 +215,6 @@ public class ChannelRequestManager extends HttpServlet {
 			return false;
 		}
 		JSONObject responseMessage = new JSONObject();
-		ChannelAPI api = launcher.getChannelAPI();
 		try {
 			if ("send".equalsIgnoreCase(requestParams[2])) {
 				//Request to send a message in the channel
@@ -228,7 +225,7 @@ public class ChannelRequestManager extends HttpServlet {
 					responseMessage.put("msgCode", 177);
 					responseMessage.put("message", "Invalid or missing parameter for message; expected: String, found: null."); 
 				} else {
-					responseMessage = api.sendMessage(user, message);
+					responseMessage = channelManager.sendMessage(user, message);
 				}
 			} else if ("get".equalsIgnoreCase(requestParams[2])) {
 				//Request to collect cued messages (NOTE: This will remove everything currently in the cue)
@@ -279,7 +276,6 @@ public class ChannelRequestManager extends HttpServlet {
 			return false;
 		}
 		JSONObject responseMessage = new JSONObject();
-		ChannelAPI api = launcher.getChannelAPI();
 		try {
 			if ("add".equalsIgnoreCase(requestParams[2])) {
 				//Request to add a rank to the rank list
@@ -292,7 +288,7 @@ public class ChannelRequestManager extends HttpServlet {
 						uID = launcher.getUserManager().getUserID(un);
 						if (uID != 0) {
 							//If a userID was found, use the specified ID
-							responseMessage = api.addRank(user, channelID, uID);
+							responseMessage = channelManager.addRank(user, channelID, uID);
 						} else {
 							responseMessage.put("status", 404);
 							responseMessage.put("msgCode", 159);
@@ -306,7 +302,7 @@ public class ChannelRequestManager extends HttpServlet {
 						responseMessage.put("message", "Invalid or missing parameter for userID OR username; expected: Integer OR String, found: neither.");
 					}
 				} else {
-					responseMessage = api.addRank(user, channelID, uID);
+					responseMessage = channelManager.addRank(user, channelID, uID);
 				}
 			} else if ("remove".equalsIgnoreCase(requestParams[2])) {
 				//Request to add a rank to the rank list
@@ -317,7 +313,7 @@ public class ChannelRequestManager extends HttpServlet {
 					responseMessage.put("msgCode", 177);
 					responseMessage.put("message", "Invalid or missing parameter for userID; expected: Integer, found: null."); 
 				} else {
-					responseMessage = api.removeRank(user, channelID, uID);
+					responseMessage = channelManager.removeRank(user, channelID, uID);
 				}					
 			} else if ("update".equalsIgnoreCase(requestParams[2])) {
 				//Request to add a rank to the rank list
@@ -334,7 +330,7 @@ public class ChannelRequestManager extends HttpServlet {
 					responseMessage.put("msgCode", 177);
 					responseMessage.put("message", "Invalid or missing parameter for rankID; expected: byte, found: null."); 
 				} else {
-					responseMessage = api.updateRank(user, channelID, uID, (byte) groupID);
+					responseMessage = channelManager.updateRank(user, channelID, uID, (byte) groupID);
 				}
 				
 			} else {
@@ -353,7 +349,6 @@ public class ChannelRequestManager extends HttpServlet {
 			return false;
 		}
 		JSONObject responseMessage = new JSONObject();
-		ChannelAPI api = launcher.getChannelAPI();
 		try {
 			if ("add".equalsIgnoreCase(requestParams[2])) {
 				//Request to add a rank to the rank list
@@ -366,7 +361,7 @@ public class ChannelRequestManager extends HttpServlet {
 						uID = launcher.getUserManager().getUserID(un);
 						if (uID != 0) {
 							//If a userID was found, use the specified ID
-							responseMessage = api.addBan(user, channelID, uID);
+							responseMessage = channelManager.addBan(user, channelID, uID);
 						} else {
 							responseMessage.put("status", 404);
 							responseMessage.put("msgCode", 160);
@@ -380,7 +375,7 @@ public class ChannelRequestManager extends HttpServlet {
 						responseMessage.put("message", "Invalid or missing parameter for userID OR username; expected: Integer OR String, found: neither.");
 					}
 				} else {
-					responseMessage = api.addBan(user, channelID, uID);
+					responseMessage = channelManager.addBan(user, channelID, uID);
 				}
 			} else if ("remove".equalsIgnoreCase(requestParams[2])) {
 				//Request to add a rank to the rank list
@@ -391,7 +386,7 @@ public class ChannelRequestManager extends HttpServlet {
 					responseMessage.put("msgCode", 177);
 					responseMessage.put("message", "Invalid or missing parameter for userID; expected: Integer, found: null."); 
 				} else {
-					responseMessage = api.removeBan(user, channelID, uID);
+					responseMessage = channelManager.removeBan(user, channelID, uID);
 				}
 			
 			} else {
@@ -407,7 +402,6 @@ public class ChannelRequestManager extends HttpServlet {
 	
 	private JSONObject processPostRequest (String[] requestParams, int channelID, User user, JSONObject requestJSON, HttpServletResponse response) throws ServletException, JSONException, IOException {
 		JSONObject responseJSON = new JSONObject();
-		ChannelAPI api = launcher.getChannelAPI();
 		
 		if ("messages".equalsIgnoreCase(requestParams[1])) {
 			if (processMessageRequest(requestParams, requestJSON, channelID, user, response)) {
@@ -433,21 +427,21 @@ public class ChannelRequestManager extends HttpServlet {
 					responseJSON.put("msgCode", 177);
 					responseJSON.put("message", "Invalid or missing parameter for message; expected: String, found: null."); 
 				} else {
-					responseJSON = api.chageOpeningMessage(user, channelID, message, Color.black);
+					responseJSON = channelManager.chageOpeningMessage(user, channelID, message, Color.black);
 				}
 			} else {
-				responseJSON = processGetRequest(requestParams, channelID, api, response);//Relays the request as a get request
+				responseJSON = processGetRequest(requestParams, channelID, response);//Relays the request as a get request
 			} 
 		} else if (requestParams.length > 1) {
 			if ("join".equalsIgnoreCase(requestParams[1])) {
 				//Request to join channel
-				responseJSON = api.joinChannel(user, channelID);			
+				responseJSON = channelManager.joinChannel(user, channelID);			
 			} else if ("leave".equalsIgnoreCase(requestParams[1])) {
 				//Request to leave channel
-				responseJSON = api.leaveChannel(user);
+				responseJSON = channelManager.leaveChannel(user);
 			} else if ("reset".equalsIgnoreCase(requestParams[1])) {
 				//Request to reset the channel
-				responseJSON = api.resetChannel(user, channelID);
+				responseJSON = channelManager.resetChannel(user, channelID);
 			} else if ("kick".equalsIgnoreCase(requestParams[1])) {
 				//Request to kick a user from the channel (also applies a 60 second ban)
 				int kUID = requestJSON.optInt("userID", 0);
@@ -457,7 +451,7 @@ public class ChannelRequestManager extends HttpServlet {
 					responseJSON.put("msgCode", 177);
 					responseJSON.put("message", "Invalid or missing parameter for userID; expected: Integer, found: null."); 
 				} else {
-					responseJSON = api.kickUser(user, channelID, kUID);
+					responseJSON = channelManager.kickUser(user, channelID, kUID);
 				}					
 			} else if ("tempban".equalsIgnoreCase(requestParams[1])) {
 				//Request to temporarily ban a user from the channel
@@ -471,7 +465,7 @@ public class ChannelRequestManager extends HttpServlet {
 						uID = launcher.getUserManager().getUserID(un);
 						if (uID != 0) {
 							//If a userID was found, use the specified ID
-							responseJSON = api.tempBanUser(user, channelID, uID, duration);
+							responseJSON = channelManager.tempBanUser(user, channelID, uID, duration);
 						} else {
 							//Send an error message otherwise
 							responseJSON.put("status", 404);
@@ -485,19 +479,19 @@ public class ChannelRequestManager extends HttpServlet {
 						responseJSON.put("message", "Invalid or missing parameter for userID OR username; expected: Integer OR String, found: neither."); 
 					}
 				} else {
-					responseJSON = api.tempBanUser(user, channelID, uID, duration);
+					responseJSON = channelManager.tempBanUser(user, channelID, uID, duration);
 				}
 			} else if ("lock".equalsIgnoreCase(requestParams[1])) {
 				//Request to lock the channel down, preventing new people of a certain rank from entering while keeping all existing members with that rank
 				int rank = requestJSON.optInt("rank", ChannelGroup.GUEST_GROUP);
 				int durationMins = requestJSON.optInt("duration", 15);
 				//If no parameters (or invalid parameters) are supplied, default to locking out new guests for 15 minutes.
-				responseJSON = api.lockChannel(user, channelID, rank, durationMins);
+				responseJSON = channelManager.lockChannel(user, channelID, rank, durationMins);
 			} else {
-				responseJSON = processGetRequest(requestParams, channelID, api, response);//Relays the request as a get request
+				responseJSON = processGetRequest(requestParams, channelID, response);//Relays the request as a get request
 			}
 		} else {
-			responseJSON = processGetRequest(requestParams, channelID, api, response);//Relays the request as a get request
+			responseJSON = processGetRequest(requestParams, channelID, response);//Relays the request as a get request
 		}		
 		return responseJSON;
 	}

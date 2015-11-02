@@ -19,7 +19,6 @@
 package com.sundays.chat.server;
 
 import com.sundays.chat.io.IOManager;
-import com.sundays.chat.server.channel.ChannelAPI;
 import com.sundays.chat.server.channel.ChannelManager;
 import com.sundays.chat.server.user.UserManager;
 
@@ -28,7 +27,6 @@ public abstract class Launcher {
 	private UserManager userManager;
 	protected IOManager ioManager;
 	private ChannelManager channelManager;
-	private ChannelAPI channelAPI;
 	private TaskScheduler serverTaskScheduler;
 	
 	public IOManager getIO() {
@@ -40,16 +38,9 @@ public abstract class Launcher {
 	
 	public ChannelManager getChannelManager() {
 		if (channelManager == null) {
-			channelManager = new ChannelManager(this);
+			channelManager = new ChannelManager(ioManager, this);
 		}
 		return channelManager;
-	}
-
-	public ChannelAPI getChannelAPI() {
-		if (channelAPI == null) {
-			channelAPI = new ChannelAPI(this);
-		}
-		return channelAPI;
 	}
 	
 	public UserManager getUserManager() {
