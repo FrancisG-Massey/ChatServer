@@ -112,6 +112,16 @@ public interface ChannelDataIO extends AutoCloseable {
 	//Data retrieval
 	public ChannelDetails getChannelDetails (int channelID) throws IOException;
 	
+	/**
+	 * Returns the attributes (aka variables) for the channel.
+	 * These are used for storing general information about the channel which are not already stored in the channel details.
+	 * 
+	 * @param channelID The ID of the channel
+	 * @return A key-value pair map containing the channel attributes
+	 * @throws IOException If an IO issue occurs during the retrieval
+	 */
+	public Map<String, String> getChannelAttributes (int channelID) throws IOException;
+	
 	public Set<Integer> getChannelBans (int channelID) throws IOException;
 	
 	public Map<Integer, Integer> getChannelMembers (int channelID) throws IOException;

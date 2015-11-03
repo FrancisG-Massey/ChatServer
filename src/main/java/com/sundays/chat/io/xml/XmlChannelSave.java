@@ -597,4 +597,10 @@ public final class XmlChannelSave implements ChannelDataIO {
 		}			
 	}
 
+	@Override
+	public Map<String, String> getChannelAttributes(int channelID) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

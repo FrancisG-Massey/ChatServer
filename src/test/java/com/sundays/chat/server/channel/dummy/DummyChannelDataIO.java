@@ -135,4 +135,10 @@ public class DummyChannelDataIO implements ChannelDataIO {
 		calls.add(new CallEvent("removeChannel", channelID));
 	}
 
+	@Override
+	public Map<String, String> getChannelAttributes(int channelID) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }
