@@ -4,17 +4,17 @@
 <project default="all" basedir="." xmlns:jacoco="antlib:org.jacoco.ant">
 	<property name="name" value="ChatServer" />
 	<property name="version" value="1.0" />
-	<property name="src.dir" value="src" />
+	<property name="src.dir" value="src/main/java" />
 	<property name="build.dir" value="build" />
 	<property name="build.classes" value="${build.dir}/classes" />
 	<property name="build.lib" value="${build.dir}/lib" />
 	<property name="build.docs" value="${build.dir}/docs" />
 	<property name="build.docs.api" value="${build.docs}/api" />
 	<property name="build.tmp" value="${build.dir}/tmp" />
-	<property name="lib.dir" value="WebContent/WEB-INF/lib" />
+	<property name="lib.dir" value="src/main/webapp/WEB-INF/lib" />
 	<property name="qa.dir" value="${build.dir}/qa-reports" />
 	<property name="test.result.dir" value="${qa.dir}/tests" />
-	<property name="test.dir" value="test" />
+	<property name="test.dir" value="src/test/java" />
 	<property name="test.classes" value="${build.dir}/test-classes" />
 	
 	<path id="build.classpath">
