@@ -34,16 +34,16 @@ import com.sundays.chat.server.channel.dummy.DummyUserManager;
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.user.User;
 
-public class MessageFactoryTest {
+public class ChannelPacketFactoryTest {
 	
-	ChannelMessageFactory factory;
+	ChannelPacketFactory factory;
 	Channel dummyChannel;
 	ChannelUser testUser;
 	DummyUserManager userLookup;
 
 	@Before
 	public void setUp() throws Exception {
-		factory = new ChannelMessageFactory();
+		factory = new ChannelPacketFactory();
 		dummyChannel = new Channel(100, new DummyChannelDataIO());
 		UserDetails details = new UserDetails(102, "Test", 0);
 		testUser = new User(102, details);

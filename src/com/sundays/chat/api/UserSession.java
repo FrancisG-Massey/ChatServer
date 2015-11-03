@@ -18,7 +18,7 @@
  *******************************************************************************/
 package com.sundays.chat.api;
 
-import com.sundays.chat.server.message.MessageWrapper;
+import com.sundays.chat.server.user.UserMessageWrapper;
 
 /**
  * 
@@ -31,7 +31,7 @@ public interface UserSession {
      * @param channelID The ID of the channel the message is from.
      * @param message The message to send to the user
      */
-	public void sendMessage (int channelID, MessageWrapper message);
+	public void sendMessage (int channelID, UserMessageWrapper message);
 	
 	/**
 	 * Forcefully disconnect the user from the server.

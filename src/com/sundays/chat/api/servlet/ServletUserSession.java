@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.sundays.chat.api.UserSession;
-import com.sundays.chat.server.message.MessageWrapper;
+import com.sundays.chat.server.user.UserMessageWrapper;
 
 /**
  * 
@@ -32,7 +32,7 @@ import com.sundays.chat.server.message.MessageWrapper;
 public class ServletUserSession implements UserSession {
 	
 	private String sessionID;
-    private ConcurrentHashMap<Integer, List<MessageWrapper>> queuedMessages = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, List<UserMessageWrapper>> queuedMessages = new ConcurrentHashMap<>();
 
 	public ServletUserSession() {
 		// TODO Auto-generated constructor stub
@@ -47,11 +47,11 @@ public class ServletUserSession implements UserSession {
     }
 
 	@Override
-	public void sendMessage(int channelID, MessageWrapper message) {		
-    	List<MessageWrapper> queuedMessages = this.queuedMessages.get(channelID);
+	public void sendMessage(int channelID, UserMessageWrapper message) {		
+    	List<UserMessageWrapper> queuedMessages = this.queuedMessages.get(channelID);
     	if (queuedMessages == null) {
     		//If the channel queue does not exist for this user, create it.
-    		queuedMessages = new CopyOnWriteArrayList<MessageWrapper>();
+    		queuedMessages = new CopyOnWriteArrayList<UserMessageWrapper>();
     		this.queuedMessages.put(channelID, queuedMessages);
     	}
     	queuedMessages.add(message);
@@ -63,9 +63,9 @@ public class ServletUserSession implements UserSession {
      * @param remove Whether the messages should be removed from the queue.
      * @return A list of wrapped messsages, or null if there are no queued messages from the channel
      */
-    public List<MessageWrapper> getQueuedMessages (int channelID, boolean remove) {
+    public List<UserMessageWrapper> getQueuedMessages (int channelID, boolean remove) {
     	// 'remove' is used to specify if the messages should be removed from the cue.
-    	List<MessageWrapper> queuedMessages = this.queuedMessages.get(channelID);
+    	List<UserMessageWrapper> queuedMessages = this.queuedMessages.get(channelID);
     	if (queuedMessages == null) {
     		return null;
     	}
@@ -75,9 +75,9 @@ public class ServletUserSession implements UserSession {
 		return queuedMessages;
     }
     
-    public List<MessageWrapper> getQueuedMessages (int channelID, boolean remove, int[] types) {
+    public List<UserMessageWrapper> getQueuedMessages (int channelID, boolean remove, int[] types) {
     	//Retrieves the cued messages for the specified channel. 'remove' is used to specify if the messages should be removed from the cue.
-    	List<MessageWrapper> cuedMessages = this.queuedMessages.get(channelID);
+    	List<UserMessageWrapper> cuedMessages = this.queuedMessages.get(channelID);
     	if (cuedMessages == null) {
     		return null;
     	}
@@ -88,7 +88,7 @@ public class ServletUserSession implements UserSession {
     }
     
     public boolean hasCuedMessages (int channelID) {
-    	List<MessageWrapper> cuedMessages = this.queuedMessages.get(channelID);
+    	List<UserMessageWrapper> cuedMessages = this.queuedMessages.get(channelID);
     	if (cuedMessages == null) {
     		return false;
     	}
@@ -104,7 +104,7 @@ public class ServletUserSession implements UserSession {
      * @param channelID The ID for the channel to remove messages related to
      */
     public void clearMessageQueue (int channelID) {
-    	this.queuedMessages.replace(channelID, new CopyOnWriteArrayList<MessageWrapper>());
+    	this.queuedMessages.replace(channelID, new CopyOnWriteArrayList<UserMessageWrapper>());
     }
 
 	@Override

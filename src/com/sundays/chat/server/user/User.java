@@ -28,7 +28,6 @@ import com.sundays.chat.server.channel.Channel;
 import com.sundays.chat.server.channel.ChannelUser;
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.message.MessageType;
-import com.sundays.chat.server.message.MessageWrapper;
 
 /**
  * Represents a user within the chat system. 
@@ -40,7 +39,7 @@ public class User implements ChannelUser {
     private Channel currentChannel;
     //private UserSession session;
     private String sessionID;
-    private ConcurrentHashMap<Integer, List<MessageWrapper>> queuedMessages = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, List<UserMessageWrapper>> queuedMessages = new ConcurrentHashMap<>();
     public Boolean connected = true;
     private int nextOrderID = 10;
     
@@ -105,7 +104,7 @@ public class User implements ChannelUser {
         	//Connected to channel
         	if (this.queuedMessages.get(newchannel.getId()) == null) {
         		//If there is no message queue for this channel, create it.
-        		this.queuedMessages.put(newchannel.getId(), new ArrayList<MessageWrapper>());
+        		this.queuedMessages.put(newchannel.getId(), new ArrayList<UserMessageWrapper>());
         	}
         }                
     }
@@ -115,12 +114,12 @@ public class User implements ChannelUser {
 	 */
     @Override
 	public void sendMessage (MessageType type, int channelID, MessagePayload payload) {
-    	MessageWrapper wrapper = new MessageWrapper(getOrderID(), type, System.currentTimeMillis(), this.userID, payload);
+    	UserMessageWrapper wrapper = new UserMessageWrapper(getOrderID(), type, System.currentTimeMillis(), this.userID, payload);
     	
-    	List<MessageWrapper> queuedMessages = this.queuedMessages.get(channelID);
+    	List<UserMessageWrapper> queuedMessages = this.queuedMessages.get(channelID);
     	if (queuedMessages == null) {
     		//If the channel queue does not exist for this user, create it.
-    		queuedMessages = new CopyOnWriteArrayList<MessageWrapper>();
+    		queuedMessages = new CopyOnWriteArrayList<UserMessageWrapper>();
     		this.queuedMessages.put(channelID, queuedMessages);
     	}
     	queuedMessages.add(wrapper);
@@ -132,9 +131,9 @@ public class User implements ChannelUser {
      * @param remove Whether the messages should be removed from the queue.
      * @return A list of wrapped messsages, or null if there are no queued messages from the channel
      */
-    public List<MessageWrapper> getQueuedMessages (int channelID, boolean remove) {
+    public List<UserMessageWrapper> getQueuedMessages (int channelID, boolean remove) {
     	// 'remove' is used to specify if the messages should be removed from the cue.
-    	List<MessageWrapper> queuedMessages = this.queuedMessages.get(channelID);
+    	List<UserMessageWrapper> queuedMessages = this.queuedMessages.get(channelID);
     	if (queuedMessages == null) {
     		return null;
     	}
@@ -145,7 +144,7 @@ public class User implements ChannelUser {
     }
     
     public boolean hasCuedMessages (int channelID) {
-    	List<MessageWrapper> cuedMessages = this.queuedMessages.get(channelID);
+    	List<UserMessageWrapper> cuedMessages = this.queuedMessages.get(channelID);
     	if (cuedMessages == null) {
     		return false;
     	}
@@ -161,7 +160,7 @@ public class User implements ChannelUser {
      * @param channelID The ID for the channel to remove messages related to
      */
     public void clearMessageQueue (int channelID) {
-    	this.queuedMessages.replace(channelID, new CopyOnWriteArrayList<MessageWrapper>());
+    	this.queuedMessages.replace(channelID, new CopyOnWriteArrayList<UserMessageWrapper>());
     }
 
 	/* (non-Javadoc)

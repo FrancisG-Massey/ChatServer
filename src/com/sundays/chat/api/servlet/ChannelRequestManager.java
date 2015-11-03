@@ -35,9 +35,10 @@ import org.json.JSONObject;
 
 import com.sundays.chat.server.channel.ChannelGroup;
 import com.sundays.chat.server.channel.ChannelManager;
-import com.sundays.chat.server.message.MessageWrapper;
+import com.sundays.chat.server.message.StatusMessage;
 import com.sundays.chat.server.user.User;
 import com.sundays.chat.server.user.UserManager;
+import com.sundays.chat.server.user.UserMessageWrapper;
 import com.sundays.chat.utils.HttpRequestTools;
 
 /**
@@ -231,13 +232,13 @@ public class ChannelRequestManager extends HttpServlet {
 				//Request to collect cued messages (NOTE: This will remove everything currently in the cue)
 				if (user.hasCuedMessages(channelID)) {
 					responseMessage.put("status", HttpServletResponse.SC_OK);
-					List<MessageWrapper> messages = user.getQueuedMessages(channelID, true);
+					List<UserMessageWrapper> messages = user.getQueuedMessages(channelID, true);
 					if (messages == null) {
 						responseMessage.put("messages", JSONObject.NULL);
 					} else {
 						JSONArray packedMessages = new JSONArray();
 						JSONObject jsonObject;
-						for (MessageWrapper message : messages) {
+						for (UserMessageWrapper message : messages) {
 							jsonObject = new JSONObject(message.getPayload());
 							jsonObject.put("orderID", message.getOrderID());
 							jsonObject.put("type", message.getType().getID());
@@ -288,7 +289,7 @@ public class ChannelRequestManager extends HttpServlet {
 						uID = launcher.getUserManager().getUserID(un);
 						if (uID != 0) {
 							//If a userID was found, use the specified ID
-							responseMessage = channelManager.addRank(user, channelID, uID);
+							responseMessage = channelManager.addMember(user, channelID, uID);
 						} else {
 							responseMessage.put("status", 404);
 							responseMessage.put("msgCode", 159);
@@ -302,7 +303,7 @@ public class ChannelRequestManager extends HttpServlet {
 						responseMessage.put("message", "Invalid or missing parameter for userID OR username; expected: Integer OR String, found: neither.");
 					}
 				} else {
-					responseMessage = channelManager.addRank(user, channelID, uID);
+					responseMessage = channelManager.addMember(user, channelID, uID);
 				}
 			} else if ("remove".equalsIgnoreCase(requestParams[2])) {
 				//Request to add a rank to the rank list
@@ -313,7 +314,7 @@ public class ChannelRequestManager extends HttpServlet {
 					responseMessage.put("msgCode", 177);
 					responseMessage.put("message", "Invalid or missing parameter for userID; expected: Integer, found: null."); 
 				} else {
-					responseMessage = channelManager.removeRank(user, channelID, uID);
+					responseMessage = channelManager.removeMember(user, channelID, uID);
 				}					
 			} else if ("update".equalsIgnoreCase(requestParams[2])) {
 				//Request to add a rank to the rank list
@@ -330,7 +331,7 @@ public class ChannelRequestManager extends HttpServlet {
 					responseMessage.put("msgCode", 177);
 					responseMessage.put("message", "Invalid or missing parameter for rankID; expected: byte, found: null."); 
 				} else {
-					responseMessage = channelManager.updateRank(user, channelID, uID, (byte) groupID);
+					responseMessage = channelManager.updateMember(user, channelID, uID, (byte) groupID);
 				}
 				
 			} else {
@@ -427,18 +428,19 @@ public class ChannelRequestManager extends HttpServlet {
 					responseJSON.put("msgCode", 177);
 					responseJSON.put("message", "Invalid or missing parameter for message; expected: String, found: null."); 
 				} else {
-					responseJSON = channelManager.chageOpeningMessage(user, channelID, message, Color.black);
+					responseJSON = channelManager.setWelcomeMessage(user, channelID, message, Color.black);
 				}
 			} else {
 				responseJSON = processGetRequest(requestParams, channelID, response);//Relays the request as a get request
 			} 
 		} else if (requestParams.length > 1) {
+			StatusMessage status;
 			if ("join".equalsIgnoreCase(requestParams[1])) {
 				//Request to join channel
 				responseJSON = channelManager.joinChannel(user, channelID);			
 			} else if ("leave".equalsIgnoreCase(requestParams[1])) {
 				//Request to leave channel
-				responseJSON = channelManager.leaveChannel(user);
+				status = channelManager.leaveChannel(user);
 			} else if ("reset".equalsIgnoreCase(requestParams[1])) {
 				//Request to reset the channel
 				responseJSON = channelManager.resetChannel(user, channelID);

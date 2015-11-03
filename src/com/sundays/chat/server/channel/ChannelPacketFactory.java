@@ -31,13 +31,13 @@ import com.sundays.chat.server.user.UserLookup;
  *
  * @author Francis
  */
-public class ChannelMessageFactory {
+public class ChannelPacketFactory {
 	
-	private static ChannelMessageFactory instance;
+	private static ChannelPacketFactory instance;
 	
-	public static ChannelMessageFactory getInstance() {
+	public static ChannelPacketFactory getInstance() {
 		if (instance == null) {
-			instance = new ChannelMessageFactory();
+			instance = new ChannelPacketFactory();
 		}
 		return instance;
 	}

@@ -16,32 +16,40 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.server.channel;
+package com.sundays.chat.server.message;
 
-import com.sundays.chat.server.message.MessagePayload;
-import com.sundays.chat.server.message.MessageType;
+import java.io.Serializable;
 
-public interface ChannelUser {
+public class StatusMessage implements Serializable {
 
-	public abstract String getUsername();
-
-	public abstract int getUserID();
-
-	public abstract Channel getChannel();
-
-	public abstract void setChannel(Channel newchannel);
-
+	private static final long serialVersionUID = 1931631285566801908L;
+	
+	private final int code;
+	private final String messageTemplate;
+	private final Serializable[] args;
+	
+	
 	/**
-	 * Sends a message to the user. 
-	 * Depending on how the user is connected, this message will either be sent immediately to the user or added to their message queue.
-	 * @param type The type of message being sent.
-	 * @param channelID The ID of the channel the message is from.
-	 * @param payload The payload data for the message.
+	 * @param code
+	 * @param args
+	 * @param messageTemplate
 	 */
-	public abstract void sendMessage(MessageType type, int channelID, MessagePayload payload);
+	public StatusMessage(int code, String messageTemplate, Serializable... args) {
+		super();
+		this.code = code;
+		this.messageTemplate = messageTemplate;
+		this.args = args;
+	}
 
-	public abstract int getDefaultChannel();
+	public int getCode() {
+		return code;
+	}
 
-	public abstract void setDefaultChannel(int defaultChannel);
-
+	public String getMessageTemplate() {
+		return messageTemplate;
+	}
+	
+	public Serializable[] getArgs() {
+		return args;
+	}
 }

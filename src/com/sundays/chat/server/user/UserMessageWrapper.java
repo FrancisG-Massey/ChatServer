@@ -16,7 +16,10 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.server.message;
+package com.sundays.chat.server.user;
+
+import com.sundays.chat.server.message.MessagePayload;
+import com.sundays.chat.server.message.MessageType;
 
 
 /**
@@ -24,7 +27,7 @@ package com.sundays.chat.server.message;
  * 
  * @author Francis
  */
-public class MessageWrapper {	
+public class UserMessageWrapper {	
 	
 	private int orderID;
 	private MessageType type;
@@ -39,7 +42,7 @@ public class MessageWrapper {
 	 * @param targetUser
 	 * @param payload
 	 */
-	public MessageWrapper(int orderID, MessageType type, long timestamp, int targetUser, MessagePayload payload) {
+	public UserMessageWrapper(int orderID, MessageType type, long timestamp, int targetUser, MessagePayload payload) {
 		super();
 		this.orderID = orderID;
 		this.type = type;

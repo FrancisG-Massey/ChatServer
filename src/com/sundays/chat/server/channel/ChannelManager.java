@@ -39,6 +39,7 @@ import com.sundays.chat.server.TaskScheduler.TaskPriority;
 import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.message.MessageType;
+import com.sundays.chat.server.message.StatusMessage;
 import com.sundays.chat.server.user.User;
 import com.sundays.chat.server.user.UserManager;
 
@@ -70,7 +71,7 @@ public class ChannelManager {
     
     private final ArrayList<Channel> channelUnloadQueue = new ArrayList<Channel>();
 	
-	private final ChannelMessageFactory messageFactory;
+	private final ChannelPacketFactory messageFactory;
     
     /**
      * Manager and channel initialisation section
@@ -82,7 +83,7 @@ public class ChannelManager {
     	launcher.serverTaskScheduler().scheduleStandardTask(getDefaultCleanups(),//Adds the default tasks to the cleanup thread.
         		5, Settings.channelCleanupThreadFrequency, TimeUnit.SECONDS, true);//Schedule the channel cleanup thread, which removes any obsolete information on a regular basis and saves the channel permanent data.
         setShutdownTasks(launcher.serverTaskScheduler());//Sets the tasks which need to be run when the server is shut down.
-        messageFactory = ChannelMessageFactory.getInstance();
+        messageFactory = ChannelPacketFactory.getInstance();
     }
     
     private void setShutdownTasks (TaskScheduler taskCue) {
@@ -210,8 +211,7 @@ public class ChannelManager {
             channels.put(channelID, new Channel(channelID, details, channelIO));
             
             logger.debug("Channel '"+channels.get(channelID).getName() +"' has been loaded onto the server.");
-        }
-        
+        }        
     }
     
     protected boolean queueChannelUnload (int channelID) {
@@ -335,9 +335,9 @@ public class ChannelManager {
         if (channel == null) {
         	try {
 				loadChannel(channelID);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (IOException ex) {
+				logger.error("Failed to load channel "+channelID, ex);
+				return null;
 			}
         	channel = getChannel(channelID);
         	if (channel == null) {
@@ -365,9 +365,9 @@ public class ChannelManager {
         if (channel == null) {
         	try {
 				loadChannel(channelID);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (IOException ex) {
+				logger.error("Failed to load channel "+channelID, ex);
+				return null;
 			}
         	channel = getChannel(channelID);
         	if (channel == null) {
@@ -382,9 +382,9 @@ public class ChannelManager {
         if (channel == null) {
         	try {
 				loadChannel(channelID);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (IOException ex) {
+				logger.error("Failed to load channel "+channelID, ex);
+				return null;
 			}
         	channel = getChannel(channelID);
         	if (channel == null) {
@@ -399,9 +399,9 @@ public class ChannelManager {
         if (channel == null) {
         	try {
 				loadChannel(channelID);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (IOException ex) {
+				logger.error("Failed to load channel "+channelID, ex);
+				return null;
 			}
         	channel = getChannel(channelID);
         }
@@ -411,12 +411,12 @@ public class ChannelManager {
     /*
      * Basic functions (join, leave, send message)
      */
-    public JSONObject joinChannel (User user, int cID) throws JSONException {
-        Channel channel = getChannel(cID);
+    public JSONObject joinChannel (User user, int channelID) throws JSONException {
+        Channel channel = getChannel(channelID);
         JSONObject response = new JSONObject();
         if (channel == null) {
             //Checks if the channel is currently loaded
-            if (!channelExists(cID)) {
+            if (!channelExists(channelID)) {
                 //Checks if the channel actually exists
             	response.put("status", 404);
             	response.put("msgCode", 100);
@@ -425,12 +425,12 @@ public class ChannelManager {
             } else {
                 //If the channel exists but is not loaded, load the channel
                 try {
-					loadChannel(cID);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					loadChannel(channelID);
+				} catch (IOException ex) {
+					logger.error("Failed to load channel "+channelID, ex);
+					return null;
 				}
-                channel = getChannel(cID);
+                channel = getChannel(channelID);
             }            
         }
         if (channel == user.getChannel()) {
@@ -488,14 +488,14 @@ public class ChannelManager {
         //Send a notification of the current user joining to all users currently in the channel
         MessagePayload userAdditionNotice = messageFactory.createChannelUserAddition(user, channel);
         for (ChannelUser u1 : channel.getUsers()) {
-        	u1.sendMessage(MessageType.CHANNEL_LIST_ADDITION, cID, userAdditionNotice);
+        	u1.sendMessage(MessageType.CHANNEL_LIST_ADDITION, channelID, userAdditionNotice);
         }
         user.setChannel(channel);//Sets the user's channel to the current one
-        user.clearMessageQueue(cID);
+        user.clearMessageQueue(channelID);
         response.put("status", 200);
-        response.put("rank", channel.getUserRank(user));
+        response.put("group", messageFactory.createGroupDetails(channel.getUserGroup(user)));
         response.put("details", messageFactory.createDetailsMessage(channel, userManager));
-        sendChannelLocalMessage(user, channel.getWelcomeMessage(), 40, cID);//Sends the opening message to the user
+        sendChannelLocalMessage(user, channel.getWelcomeMessage(), 40, channelID);//Sends the opening message to the user
         return response;
     }
     
@@ -533,9 +533,8 @@ public class ChannelManager {
         return response;
     }
 
-    public JSONObject leaveChannel (ChannelUser user) throws JSONException {
+    public StatusMessage leaveChannel (ChannelUser user) {
         Channel channel = user.getChannel();
-        JSONObject response = new JSONObject();
         if (channel != null) {
         	channel.removeUser(user);
             if (channel.getUsers().isEmpty()) {                
@@ -554,10 +553,7 @@ public class ChannelManager {
         user.sendMessage(MessageType.CHANNEL_REMOVAL, channel.getId(), new MessagePayload());
         
         //Returns successful
-        response.put("status", 200);
-    	response.put("msgCode", 177);
-        response.put("message", "You have left the channel.");
-        return response;
+        return new StatusMessage(177, "You have left the channel.");
     }
     
     /*
@@ -733,7 +729,7 @@ public class ChannelManager {
 		return response;
     }
     
-    public JSONObject chageOpeningMessage (ChannelUser user, int channelID, String message, Color newColour) throws JSONException {
+    public JSONObject setWelcomeMessage (ChannelUser user, int channelID, String message, Color newColour) throws JSONException {
     	JSONObject response = new JSONObject();
         Channel channel = getChannel(channelID);
         if (channel == null) {
@@ -773,7 +769,7 @@ public class ChannelManager {
         return response;
     }
     
-    public JSONObject addRank (ChannelUser user, int channelID, int uID) throws JSONException {
+    public JSONObject addMember (ChannelUser user, int channelID, int uID) throws JSONException {
     	JSONObject response = new JSONObject();
         Channel channel = getChannel(channelID);
         if (channel == null) {
@@ -844,7 +840,7 @@ public class ChannelManager {
 		return response;
     }
     
-    public JSONObject removeRank (ChannelUser u, int channelID, int uID) throws JSONException {
+    public JSONObject removeMember (ChannelUser u, int channelID, int uID) throws JSONException {
     	JSONObject response = new JSONObject();
         Channel channel = getChannel(channelID);
         String targetUsername = userManager.getUsername(uID);
@@ -911,7 +907,7 @@ public class ChannelManager {
 		return response;
     }
     
-    public JSONObject updateRank (ChannelUser u, int channelID, int uID, byte rank) throws JSONException {
+    public JSONObject updateMember (ChannelUser u, int channelID, int uID, byte rank) throws JSONException {
     	JSONObject response = new JSONObject();
         Channel channel = getChannel(channelID);
         String targetUsername = userManager.getUsername(uID);
