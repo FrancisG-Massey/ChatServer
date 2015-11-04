@@ -111,6 +111,7 @@ public final class XmlChannelSave implements ChannelDataIO {
 	private XPathExpression welcomeMessageLookup;
 	private XPathExpression descriptionLookup;
 	private XPathExpression ownerLookup;	
+	private XPathExpression attributeLookup;
 	
 	private XPathExpression banLookup;
 	private XPathExpression memberLookup;
@@ -447,6 +448,47 @@ public final class XmlChannelSave implements ChannelDataIO {
 		}
 		return details;
 	}
+	
+
+
+	@Override
+	public Map<String, String> getChannelAttributes(int channelID) throws IOException {
+		Document channelDoc;
+		synchronized (docCache) {
+			try {
+				channelDoc = docCache.get(channelID);
+			} catch (ExecutionException ex) {
+				throw new IOException("Failed to find data for channel "+channelID+".", ex);
+			}
+		}
+		if (attributeLookup == null) {		
+			try {
+					attributeLookup = xPath.compile("/csc:channel/csc:attribute");
+			} catch (XPathExpressionException ex) {
+				throw new IOException("Failed to compile attribute lookup expression. This probably indicates a configuration or program error.", ex);
+			}
+		}
+		
+		Map<String, String> attributes = new HashMap<>();
+		synchronized (channelDoc) {
+			NodeList membersList;
+			try {
+				membersList = (NodeList) attributeLookup.evaluate(channelDoc, XPathConstants.NODESET);
+			} catch (XPathExpressionException ex) {
+				throw new IOException("Failed to evaluate attribute lookup expression.", ex);
+			}
+			for (int i=0;i<membersList.getLength();i++) {
+				Node attrNode = membersList.item(i);
+				if (attrNode instanceof Element) {
+					Element attrElement = (Element) attrNode;
+					String key = attrElement.getAttribute("key");
+					String value = attrElement.getTextContent();
+					attributes.put(key, value);
+				}
+			}
+		}
+		return attributes;
+	}
 
 	@Override
 	public Set<Integer> getChannelBans(int channelID) throws IOException {
@@ -598,9 +640,21 @@ public final class XmlChannelSave implements ChannelDataIO {
 	}
 
 	@Override
-	public Map<String, String> getChannelAttributes(int channelID) throws IOException {
+	public void addAttribute(String key, String value) throws IOException {
 		// TODO Auto-generated method stub
-		return null;
+		
+	}
+
+	@Override
+	public void updateAttribute(String key, String value) throws IOException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void clearAttribute(String key) throws IOException {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

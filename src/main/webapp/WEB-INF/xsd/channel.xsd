@@ -30,7 +30,7 @@
 			<xs:sequence>
 				<xs:element name="name" type="xs:token" />
 				<xs:element name="alias" type="aliasType" />
-				<xs:element name="attributes" type="keyValuePair" minOccurs="0" maxOccurs="unbounded" />
+				<xs:element name="attribute" type="keyValuePair" minOccurs="0" maxOccurs="unbounded" />
 				<xs:element name="welcomeMessage" type="xs:string" />
 				<xs:element name="description" type="xs:string" />
 				<xs:element name="owner" type="xs:integer" />
@@ -58,7 +58,7 @@
 	<xs:complexType name="keyValuePair">
 		<xs:simpleContent>
 			<xs:extension base="xs:string">
-				<xs:attribute name="key" type="xs:NMTOKEN" />
+				<xs:attribute name="key" type="xs:token" />
 			</xs:extension>
 		</xs:simpleContent>
 	</xs:complexType>

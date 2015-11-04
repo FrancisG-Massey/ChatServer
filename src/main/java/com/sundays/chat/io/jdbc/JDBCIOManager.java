@@ -42,7 +42,7 @@ public class JDBCIOManager implements IOManager {
 		this.dbcon = new ConnectionManager(properties);
 		this.userManager = new JDBCUserSave(dbcon.getConnection());
 		this.channelIndex = new JDBCChannelIndex(dbcon);
-		this.channelManager = new JDBCChannelSave(dbcon);
+		this.channelManager = new JDBCChannelSave(dbcon, properties);
 	}
 
 	@Override

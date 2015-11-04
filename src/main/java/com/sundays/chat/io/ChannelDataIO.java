@@ -28,10 +28,7 @@ import java.util.Set;
  * 
  * @author Francis
  */
-public interface ChannelDataIO extends AutoCloseable {	
-	
-	public static final int VERSION = 5;//The interface version
-	public static final int MIN_VERSION = 5;//The minimum version that the back-end and front-end must support in order for this interface to work
+public interface ChannelDataIO extends AutoCloseable {
 	
 	/**
 	 * Creates a new channel with the specified details.
@@ -108,6 +105,12 @@ public interface ChannelDataIO extends AutoCloseable {
 	
 	//Channel detail changes
 	public void updateDetails (int channelID, ChannelDetails details) throws IOException;
+	
+	public void addAttribute (String key, String value) throws IOException;
+	
+	public void updateAttribute (String key, String value) throws IOException;
+	
+	public void clearAttribute (String key) throws IOException;
 
 	//Data retrieval
 	public ChannelDetails getChannelDetails (int channelID) throws IOException;

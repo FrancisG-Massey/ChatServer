@@ -5,6 +5,8 @@
 	xmlns:xmime="http://www.w3.org/2005/05/xmlmime" id="100">
 	<name>Test Channel</name>
 	<alias>T C</alias>
+	<attribute key="welcomeMessage">Welcome to the Test Channel!</attribute>
+	<attribute key="welcomeMessage.colour">#5555ff</attribute>
 	<welcomeMessage>Welcome to the Test Channel!</welcomeMessage>
 	<description>The testing channel for this server. Used for ensuring channel features work correctly.</description>
 	<owner>100</owner>
@@ -12,11 +14,9 @@
 		<csg:group id="0" overridesDefault="true">
 			<csg:name>Guest</csg:name>
 			<csg:type>normal</csg:type>
-			<csg:description>Represents users who are not members of the channel.
-			</csg:description>
+			<csg:description>Represents users who are not members of the channel.</csg:description>
 			<csg:icon>
-				<csg:remoteURL>http://example.com/icons/groups/guest_new.png
-				</csg:remoteURL>
+				<csg:remoteURL>http://example.com/icons/groups/guest_new.png</csg:remoteURL>
 			</csg:icon>
 			<csg:permissions>
 				<csg:permission type="talk" granted="true" />

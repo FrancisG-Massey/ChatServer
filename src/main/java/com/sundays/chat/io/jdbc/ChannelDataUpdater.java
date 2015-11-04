@@ -34,6 +34,14 @@ public class ChannelDataUpdater {
 	
 	private final Map<Integer, ChannelDetails> detailChanges = new HashMap<>();
 	
+	private final String detailTableName;
+	private final String attributeTableName;
+	
+	protected ChannelDataUpdater (String detailTableName, String attributeTableName) {
+		this.detailTableName = detailTableName;
+		this.attributeTableName = attributeTableName;
+	}
+	
 	protected void syncDetails (int channelID, ChannelDetails details) {
 		synchronized (detailChanges) {
 			if (detailChanges.containsKey(channelID)) {
@@ -49,7 +57,7 @@ public class ChannelDataUpdater {
 		if (detailChanges.size() > 0) {
 			try {
 				if (channelUpdateQuery == null) {
-					channelUpdateQuery = dbCon.getConnection().prepareStatement("UPDATE `"+JDBCChannelSave.DETAIL_TABLE_NAME+"` SET" +
+					channelUpdateQuery = dbCon.getConnection().prepareStatement("UPDATE `"+detailTableName+"` SET" +
 							" `name` = ?, `abbrieviation` = ?," +
 							" `openingMessage` = ?, `trackMessages` = ?, " +
 							" `owner` = ? WHERE `id` = ?");

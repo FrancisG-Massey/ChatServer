@@ -42,7 +42,7 @@ import com.sundays.chat.server.channel.ChannelGroup;
 public class XmlChannelSaveTest {
 	
 	private static File channelsDir = Files.createTempDir();
-	private static File channelSchema = new File("WebContent/WEB-INF/xsd/channel.xsd");
+	private static File channelSchema = new File("src/main/webapp/WEB-INF/xsd/channel.xsd");
 	private static File testData = new File("resources/testcase.xml");
 
 	@BeforeClass
@@ -122,6 +122,14 @@ public class XmlChannelSaveTest {
 		assertEquals("This is a new message...", details.getWelcomeMessage());
 		assertEquals("A new description!", details.getDescription());
 		assertEquals(101, details.getOwner());
+	}
+
+	@Test
+	public void testLoadAttributes() throws IOException {
+		Map<String, String> attributes = saveTest.getChannelAttributes(100);
+		assertEquals(2, attributes.size());
+		assertEquals("Welcome to the Test Channel!", attributes.get("welcomeMessage"));
+		assertEquals("#5555ff", attributes.get("welcomeMessage.colour"));
 	}
 
 	@Test
