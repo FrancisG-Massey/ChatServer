@@ -130,7 +130,7 @@ public class JDBCChannelSave implements ChannelDataIO {
 			if (detailFetchQuery == null) {
 				detailFetchQuery = dbCon.getConnection().prepareStatement(
 						"SELECT `id`, `name`, `abbrieviation`, "
-								+ "`permissions`, `rankNames`, `openingMessage`, `trackMessages`," + "`owner`" + " FROM `"
+								+ "`permissions`, `rankNames`, `trackMessages`," + "`owner`" + " FROM `"
 								+ detailTableName + "` WHERE `id` = ?");
 			}
 			detailFetchQuery.setInt(1, channelID);
@@ -139,10 +139,9 @@ public class JDBCChannelSave implements ChannelDataIO {
 			while (res.next()) {
 				details = new ChannelDetails(res.getInt(1),// Channel ID
 						res.getString(2),// Channel Name
-						res.getString(6),// Opening Message
 						res.getString(3),// Channel Abbreviation
-						res.getBoolean(7),// Whether or not to track messages
-						res.getInt(8));// Channel owner userID
+						res.getBoolean(6),// Whether or not to track messages
+						res.getInt(7));// Channel owner userID
 			}
 		} catch (SQLException ex) {
 			logger.error("Failed to fetch details for channel " + channelID, ex);

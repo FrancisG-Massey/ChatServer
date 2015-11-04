@@ -30,7 +30,6 @@ public class ChannelDetails {
 	
 	private int id;//Channel ID	
 	private String name;
-	private String welcomeMessage;
 	private String alias;
 	private String description;
 	private int owner;
@@ -40,12 +39,11 @@ public class ChannelDetails {
 		
 	}
 	
-	public ChannelDetails (int id, String name, String openingMessage, 
+	public ChannelDetails (int id, String name, 
 			String abbreviation, boolean trackMessages, int owner) {
 		//Full constructor used when data can be added all at once
 		this.id = id;
 		this.name = name;
-		this.welcomeMessage = openingMessage;
 		this.alias = abbreviation;
 		this.trackMessages = trackMessages;
 		this.owner = owner;
@@ -65,14 +63,6 @@ public class ChannelDetails {
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public String getWelcomeMessage() {
-		return welcomeMessage;
-	}
-
-	public void setWelcomeMessage(String welcomeMessage) {
-		this.welcomeMessage = welcomeMessage;
 	}
 
 	public String getAlias() {
@@ -126,7 +116,7 @@ public class ChannelDetails {
 	 */
 	@Override
 	public String toString() {
-		return "ChannelDetails [id=" + id + ", name=" + name + ", welcomeMessage=" + welcomeMessage + ", alias=" + alias + ", description="
+		return "ChannelDetails [id=" + id + ", name=" + name + ", alias=" + alias + ", description="
 				+ description + ", owner=" + owner + ", trackMessages=" + trackMessages + "]";
 	}
 }

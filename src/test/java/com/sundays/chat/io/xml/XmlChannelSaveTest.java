@@ -73,7 +73,6 @@ public class XmlChannelSaveTest {
 		details.setId(100);
 		details.setName("Name 2");
 		details.setAlias("N 2");
-		details.setWelcomeMessage("This is a new message...");
 		details.setDescription("A new description!");
 		details.setOwner(101);
 		saveTest.updateDetails(100, details);
@@ -87,7 +86,6 @@ public class XmlChannelSaveTest {
 		assertEquals(100, details.getId());
 		assertEquals("Name 2", details.getName());
 		assertEquals("N 2", details.getAlias());
-		assertEquals("This is a new message...", details.getWelcomeMessage());
 		assertEquals("A new description!", details.getDescription());
 		assertEquals(101, details.getOwner());
 		
@@ -99,7 +97,6 @@ public class XmlChannelSaveTest {
 		assertEquals(100, details.getId());
 		assertEquals("Test Channel", details.getName());
 		assertEquals("T C", details.getAlias());
-		assertEquals("Welcome to the Test Channel!", details.getWelcomeMessage());
 		assertEquals("The testing channel for this server. Used for ensuring channel features work correctly.", details.getDescription());
 		assertEquals(100, details.getOwner());
 	}
@@ -110,7 +107,6 @@ public class XmlChannelSaveTest {
 		details.setId(100);
 		details.setName("Name 2");
 		details.setAlias("N 2");
-		details.setWelcomeMessage("This is a new message...");
 		details.setDescription("A new description!");
 		details.setOwner(101);
 		saveTest.updateDetails(100, details);
@@ -119,7 +115,6 @@ public class XmlChannelSaveTest {
 		assertEquals(100, details.getId());
 		assertEquals("Name 2", details.getName());
 		assertEquals("N 2", details.getAlias());
-		assertEquals("This is a new message...", details.getWelcomeMessage());
 		assertEquals("A new description!", details.getDescription());
 		assertEquals(101, details.getOwner());
 	}

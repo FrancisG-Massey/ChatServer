@@ -85,12 +85,6 @@ public class ChannelTest {
 	}
 
 	@Test
-	public void testMessage() {
-		channel.setWelcomeMessage("Test Welcome Message");
-		assertEquals("Test Welcome Message", channel.getWelcomeMessage());
-	}
-
-	@Test
 	public void testOwnerGroup() {
 		channel.setOwnerID(102);
 		assertEquals(ChannelGroup.OWNER_GROUP, channel.getUserGroup(102).getId());
@@ -100,6 +94,45 @@ public class ChannelTest {
 	public void testGuestGroup() {
 		assumeFalse(channel.getMembers().containsKey(103));
 		assertEquals(ChannelGroup.GUEST_GROUP, channel.getUserGroup(103).getId());
+	}
+
+	@Test
+	public void testAttributeDefault() {
+		assumeTrue(channel.getAttribute("test.attr") == null);
+		
+		assertEquals("DefaultValue", channel.getAttribute("test.attr", "DefaultValue"));
+	}
+
+	@Test
+	public void testNewAttribute() {
+		assumeTrue(channel.getAttribute("test.attr") == null);
+		channel.setAttribute("test.attr", "Some Value");
+		assertEquals("Some Value", channel.getAttribute("test.attr"));
+	}
+
+	@Test
+	public void testNewAttributeError() throws IOException {
+		doThrow(new IOException()).when(channelIO).addAttribute("test.attr", "Some Value");
+		assumeTrue(channel.getAttribute("test.attr") == null);
+		assertFalse(channel.setAttribute("test.attr", "Some Value"));
+		assertEquals(null, channel.getAttribute("test.attr"));
+	}
+
+	@Test
+	public void testUpdateAttribute() {
+		channel.setAttribute("test.attr", "Some Value");
+		assumeFalse(channel.getAttribute("test.attr") == null);
+		channel.setAttribute("test.attr", "New Value");
+		assertEquals("New Value", channel.getAttribute("test.attr"));
+	}
+
+	@Test
+	public void testUpdateAttributeError() throws IOException {
+		doThrow(new IOException()).when(channelIO).updateAttribute("test.attr", "New Value");
+		channel.setAttribute("test.attr", "Some Value");
+		assumeFalse(channel.getAttribute("test.attr") == null);
+		assertFalse(channel.setAttribute("test.attr", "New Value"));
+		assertEquals("Some Value", channel.getAttribute("test.attr"));
 	}
 
 	@Test

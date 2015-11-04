@@ -108,7 +108,6 @@ public final class XmlChannelSave implements ChannelDataIO {
 	private XPathExpression idLookup;
 	private XPathExpression nameLookup;
 	private XPathExpression aliasLookup;
-	private XPathExpression welcomeMessageLookup;
 	private XPathExpression descriptionLookup;
 	private XPathExpression ownerLookup;	
 	private XPathExpression attributeLookup;
@@ -379,7 +378,6 @@ public final class XmlChannelSave implements ChannelDataIO {
 			if (nameLookup == null) {
 				nameLookup = xPath.compile("/csc:channel/csc:name");
 				aliasLookup = xPath.compile("/csc:channel/csc:alias");
-				welcomeMessageLookup = xPath.compile("/csc:channel/csc:welcomeMessage");
 				descriptionLookup = xPath.compile("/csc:channel/csc:description");
 				ownerLookup = xPath.compile("/csc:channel/csc:owner");
 			}
@@ -394,9 +392,6 @@ public final class XmlChannelSave implements ChannelDataIO {
 				
 				Element alaisElement = (Element) aliasLookup.evaluate(channelDoc, XPathConstants.NODE);
 				alaisElement.setTextContent(details.getAlias());
-				
-				Element messageElement = (Element) welcomeMessageLookup.evaluate(channelDoc, XPathConstants.NODE);
-				messageElement.setTextContent(details.getWelcomeMessage());
 				
 				Element descriptionElement = (Element) descriptionLookup.evaluate(channelDoc, XPathConstants.NODE);
 				descriptionElement.setTextContent(details.getDescription());
@@ -425,7 +420,6 @@ public final class XmlChannelSave implements ChannelDataIO {
 			if (nameLookup == null) {
 				nameLookup = xPath.compile("/csc:channel/csc:name");
 				aliasLookup = xPath.compile("/csc:channel/csc:alias");
-				welcomeMessageLookup = xPath.compile("/csc:channel/csc:welcomeMessage");
 				descriptionLookup = xPath.compile("/csc:channel/csc:description");
 				ownerLookup = xPath.compile("/csc:channel/csc:owner");
 			}
@@ -439,7 +433,6 @@ public final class XmlChannelSave implements ChannelDataIO {
 			try {
 				details.setName(nameLookup.evaluate(channelDoc));
 				details.setAlias(aliasLookup.evaluate(channelDoc));
-				details.setWelcomeMessage(welcomeMessageLookup.evaluate(channelDoc));
 				details.setDescription(descriptionLookup.evaluate(channelDoc));
 				details.setOwner(Integer.parseInt(ownerLookup.evaluate(channelDoc)));
 			} catch (XPathExpressionException ex) {

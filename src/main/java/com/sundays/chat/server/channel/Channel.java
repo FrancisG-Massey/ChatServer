@@ -18,19 +18,19 @@
  *******************************************************************************/
 package com.sundays.chat.server.channel;
 
-import java.awt.Color;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
@@ -49,18 +49,17 @@ public final class Channel {
 	private final int id;
 	
 	/*Permanent data*/
-    private Color openingMessageColour = Color.BLACK;
     private String name = "Not in Channel";
     private String alias = "undefined";
-    private String welcomeMessage = "Not in Channel";
     private final Map<Integer, Integer> members;
     private final Set<Integer> permBans;
     private boolean trackMessages = false;
     private final Map<Integer, ChannelGroup> groups;
+    private final Map<String, String> attributes;
     
-    /*Instanced data*/
     /**
      * Represents the users who are temporarily blocked from joining this channel, and the time (as milliseconds since the Unix epoch) their ban will be lifted.
+     * This information is not stored persistently, and will be removed when the channel is unloaded.
      */
     private transient final Map<Integer, Long> tempBans = new HashMap<Integer, Long>();
     
@@ -68,7 +67,7 @@ public final class Channel {
      * Represents the users who are currently in the channel.
      */
     private transient final Set<ChannelUser> users = new HashSet<>();
-    private transient final LinkedList<MessagePayload> messageCache = new LinkedList<>();
+    private transient final Cache<Long, MessagePayload> messageCache = CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.MINUTES).build();
     //Contains a specified number of recent messages from the channel (global system and normal messages)
     protected boolean unloadInitialised = false;
     protected boolean resetLaunched = false;
@@ -91,6 +90,7 @@ public final class Channel {
     protected Channel (int id, ChannelDataIO io) {
     	this.id = id;
         this.io = io;
+    	this.attributes = new HashMap<>();
     	this.groups = loadGroups(new HashSet<ChannelGroupData>());
     	this.permBans = new HashSet<>();
     	this.members = new HashMap<>();
@@ -101,7 +101,7 @@ public final class Channel {
         this.io = io;
         this.name = details.getName();
         this.ownerID = details.getOwner();
-        this.welcomeMessage = details.getWelcomeMessage();
+        this.attributes = io.getChannelAttributes(id);
         this.alias = details.getAlias();
         this.trackMessages = details.isTrackMessages();
         this.groups = loadGroups(io.getChannelGroups(id));
@@ -157,26 +157,24 @@ public final class Channel {
 		this.alias = alias;
 		this.flushRequired = true;
 	}
-
+	
 	/**
-	 * Gets the message presented to users when joining the channel
-	 * @return The welcome message
+	 * Gets the channel attribute associated with the given key.
+	 * @param key The attribute key to lookup
+	 * @return The attribute value, or null if the attribute has not yet been assigned.
 	 */
-	public String getWelcomeMessage() {
-        return this.welcomeMessage;
+	public String getAttribute(String key) {
+        return getAttribute(key, null);
     }
 
 	/**
-	 * Sets the message presented to users when joining the channel to the provided string
-	 * @param welcomeMessage The new opening message for the channel.
+	 * Gets the channel attribute associated with the given key.
+	 * @param key The attribute key to lookup
+	 * @param defaultValue The string to return if the attribute is not set
+	 * @return The attribute value, or null if the attribute has not yet been assigned.
 	 */
-	protected void setWelcomeMessage(String welcomeMessage) {
-		this.welcomeMessage = welcomeMessage;
-		this.flushRequired = true;
-	}
-    
-    public Color getOMColour () {
-        return this.openingMessageColour;
+	public String getAttribute(String key, String defaultValue) {		
+        return attributes.containsKey(key) ? attributes.get(key) : defaultValue;
     }
     
     public int getLockRank () {
@@ -356,8 +354,7 @@ public final class Channel {
 
     //Saving stages
     protected ChannelDetails getChannelDetails () {    	
-    	return new ChannelDetails(id, name, welcomeMessage,
-    			alias, trackMessages, ownerID);
+    	return new ChannelDetails(id, name, alias, trackMessages, ownerID);
     }
     
     //Alter temporary data
@@ -403,12 +400,39 @@ public final class Channel {
      */
     protected void addToMessageCache (MessagePayload message) {
     	synchronized (messageCache) {
-	    	if (messageCache.size() >= Settings.CHANNEL_CACHE_SIZE) {
-	    		messageCache.removeFirst();
-	    	}
-	    	messageCache.addLast(message);
+    		messageCache.put(System.currentTimeMillis(), message);
     	}
     }
+	
+    /**
+     * Sets a channel attribute to the given value. If the attribute does not exist, add it.<br />
+     * NOTE: This method does <em>not</em> verify that the key and value are valid - this <em>must</em> be done externally to prevent issues.<br />
+     * Keys must conform to the following constraints:
+     * <ul>
+     * <li>Between 2 and 100 characters</li>
+     * <li>Only contain alpha-numeric characters, underscores, hyphens, or dots.</li>
+     * </ul>
+     * Values must be less than 2^16 characters in length
+     * @param key The attribute key
+     * @param value The attribute value
+     * @return True if the attribute was set successfully, false if it could not be set due to an error at the persistence layer.
+     */
+    protected boolean setAttribute (String key, String value) {
+		synchronized (attributes) {
+			try {
+				if (attributes.containsKey(key)) {
+					io.updateAttribute(key, value);
+				} else {
+					io.addAttribute(key, value);
+				}
+			} catch (IOException ex) {
+				logger.error("Failed to set attribute "+key+" to "+value, ex);
+				return false;
+			}
+			attributes.put(key, value);
+			return true;
+		}
+	}
     
     /**
      * Adds the user to the channel's member list.
@@ -560,15 +584,5 @@ public final class Channel {
     protected int getNextMessageID () {
     	this.nextMessageID++;
     	return this.nextMessageID;
-    }
-    
-    /**
-     * Fetches an exact copy of the current message cache, in the format of an ArrayList (to save space).
-     * The fetched cache is not a reference to the active cache, but a new object instead, to prevent accidental unsynchronised access.
-     * 
-     * @return an ArrayList copy of the current message cache
-     */
-    protected List<MessagePayload> getCurrentCache () {
-    	return Collections.unmodifiableList(this.messageCache);
     }
 }

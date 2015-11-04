@@ -55,8 +55,8 @@ public class ChannelPacketFactory {
     	MessagePayload message = new MessagePayload();
     	
     	message.put("name", channel.getName());
-    	message.put("openingMessage", channel.getWelcomeMessage());
-    	message.put("messageColour", channel.getOMColour().getRGB());
+    	message.put("welcomeMessage", channel.getAttribute("welcomeMessage"));
+    	message.put("messageColour", channel.getAttribute("welcomeMessage.colour"));
     	
     	MessagePayload owner = new MessagePayload();
     	owner.put("id", channel.getOwnerID());

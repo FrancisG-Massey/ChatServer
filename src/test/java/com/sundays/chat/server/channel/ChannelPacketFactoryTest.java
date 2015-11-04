@@ -59,18 +59,18 @@ public class ChannelPacketFactoryTest {
 	@Test
 	public void testDetailMessage () {
 		dummyChannel.setName("Test Channel");
-		dummyChannel.setWelcomeMessage("Test Message");
+		dummyChannel.setAttribute("welcomeMessage", "Test Message");
 		dummyChannel.setOwnerID(102);
 		userLookup.nameLookup.put(102, "Test");
 		
 		assumeTrue("Test Channel".equals(dummyChannel.getName()));		
-		assumeTrue("Test Message".equals(dummyChannel.getWelcomeMessage()));
+		assumeTrue("Test Message".equals(dummyChannel.getAttribute("welcomeMessage")));
 		assumeTrue(102 == dummyChannel.getOwnerID());
 		
 		MessagePayload message = factory.createDetailsMessage(dummyChannel, userLookup);
 		
 		assertEquals("Test Channel", message.get("name"));
-		assertEquals("Test Message", message.get("openingMessage"));
+		assertEquals("Test Message", message.get("welcomeMessage"));
 		
 		MessagePayload owner = (MessagePayload) message.get("owner");
 		assertEquals(102, owner.get("id"));

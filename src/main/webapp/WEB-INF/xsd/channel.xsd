@@ -31,7 +31,6 @@
 				<xs:element name="name" type="xs:token" />
 				<xs:element name="alias" type="aliasType" />
 				<xs:element name="attribute" type="keyValuePair" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="welcomeMessage" type="xs:string" />
 				<xs:element name="description" type="xs:string" />
 				<xs:element name="owner" type="xs:integer" />
 				<xs:element ref="csg:groups" />

@@ -495,7 +495,7 @@ public class ChannelManager {
         response.put("status", 200);
         response.put("group", messageFactory.createGroupDetails(channel.getUserGroup(user)));
         response.put("details", messageFactory.createDetailsMessage(channel, userManager));
-        sendChannelLocalMessage(user, channel.getWelcomeMessage(), 40, channelID);//Sends the opening message to the user
+        sendChannelLocalMessage(user, channel.getAttribute("welcomeMessage"), 40, channelID);//Sends the opening message to the user
         return response;
     }
     
@@ -753,7 +753,7 @@ public class ChannelManager {
             return response;
         }
         //Add additional checks (such as removing/encoding special characters, filtering bad language, etc) here
-        channel.setWelcomeMessage(message);//Changes the opening message in the temporarily loaded version of the channel, sets the colour to black (default)
+        channel.setAttribute("welcomeMessage", message);//Changes the opening message in the temporarily loaded version of the channel, sets the colour to black (default)
         channel.flushRequired = true;
         //c.flushChannelDetails();//Applies the message change to the channel database
         MessagePayload messagePayload = messageFactory.createDetailsMessage(channel, userManager);
