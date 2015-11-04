@@ -29,10 +29,16 @@
 		<xs:complexType>
 			<xs:sequence>
 				<xs:element name="name" type="xs:token" />
-				<xs:element name="alias" type="aliasType" />
-				<xs:element name="attribute" type="keyValuePair" minOccurs="0" maxOccurs="unbounded" />
+				<xs:element name="alias" type="aliasType" />			
 				<xs:element name="description" type="xs:string" />
 				<xs:element name="owner" type="xs:integer" />
+				<xs:element name="attributes">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="attribute" type="keyValuePair" minOccurs="0" maxOccurs="unbounded" />
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>	
 				<xs:element ref="csg:groups" />
 				<xs:element name="members" type="memberList" />
 				<xs:element name="bans" type="banList" />

@@ -456,7 +456,7 @@ public final class XmlChannelSave implements ChannelDataIO {
 		}
 		if (attributeLookup == null) {		
 			try {
-					attributeLookup = xPath.compile("/csc:channel/csc:attribute");
+					attributeLookup = xPath.compile("/csc:channel/csc:attributes/csc:attribute");
 			} catch (XPathExpressionException ex) {
 				throw new IOException("Failed to compile attribute lookup expression. This probably indicates a configuration or program error.", ex);
 			}

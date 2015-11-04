@@ -5,11 +5,12 @@
 	xmlns:xmime="http://www.w3.org/2005/05/xmlmime" id="100">
 	<name>Test Channel</name>
 	<alias>T C</alias>
-	<attribute key="welcomeMessage">Welcome to the Test Channel!</attribute>
-	<attribute key="welcomeMessage.colour">#5555ff</attribute>
-	<welcomeMessage>Welcome to the Test Channel!</welcomeMessage>
 	<description>The testing channel for this server. Used for ensuring channel features work correctly.</description>
 	<owner>100</owner>
+	<attributes>
+	    <attribute key="welcomeMessage">Welcome to the Test Channel!</attribute>
+		<attribute key="welcomeMessage.colour">#5555ff</attribute>
+	</attributes>
 	<csg:groups>
 		<csg:group id="0" overridesDefault="true">
 			<csg:name>Guest</csg:name>
