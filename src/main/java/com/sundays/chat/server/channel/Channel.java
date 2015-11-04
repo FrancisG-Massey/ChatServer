@@ -421,9 +421,9 @@ public final class Channel {
 		synchronized (attributes) {
 			try {
 				if (attributes.containsKey(key)) {
-					io.updateAttribute(key, value);
+					io.updateAttribute(id, key, value);
 				} else {
-					io.addAttribute(key, value);
+					io.addAttribute(id, key, value);
 				}
 			} catch (IOException ex) {
 				logger.error("Failed to set attribute "+key+" to "+value, ex);

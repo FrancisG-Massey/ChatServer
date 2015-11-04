@@ -106,11 +106,11 @@ public interface ChannelDataIO extends AutoCloseable {
 	//Channel detail changes
 	public void updateDetails (int channelID, ChannelDetails details) throws IOException;
 	
-	public void addAttribute (String key, String value) throws IOException;
+	public void addAttribute (int channelID, String key, String value) throws IOException;
 	
-	public void updateAttribute (String key, String value) throws IOException;
+	public void updateAttribute (int channelID, String key, String value) throws IOException;
 	
-	public void clearAttribute (String key) throws IOException;
+	public void clearAttribute (int channelID, String key) throws IOException;
 
 	//Data retrieval
 	public ChannelDetails getChannelDetails (int channelID) throws IOException;

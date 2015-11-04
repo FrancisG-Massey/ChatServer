@@ -112,7 +112,7 @@ public class ChannelTest {
 
 	@Test
 	public void testNewAttributeError() throws IOException {
-		doThrow(new IOException()).when(channelIO).addAttribute("test.attr", "Some Value");
+		doThrow(new IOException()).when(channelIO).addAttribute(100, "test.attr", "Some Value");
 		assumeTrue(channel.getAttribute("test.attr") == null);
 		assertFalse(channel.setAttribute("test.attr", "Some Value"));
 		assertEquals(null, channel.getAttribute("test.attr"));
@@ -128,7 +128,7 @@ public class ChannelTest {
 
 	@Test
 	public void testUpdateAttributeError() throws IOException {
-		doThrow(new IOException()).when(channelIO).updateAttribute("test.attr", "New Value");
+		doThrow(new IOException()).when(channelIO).updateAttribute(100, "test.attr", "New Value");
 		channel.setAttribute("test.attr", "Some Value");
 		assumeFalse(channel.getAttribute("test.attr") == null);
 		assertFalse(channel.setAttribute("test.attr", "New Value"));

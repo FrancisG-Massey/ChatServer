@@ -312,19 +312,19 @@ public class JDBCChannelSave implements ChannelDataIO {
 	}
 
 	@Override
-	public void addAttribute(String key, String value) throws IOException {
+	public void addAttribute(int channelID, String key, String value) throws IOException {
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public void updateAttribute(String key, String value) throws IOException {
+	public void updateAttribute(int channelID, String key, String value) throws IOException {
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public void clearAttribute(String key) throws IOException {
+	public void clearAttribute(int channelID, String key) throws IOException {
 		// TODO Auto-generated method stub
 		
 	}

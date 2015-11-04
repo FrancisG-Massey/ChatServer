@@ -110,11 +110,12 @@ public final class XmlChannelSave implements ChannelDataIO {
 	private XPathExpression aliasLookup;
 	private XPathExpression descriptionLookup;
 	private XPathExpression ownerLookup;	
+
 	private XPathExpression attributeLookup;
-	
-	private XPathExpression banLookup;
 	private XPathExpression memberLookup;
+	private XPathExpression banLookup;
 	private XPathExpression groupLookup;
+	private XPathExpression attributeListLookup;
 	private XPathExpression memberListLookup;
 	private XPathExpression banListLookup;
 
@@ -169,6 +170,24 @@ public final class XmlChannelSave implements ChannelDataIO {
 		} catch (TransformerException ex) {
 			throw new IOException("Problem saving data for channel "+channelID, ex);
 		}
+	}
+
+	@Override
+	public void addAttribute(int channelID, String key, String value) throws IOException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void updateAttribute(int channelID, String key, String value) throws IOException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void clearAttribute(int channelID, String key) throws IOException {
+		// TODO Auto-generated method stub
+		
 	}
 
 	@Override
@@ -630,24 +649,6 @@ public final class XmlChannelSave implements ChannelDataIO {
 		if (!new File(""+channelID+".xml").delete()) {
 			throw new IOException("Unable to remove channel xml file.");
 		}			
-	}
-
-	@Override
-	public void addAttribute(String key, String value) throws IOException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void updateAttribute(String key, String value) throws IOException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void clearAttribute(String key) throws IOException {
-		// TODO Auto-generated method stub
-		
 	}
 
 }

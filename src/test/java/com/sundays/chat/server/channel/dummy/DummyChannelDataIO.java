@@ -142,19 +142,19 @@ public class DummyChannelDataIO implements ChannelDataIO {
 	}
 
 	@Override
-	public void addAttribute(String attribute, String value) throws IOException {
+	public void addAttribute(int channelID, String attribute, String value) throws IOException {
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public void updateAttribute(String attribute, String value) throws IOException {
+	public void updateAttribute(int channelID, String attribute, String value) throws IOException {
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public void clearAttribute(String attribute) throws IOException {
+	public void clearAttribute(int channelID, String attribute) throws IOException {
 		// TODO Auto-generated method stub
 		
 	}
