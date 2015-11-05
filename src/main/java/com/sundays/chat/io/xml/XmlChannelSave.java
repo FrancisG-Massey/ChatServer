@@ -174,20 +174,103 @@ public final class XmlChannelSave implements ChannelDataIO {
 
 	@Override
 	public void addAttribute(int channelID, String key, String value) throws IOException {
-		// TODO Auto-generated method stub
+		Document channelDoc;
+		synchronized (docCache) {
+			try {
+				channelDoc = docCache.get(channelID);
+			} catch (ExecutionException ex) {
+				throw new IOException("Failed to find data for channel "+channelID+".", ex);
+			}
+		}
 		
+		if (attributeListLookup == null) {
+			try {
+				attributeListLookup = xPath.compile("/csc:channel/csc:attributes");
+			} catch (XPathExpressionException ex) {
+				throw new IOException("Failed to compile attribute lookup expression. This probably indicates a configuration or program error.", ex);
+			}
+		}
+		
+		synchronized (channelDoc) {
+			Element attrList;
+			try {
+				attrList = (Element) attributeListLookup.evaluate(channelDoc, XPathConstants.NODE);
+			} catch (XPathExpressionException ex) {
+				throw new IOException("Failed to run attribute search expression.", ex);
+			}
+			//Need to use 'createElementNS' as the document does not add it with 'createElement'.
+			Element newAttribute = channelDoc.createElementNS(attrList.getNamespaceURI(), "attribute");
+			newAttribute.setAttribute("key", key);
+			newAttribute.setTextContent(value);
+			attrList.appendChild(newAttribute);
+		}
+		savePending.add(channelDoc);
 	}
 
 	@Override
 	public void updateAttribute(int channelID, String key, String value) throws IOException {
-		// TODO Auto-generated method stub
+		Document channelDoc;
+		synchronized (docCache) {
+			try {
+				channelDoc = docCache.get(channelID);
+			} catch (ExecutionException ex) {
+				throw new IOException("Failed to find data for channel "+channelID+".", ex);
+			}
+		}
 		
+		synchronized (channelDoc) {
+			Element attribute;
+			try {
+				attribute = (Element) xPath.compile("/csc:channel/csc:attributes/csc:attribute[@key='"+key+"']").evaluate(channelDoc, XPathConstants.NODE);
+			} catch (XPathExpressionException ex) {
+				throw new IOException("Failed to run attribute search expression.", ex);
+			}
+			if (attribute == null) {
+				throw new IOException("Attribute "+key+" does not exist! Add it via addAttribute() first.");
+			}
+			attribute.setTextContent(value);
+		}
+		savePending.add(channelDoc);
 	}
 
 	@Override
 	public void clearAttribute(int channelID, String key) throws IOException {
-		// TODO Auto-generated method stub
+		Document channelDoc;
+		synchronized (docCache) {
+			try {
+				channelDoc = docCache.get(channelID);
+			} catch (ExecutionException ex) {
+				throw new IOException("Failed to find data for channel "+channelID+".", ex);
+			}
+		}
 		
+		if (attributeListLookup == null) {
+			try {
+				attributeListLookup = xPath.compile("/csc:channel/csc:attributes");
+			} catch (XPathExpressionException ex) {
+				throw new IOException("Failed to compile attribute lookup expression. This probably indicates a configuration or program error.", ex);
+			}
+		}
+		
+		synchronized (channelDoc) {
+			Element attribute;
+			try {
+				attribute = (Element) xPath.compile("/csc:channel/csc:attributes/csc:attribute[@key='"+key+"']").evaluate(channelDoc, XPathConstants.NODE);
+			} catch (XPathExpressionException ex) {
+				throw new IOException("Failed to run attribute search expression.", ex);
+			}
+			if (attribute == null) {
+				throw new IOException("Attribute "+key+" does not exist! Add it via addAttribute() first.");
+			}
+			Element attributeList;
+			try {
+				attributeList = (Element) attributeListLookup.evaluate(channelDoc, XPathConstants.NODE);
+			} catch (XPathExpressionException ex) {
+				throw new IOException("Failed to run attribute search expression.", ex);
+			}
+			attributeList.removeChild(attribute);
+		}
+		savePending.add(channelDoc);
 	}
 
 	@Override

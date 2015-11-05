@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.Assume.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -76,6 +76,7 @@ public class XmlChannelSaveTest {
 		details.setDescription("A new description!");
 		details.setOwner(101);
 		saveTest.updateDetails(100, details);
+		saveTest.addAttribute(100, "attr.test", "Test Attr");
 		
 		saveTest.commitChanges();//Apply the change
 		
@@ -88,6 +89,7 @@ public class XmlChannelSaveTest {
 		assertEquals("N 2", details.getAlias());
 		assertEquals("A new description!", details.getDescription());
 		assertEquals(101, details.getOwner());
+		assertEquals("Test Attr", saveTest.getChannelAttributes(100).get("attr.test"));
 		
 	}
 
@@ -143,6 +145,34 @@ public class XmlChannelSaveTest {
 		assertEquals(11, members.get(100).byteValue());
 		assertTrue(members.containsKey(101));
 		assertEquals(9, members.get(101).byteValue());		
+	}
+	
+	@Test
+	public void testAddAttribute() throws IOException {
+		assumeFalse(saveTest.getChannelAttributes(100).containsKey("attr.test"));
+		saveTest.addAttribute(100, "attr.test", "Test Value");
+		Map<String, String> attributes = saveTest.getChannelAttributes(100);
+		assertTrue(attributes.containsKey("attr.test"));
+		assertEquals("Test Value", attributes.get("attr.test"));
+	}
+	
+	@Test
+	public void testUpdateAttribute() throws IOException {
+		saveTest.addAttribute(100, "attr.test", "Test Value");
+		assumeTrue(saveTest.getChannelAttributes(100).containsKey("attr.test"));
+		
+		saveTest.updateAttribute(100, "attr.test", "New Value");
+		Map<String, String> attributes = saveTest.getChannelAttributes(100);
+		assertEquals("New Value", attributes.get("attr.test"));
+	}
+	
+	@Test
+	public void testClearAttribute() throws IOException {
+		saveTest.addAttribute(100, "attr.test", "Test Value");
+		assumeTrue(saveTest.getChannelAttributes(100).containsKey("attr.test"));
+		
+		saveTest.clearAttribute(100, "attr.test");
+		assertFalse(saveTest.getChannelAttributes(100).containsKey("attr.test"));
 	}
 	
 	@Test
