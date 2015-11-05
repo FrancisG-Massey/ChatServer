@@ -18,28 +18,21 @@
  *******************************************************************************/
 package com.sundays.chat.io.jdbc;
 
-public class ChannelUserMatcher {
+import java.util.Arrays;
 
-	private final int channelID;
-	private final int userID;
+public class KeyMatcher {
 
-	public ChannelUserMatcher (int channelID, int userID) {
-		this.channelID = channelID;
-		this.userID = userID;
+	private final Object[] values;
+
+	public KeyMatcher (Object... values) {
+		this.values = values;
 	}
 
 	/**
-	 * @return the channelID
+	 * @return the values
 	 */
-	public int getChannelID() {
-		return channelID;
-	}
-
-	/**
-	 * @return the userID
-	 */
-	public int getUserID() {
-		return userID;
+	public Object[] getValues() {
+		return values;
 	}
 
 	/* (non-Javadoc)
@@ -49,8 +42,7 @@ public class ChannelUserMatcher {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + channelID;
-		result = prime * result + userID;
+		result = prime * result + Arrays.hashCode(values);
 		return result;
 	}
 
@@ -59,22 +51,15 @@ public class ChannelUserMatcher {
 	 */
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj) {
+		if (this == obj)
 			return true;
-		}
-		if (obj == null) {
+		if (obj == null)
 			return false;
-		}
-		if (getClass() != obj.getClass()) {
+		if (getClass() != obj.getClass())
 			return false;
-		}
-		ChannelUserMatcher other = (ChannelUserMatcher) obj;
-		if (channelID != other.channelID) {
+		KeyMatcher other = (KeyMatcher) obj;
+		if (!Arrays.equals(values, other.values))
 			return false;
-		}
-		if (userID != other.userID) {
-			return false;
-		}
 		return true;
 	}
 
@@ -83,7 +68,8 @@ public class ChannelUserMatcher {
 	 */
 	@Override
 	public String toString() {
-		return "ChannelUserMatcher [channelID=" + channelID + ", userID="
-				+ userID + "]";
+		return "JDBCMatcher [values=" + Arrays.toString(values) + "]";
 	}
+	
+	
 }

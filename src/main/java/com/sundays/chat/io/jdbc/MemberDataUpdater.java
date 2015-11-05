@@ -36,8 +36,7 @@ import com.sundays.chat.server.channel.ChannelGroup;
 public class MemberDataUpdater {
 	
 	private static final Logger logger = Logger.getLogger(MemberDataUpdater.class);
-	
-	
+		
 	private final String memberTableName;
 	private final String banTableName;
 	private final String groupTableName;
@@ -49,20 +48,20 @@ public class MemberDataUpdater {
 	}
 	
 	//Rank database update queues
-	private final Set<ChannelUserMatcher> memberAdditions = new HashSet<>();
-	private final Set<ChannelUserMatcher> memberRemovals = new HashSet<>();
-	private final Map<ChannelUserMatcher, Integer> memberUpdates = new HashMap<>();
+	private final Set<KeyMatcher> memberAdditions = new HashSet<>();
+	private final Set<KeyMatcher> memberRemovals = new HashSet<>();
+	private final Map<KeyMatcher, Integer> memberUpdates = new HashMap<>();
 	
 	//Ban database update queues
-	private final Set<ChannelUserMatcher> banAdditions = new HashSet<>();
-	private final Set<ChannelUserMatcher> banRemovals = new HashSet<>();
+	private final Set<KeyMatcher> banAdditions = new HashSet<>();
+	private final Set<KeyMatcher> banRemovals = new HashSet<>();
 	
 	//Group update queues
 	private final Set<ChannelGroupData> groupUpdates = new HashSet<>();
 	
-	public synchronized void addMember(int channelID, int userID) {
+	protected synchronized void addMember(int channelID, int userID) {
 		//Updates the rank change queue with the specified rank addition
-		ChannelUserMatcher memberKey = new ChannelUserMatcher(channelID, userID);
+		KeyMatcher memberKey = new KeyMatcher(channelID, userID);
 		
 		if (memberAdditions.contains(memberKey)) {
 			//Rank addition already queued
@@ -77,9 +76,9 @@ public class MemberDataUpdater {
 		memberAdditions.add(memberKey);//Place the user in the addition queues
 	}
 
-	public synchronized void updateMember(int channelID, int userID, int group) {
+	protected synchronized void updateMember(int channelID, int userID, int group) {
 		//Updates the member change queue with the specified member change
-		ChannelUserMatcher memberKey = new ChannelUserMatcher(channelID, userID);
+		KeyMatcher memberKey = new KeyMatcher(channelID, userID);
 		
 		if (memberRemovals.contains(memberKey)) {
 			//Member removal was queued beforehand. Since the removal takes priority, the member cannot be changed.
@@ -92,9 +91,9 @@ public class MemberDataUpdater {
 		memberUpdates.put(memberKey, group);//Place the user in the member change queue
 	}
 
-	public synchronized void removeMember(int channelID, int userID) {
+	protected synchronized void removeMember(int channelID, int userID) {
 		//Updates the member change queue with the specified member removal
-		ChannelUserMatcher memberKey = new ChannelUserMatcher(channelID, userID);
+		KeyMatcher memberKey = new KeyMatcher(channelID, userID);
 		
 		if (memberRemovals.contains(memberKey)) {
 			//Member removal already queued
@@ -112,9 +111,9 @@ public class MemberDataUpdater {
 		memberRemovals.add(memberKey);//Place the member in the removal cue
 	}
 
-	public synchronized void addBan(int channelID, int userID) {
+	protected synchronized void addBan(int channelID, int userID) {
 		//Updates the ban addition queue with the specified ban addition
-		ChannelUserMatcher banAdditionKey = new ChannelUserMatcher(channelID, userID);
+		KeyMatcher banAdditionKey = new KeyMatcher(channelID, userID);
 		
 		if (banAdditions.contains(banAdditionKey)) {
 			//Ban addition already queued
@@ -128,9 +127,9 @@ public class MemberDataUpdater {
 		banAdditions.add(banAdditionKey);//Place the user in the addition queue
 	}
 
-	public synchronized void removeBan(int channelID, int userID) {
+	protected synchronized void removeBan(int channelID, int userID) {
 		//Updates the ban removal queue with the specified rank removal
-		ChannelUserMatcher banRemovalKey = new ChannelUserMatcher(channelID, userID);
+		KeyMatcher banRemovalKey = new KeyMatcher(channelID, userID);
 		
 		if (banRemovals.contains(banRemovalKey)) {
 			//Ban removal already queued
@@ -144,7 +143,7 @@ public class MemberDataUpdater {
 		banRemovals.add(banRemovalKey);//Place the user in the removal queue
 	}
 	
-	public synchronized void updateGroup (int channelID, ChannelGroupData group) {
+	protected synchronized void updateGroup (int channelID, ChannelGroupData group) {
 		if (groupUpdates.contains(group)) {
 			//Group update already queued
 			groupUpdates.remove(group);
@@ -168,17 +167,17 @@ public class MemberDataUpdater {
 	protected void commitPendingChanges(ConnectionManager dbCon) {
 		
 		//Create a clone for each available queue
-		ChannelUserMatcher[] rankAdditionsCopy = null;
-		Map<ChannelUserMatcher, Integer> rankChangesCopy = new HashMap<>();
-		ChannelUserMatcher[] rankRemovalsCopy = null;
-		ChannelUserMatcher[] banAdditionsCopy = null;
-		ChannelUserMatcher[] banRemovalsCopy = null;
+		KeyMatcher[] rankAdditionsCopy = null;
+		Map<KeyMatcher, Integer> rankChangesCopy = new HashMap<>();
+		KeyMatcher[] rankRemovalsCopy = null;
+		KeyMatcher[] banAdditionsCopy = null;
+		KeyMatcher[] banRemovalsCopy = null;
 		ChannelGroupData[] groupUpdatesCopy = null;
 		
 		//Enter a synchronized block, which will prevent any other threads from adding updates while the cues are cloned
 		synchronized (this) {
 			//Copy the member addition queue, then clear the original
-			rankAdditionsCopy = new ChannelUserMatcher[memberAdditions.size()];
+			rankAdditionsCopy = new KeyMatcher[memberAdditions.size()];
 			rankAdditionsCopy = memberAdditions.toArray(rankAdditionsCopy);
 			memberAdditions.clear();
 			
@@ -187,17 +186,17 @@ public class MemberDataUpdater {
 			memberUpdates.clear();
 			
 			//Copy the member removals queue, then clear the original
-			rankRemovalsCopy = new ChannelUserMatcher[memberRemovals.size()];
+			rankRemovalsCopy = new KeyMatcher[memberRemovals.size()];
 			rankRemovalsCopy = memberRemovals.toArray(rankRemovalsCopy);
 			memberRemovals.clear();
 
 			//Copy the ban additions queue, then clear the original
-			banAdditionsCopy = new ChannelUserMatcher[banAdditions.size()];
+			banAdditionsCopy = new KeyMatcher[banAdditions.size()];
 			banAdditionsCopy = banAdditions.toArray(banAdditionsCopy);
 			banAdditions.clear();
 			
 			//Copy the ban removals queue, then clear the original
-			banRemovalsCopy = new ChannelUserMatcher[banRemovals.size()];
+			banRemovalsCopy = new KeyMatcher[banRemovals.size()];
 			banRemovalsCopy = banRemovals.toArray(banRemovalsCopy);
 			banRemovals.clear();
 
@@ -209,15 +208,17 @@ public class MemberDataUpdater {
 		
 		if (rankAdditionsCopy.length > 0) {
 			//If there are pending member additions, run through them and insert them into the relevant database entries
-			ChannelUserMatcher lastAddition = null;
+			KeyMatcher lastAddition = null;
 			try {
 				if (rankInsertQuery == null) {
 					rankInsertQuery = dbCon.getConnection().prepareStatement("INSERT INTO `"+memberTableName+"` SET `channel` = ?, `user` = ?");
 				}
-				for (ChannelUserMatcher addition : rankAdditionsCopy) {
+				for (KeyMatcher addition : rankAdditionsCopy) {
 					lastAddition = addition;
-					rankInsertQuery.setInt(1, addition.getChannelID());
-					rankInsertQuery.setInt(2, addition.getUserID());
+					int channelID = (Integer) addition.getValues()[0];
+					int userID = (Integer) addition.getValues()[1];
+					rankInsertQuery.setInt(1, channelID);
+					rankInsertQuery.setInt(2, userID);
 					try {
 						rankInsertQuery.execute();
 					} catch (MySQLIntegrityConstraintViolationException ex) {
@@ -237,17 +238,19 @@ public class MemberDataUpdater {
 				if (rankUpdateQuery == null) {
 					rankUpdateQuery = dbCon.getConnection().prepareStatement("UPDATE `"+memberTableName+"` SET `rank` = ? WHERE `channel` = ? AND `user` = ?");
 				}
-				for (Entry<ChannelUserMatcher, Integer> update : rankChangesCopy.entrySet()) {
+				for (Entry<KeyMatcher, Integer> update : rankChangesCopy.entrySet()) {
+					int channelID = (Integer) update.getKey().getValues()[0];
+					int userID = (Integer) update.getKey().getValues()[1];
 					rankUpdateQuery.setInt(1, update.getValue());
-					rankUpdateQuery.setInt(2, update.getKey().getChannelID());
-					rankUpdateQuery.setInt(3, update.getKey().getUserID());
+					rankUpdateQuery.setInt(2, channelID);
+					rankUpdateQuery.setInt(3, userID);
 		            try {
 		            	rankUpdateQuery.execute();
 		            } catch (MySQLIntegrityConstraintViolationException ex) {
-		            	logger.warn("Failed to commit rank update request: user="+update.getKey().getUserID()+" channel="+update.getKey().getChannelID()+" rank="+update.getValue(), ex);
+		            	logger.warn("Failed to commit rank update request: user="+update.getKey().getValues()[1]+" channel="+update.getKey().getValues()[0]+" rank="+update.getValue(), ex);
 		            	continue;
 		            }
-		            logger.info("Rank updated in database: user="+update.getKey().getUserID()+" channel="+update.getKey().getChannelID()+" rank="+update.getValue());
+		            logger.info("Rank updated in database: user="+update.getKey().getValues()[1]+" channel="+update.getKey().getValues()[0]+" rank="+update.getValue());
 				}
 			} catch (SQLException ex) {
 				logger.error("Failed to commit rank change requests", ex);
@@ -260,9 +263,11 @@ public class MemberDataUpdater {
 				if (rankDeleteQuery == null) {
 					rankDeleteQuery = dbCon.getConnection().prepareStatement("DELETE FROM `"+memberTableName+"` WHERE `channel` = ? AND `user` = ? LIMIT 1");
 				}
-				for (ChannelUserMatcher removal : rankRemovalsCopy) {
-					rankDeleteQuery.setInt(1, removal.getChannelID());
-					rankDeleteQuery.setInt(2, removal.getUserID());
+				for (KeyMatcher removal : rankRemovalsCopy) {
+					int channelID = (Integer) removal.getValues()[0];
+					int userID = (Integer) removal.getValues()[1];
+					rankDeleteQuery.setInt(1, channelID);
+					rankDeleteQuery.setInt(2, userID);
 		            try {
 		            	rankDeleteQuery.execute();
 		            } catch (MySQLIntegrityConstraintViolationException ex) {
@@ -282,9 +287,11 @@ public class MemberDataUpdater {
 				if (banInsertQuery == null) {
 					banInsertQuery = dbCon.getConnection().prepareStatement("INSERT INTO `"+banTableName+"` SET `channel` = ?, `user` = ?");
 				}
-				for (ChannelUserMatcher addition : banAdditionsCopy) {
-					banInsertQuery.setInt(1, addition.getChannelID());
-					banInsertQuery.setInt(2, addition.getUserID());
+				for (KeyMatcher addition : banAdditionsCopy) {
+					int channelID = (Integer) addition.getValues()[0];
+					int userID = (Integer) addition.getValues()[1];
+					banInsertQuery.setInt(1, channelID);
+					banInsertQuery.setInt(2, userID);
 		            try {
 		            	banInsertQuery.execute();
 		            } catch (MySQLIntegrityConstraintViolationException ex) {
@@ -304,9 +311,11 @@ public class MemberDataUpdater {
 				if (banDeleteQuery == null) {
 					banDeleteQuery = dbCon.getConnection().prepareStatement("DELETE FROM `"+banTableName+"` WHERE `channel` = ? AND `user` = ? LIMIT 1");
 				}
-				for (ChannelUserMatcher removal : banRemovalsCopy) {
-					banDeleteQuery.setInt(1, removal.getChannelID());
-					banDeleteQuery.setInt(2, removal.getUserID());
+				for (KeyMatcher removal : banRemovalsCopy) {
+					int channelID = (Integer) removal.getValues()[0];
+					int userID = (Integer) removal.getValues()[1];
+					banDeleteQuery.setInt(1, channelID);
+					banDeleteQuery.setInt(2, userID);
 		            try {
 		            	banDeleteQuery.execute();
 		            } catch (MySQLIntegrityConstraintViolationException ex) {

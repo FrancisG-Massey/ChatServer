@@ -72,6 +72,21 @@ public class JDBCChannelSave implements ChannelDataIO {
 	}
 
 	@Override
+	public void addAttribute(int channelID, String key, String value) throws IOException {
+		channelUpdater.addAttribute(channelID, key, value);
+	}
+
+	@Override
+	public void updateAttribute(int channelID, String key, String value) throws IOException {
+		channelUpdater.updateAttribute(channelID, key, value);
+	}
+
+	@Override
+	public void clearAttribute(int channelID, String key) throws IOException {
+		channelUpdater.removeAttribute(channelID, key);
+	}
+
+	@Override
 	public void addMember(int channel, int user, int group) {
 		memberUpdater.addMember(channel, user);
 	}
@@ -309,24 +324,6 @@ public class JDBCChannelSave implements ChannelDataIO {
 				throw new IOException("Failed to remove channel from database", ex);
 			}			
 		}
-	}
-
-	@Override
-	public void addAttribute(int channelID, String key, String value) throws IOException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void updateAttribute(int channelID, String key, String value) throws IOException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void clearAttribute(int channelID, String key) throws IOException {
-		// TODO Auto-generated method stub
-		
 	}
 
 }

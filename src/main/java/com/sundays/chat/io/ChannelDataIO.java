@@ -106,8 +106,24 @@ public interface ChannelDataIO extends AutoCloseable {
 	//Channel detail changes
 	public void updateDetails (int channelID, ChannelDetails details) throws IOException;
 	
+	/**
+	 * Adds the specified key-value pair as an attribute for the channel.<br />
+	 * Note: this method will fail if the attribute already exists. If the attribute exists, use {@link #updateAttribute(int, String, String)} instead.
+	 * @param channelID The ID of the channel
+	 * @param key The attribute key; used for retrieving the value once stored. Should be a string between 2 and 100 alphanumeric, hyphen, underscore, or dot characters.
+	 * @param value The attribute value. Should be a string with less than 2^16 characters.
+	 * @throws IOException If an IO issue occurs during the addition.
+	 */
 	public void addAttribute (int channelID, String key, String value) throws IOException;
 	
+	/**
+	 * Updates the specified attribute for the channel to the provided value.<br />
+	 * Note: this method will fail if the attribute does not exist. If this is the case, use {@link #addAttribute(int, String, String)} to add the attribute first.
+	 * @param channelID The ID of the channel
+	 * @param key The attribute key; used for identifying the value to update. Should be a string between 2 and 100 alphanumeric, hyphen, underscore, or dot characters.
+	 * @param value The attribute value. Should be a string with less than 2^16 characters.
+	 * @throws IOException If an IO issue occurs during the addition.
+	 */
 	public void updateAttribute (int channelID, String key, String value) throws IOException;
 	
 	public void clearAttribute (int channelID, String key) throws IOException;
