@@ -18,25 +18,27 @@
  *******************************************************************************/
 package com.sundays.chat.server.channel;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
+import java.io.IOException;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.sundays.chat.server.channel.dummy.CallEvent;
-import com.sundays.chat.server.channel.dummy.DummyChannelDataIO;
+import com.sundays.chat.io.ChannelDataIO;
 
 public class ChannelSyncTest {
 	
-	private DummyChannelDataIO channelIO;
+	private ChannelDataIO channelIO;
 	private Channel channel;
 
 	@Before
 	public void setUp() throws Exception {
-		channelIO = new DummyChannelDataIO();
+		channelIO = mock(ChannelDataIO.class);
 		channel = new Channel(100, channelIO);
 	}
 
@@ -47,68 +49,52 @@ public class ChannelSyncTest {
 	}
 
 	@Test
-	public void testAddMember() {
+	public void testAddMember() throws IOException {
 		channel.addMember(102);
 		assumeTrue(channel.getUserGroup(102).getId() == ChannelGroup.DEFAULT_GROUP);//Assume the addition succeeded
 		
-		CallEvent call = channelIO.calls.get(0);
-		assertEquals("addRank", call.getMethod());
-		assertEquals("channelID in io call does not match actual channel ID! Found: "+call.getArg(0), 100, call.getArg(0));
-		assertEquals("userID in io call does not match actual user ID! Found: "+call.getArg(1), 102, call.getArg(1));
+		verify(channelIO).addMember(100, 102, ChannelGroup.DEFAULT_GROUP);
 	}
 
 	@Test
-	public void testUpdateMember() {
+	public void testUpdateMember() throws IOException {
 		channel.addMember(102);
 		assumeTrue(channel.getUserGroup(102).getId() == ChannelGroup.DEFAULT_GROUP);
-		channelIO.calls.clear();//Remove the "addRank" event, as this is tested in a different test case
 		
 		channel.setMemberGroup(102, ChannelGroup.MOD_GROUP);
 		assumeTrue(channel.getUserGroup(102).getId() == ChannelGroup.MOD_GROUP);//Assume the change succeeded
-		CallEvent call = channelIO.calls.get(0);
-		assertEquals("changeRank", call.getMethod());
-		assertEquals("channelID in io call does not match actual channel ID! Found: "+call.getArg(0), 100, call.getArg(0));
-		assertEquals("userID in io call does not match actual user ID! Found: "+call.getArg(1), 102, call.getArg(1));
-		assertEquals("rankID in io call does not match actual rank ID! Found: "+call.getArg(2), ChannelGroup.MOD_GROUP, ((Integer) call.getArg(2)).intValue());
+
+		verify(channelIO).updateMember(100, 102, ChannelGroup.MOD_GROUP);
 	}
 
 	@Test
-	public void testRemoveMember() {
+	public void testRemoveMember() throws IOException {
 		channel.addMember(102);
 		assumeTrue(channel.getUserGroup(102).getId() == ChannelGroup.DEFAULT_GROUP);
-		channelIO.calls.clear();//Remove the "addRank" event, as this is tested in a different test case
 		
 		channel.removeMember(102);
 		assumeTrue(channel.getUserGroup(102).getId() == ChannelGroup.GUEST_GROUP);//Assume the removal succeeded
-		CallEvent call = channelIO.calls.get(0);
-		assertEquals("removeRank", call.getMethod());
-		assertEquals("channelID in io call does not match actual channel ID! Found: "+call.getArg(0), 100, call.getArg(0));
-		assertEquals("userID in io call does not match actual user ID! Found: "+call.getArg(1), 102, call.getArg(1));
+
+		verify(channelIO).removeMember(100, 102);
 	}
 
 	@Test
-	public void testAddBan() {
+	public void testAddBan() throws IOException {
 		channel.addBan(102);
 		assumeTrue(channel.isUserBanned(102));//Assume the ban addition succeeded
 		
-		CallEvent call = channelIO.calls.get(0);
-		assertEquals("addBan", call.getMethod());
-		assertEquals("channelID in io call does not match actual channel ID! Found: "+call.getArg(0), 100, call.getArg(0));
-		assertEquals("userID in io call does not match actual user ID! Found: "+call.getArg(1), 102, call.getArg(1));
+		verify(channelIO).addBan(100, 102);
 	}
 
 	@Test
-	public void testRemoveBan() {
+	public void testRemoveBan() throws IOException {
 		channel.addBan(102);
 		assumeTrue(channel.isUserBanned(102));
-		channelIO.calls.clear();//Remove the "addBan" event, as this is tested in a different test case
 		
 		channel.removeBan(102);
 		assumeFalse(channel.isUserBanned(102));//Assume the removal succeeded
-		CallEvent call = channelIO.calls.get(0);
-		assertEquals("removeBan", call.getMethod());
-		assertEquals("channelID in io call does not match actual channel ID! Found: "+call.getArg(0), 100, call.getArg(0));
-		assertEquals("userID in io call does not match actual user ID! Found: "+call.getArg(1), 102, call.getArg(1));
+		
+		verify(channelIO).removeBan(100, 102);
 	}
 
 }

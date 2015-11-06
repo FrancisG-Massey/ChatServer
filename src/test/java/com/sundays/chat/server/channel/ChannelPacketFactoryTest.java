@@ -20,6 +20,8 @@ package com.sundays.chat.server.channel;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 
@@ -27,27 +29,27 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelGroupType;
 import com.sundays.chat.io.UserDetails;
-import com.sundays.chat.server.channel.dummy.DummyChannelDataIO;
-import com.sundays.chat.server.channel.dummy.DummyUserManager;
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.user.User;
+import com.sundays.chat.server.user.UserLookup;
 
 public class ChannelPacketFactoryTest {
 	
 	ChannelPacketFactory factory;
 	Channel dummyChannel;
 	ChannelUser testUser;
-	DummyUserManager userLookup;
+	UserLookup userLookup;
 
 	@Before
 	public void setUp() throws Exception {
 		factory = new ChannelPacketFactory();
-		dummyChannel = new Channel(100, new DummyChannelDataIO());
+		dummyChannel = new Channel(100, mock(ChannelDataIO.class));
 		UserDetails details = new UserDetails(102, "Test", 0);
 		testUser = new User(102, details);
-		userLookup = new DummyUserManager();
+		userLookup = mock(UserLookup.class);
 	}
 
 	@After
@@ -61,7 +63,7 @@ public class ChannelPacketFactoryTest {
 		dummyChannel.setName("Test Channel");
 		dummyChannel.setAttribute("welcomeMessage", "Test Message");
 		dummyChannel.setOwnerID(102);
-		userLookup.nameLookup.put(102, "Test");
+		when(userLookup.getUsername(102)).thenReturn("Test");
 		
 		assumeTrue("Test Channel".equals(dummyChannel.getName()));		
 		assumeTrue("Test Message".equals(dummyChannel.getAttribute("welcomeMessage")));
@@ -145,10 +147,8 @@ public class ChannelPacketFactoryTest {
 	@Test
 	public void testMemberList () {
 		for (int i=0;i<10;i++) {
-			//UserDetails details = new UserDetails(110+i, "Test"+i, 0);
-			//dummyChannel.addUser(new User(110+i, details));
 			dummyChannel.addMember(110+i);
-			userLookup.nameLookup.put(110+i, "Test"+i);
+			when(userLookup.getUsername(110+i)).thenReturn("Test"+i);
 		}
 		assumeTrue(dummyChannel.getMembers().size() == 10);//Assume all members were added properly.
 		
@@ -170,7 +170,7 @@ public class ChannelPacketFactoryTest {
 	@Test
 	public void testMemberAddition() {
 		dummyChannel.addMember(102);
-		userLookup.nameLookup.put(102, "Test");
+		when(userLookup.getUsername(102)).thenReturn("Test");
 		
 		assumeTrue(dummyChannel.getUserGroup(102).getId() == ChannelGroup.DEFAULT_GROUP);
 		
@@ -186,7 +186,7 @@ public class ChannelPacketFactoryTest {
 	public void testMemberUpdate() {
 		dummyChannel.addMember(102);
 		dummyChannel.setMemberGroup(102, ChannelGroup.ADMIN_GROUP);
-		userLookup.nameLookup.put(102, "Test");
+		when(userLookup.getUsername(102)).thenReturn("Test");
 		
 		assumeTrue(dummyChannel.getUserGroup(102).getId() == ChannelGroup.ADMIN_GROUP);
 		
@@ -209,7 +209,7 @@ public class ChannelPacketFactoryTest {
 	public void testBanList () {
 		for (int i=0;i<10;i++) {
 			dummyChannel.addBan(110+i);
-			userLookup.nameLookup.put(110+i, "Test"+i);
+			when(userLookup.getUsername(110+i)).thenReturn("Test"+i);
 		}
 		assumeTrue(dummyChannel.getBans().size() == 10);//Assume all bans were added properly.
 		
@@ -230,7 +230,7 @@ public class ChannelPacketFactoryTest {
 	@Test
 	public void testBanAddition() {
 		dummyChannel.addBan(102);
-		userLookup.nameLookup.put(102, "Test");
+		when(userLookup.getUsername(102)).thenReturn("Test");
 		
 		assumeTrue(dummyChannel.isUserBanned(102));		
 		

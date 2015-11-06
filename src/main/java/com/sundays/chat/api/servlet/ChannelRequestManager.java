@@ -253,7 +253,7 @@ public class ChannelRequestManager extends HttpServlet {
 			} else {
 				return false;
 			}
-			HttpRequestTools.sendResponseJSON(response, responseMessage);;
+			HttpRequestTools.sendResponseJSON(response, responseMessage);
 			return true;
 		} catch (JSONException ex) {
 			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -286,7 +286,7 @@ public class ChannelRequestManager extends HttpServlet {
 					String un = requestMessage.optString("username", null);
 					if (un != null) {
 						//If a username was specified, attempt to resolve it to an ID
-						uID = launcher.getUserManager().getUserID(un);
+						uID = userManager.getUserID(un);
 						if (uID != 0) {
 							//If a userID was found, use the specified ID
 							responseMessage = channelManager.addMember(user, channelID, uID);
@@ -322,14 +322,14 @@ public class ChannelRequestManager extends HttpServlet {
 				int groupID = requestMessage.optInt("group", Integer.MAX_VALUE);
 				if (uID == 0) {
 					responseMessage.put("status", HttpServletResponse.SC_BAD_REQUEST);
-					responseMessage.put("msgArgs", "arg=userID,expected=Integer,found=null");
+					responseMessage.put("msgArgs", "arg=user,expected=int,found=null");
 					responseMessage.put("msgCode", 177);
-					responseMessage.put("message", "Invalid or missing parameter for userID; expected: Integer, found: null."); 
+					responseMessage.put("message", "Invalid or missing parameter for user; expected: Integer, found: null."); 
 				} else if (groupID > Byte.MAX_VALUE || groupID < Byte.MIN_VALUE) {
 					responseMessage.put("status", HttpServletResponse.SC_BAD_REQUEST);
-					responseMessage.put("msgArgs", "arg=rankID,expected=byte,found=null");
+					responseMessage.put("msgArgs", "arg=group,expected=int,found=null");
 					responseMessage.put("msgCode", 177);
-					responseMessage.put("message", "Invalid or missing parameter for rankID; expected: byte, found: null."); 
+					responseMessage.put("message", "Invalid or missing parameter for group; expected: byte, found: null."); 
 				} else {
 					responseMessage = channelManager.updateMember(user, channelID, uID, (byte) groupID);
 				}
@@ -359,7 +359,7 @@ public class ChannelRequestManager extends HttpServlet {
 					String un = requestMessage.optString("username", null);
 					if (un != null) {
 						//If a username was specified, attempt to resolve it to an ID
-						uID = launcher.getUserManager().getUserID(un);
+						uID = userManager.getUserID(un);
 						if (uID != 0) {
 							//If a userID was found, use the specified ID
 							responseMessage = channelManager.addBan(user, channelID, uID);
