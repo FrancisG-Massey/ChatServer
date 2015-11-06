@@ -88,7 +88,7 @@ public class JDBCChannelSave implements ChannelDataIO {
 
 	@Override
 	public void addMember(int channel, int user, int group) {
-		memberUpdater.addMember(channel, user);
+		memberUpdater.addMember(channel, user, group);
 	}
 
 	@Override

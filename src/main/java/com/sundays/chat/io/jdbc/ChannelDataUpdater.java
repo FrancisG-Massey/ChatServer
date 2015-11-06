@@ -28,7 +28,6 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import com.sundays.chat.io.ChannelDetails;
 
 public class ChannelDataUpdater {
@@ -174,7 +173,7 @@ public class ChannelDataUpdater {
 					attrInsertQuery.setString(2, key);
 					try {
 						attrInsertQuery.execute();
-					} catch (MySQLIntegrityConstraintViolationException ex) {
+					} catch (SQLException ex) {
 						logger.warn("Failed to commit attribute addition request: "+addition, ex);
 		            	continue;
 		            }
@@ -199,7 +198,7 @@ public class ChannelDataUpdater {
 					attrUpdateQuery.setString(3, key);
 		            try {
 		            	attrUpdateQuery.execute();
-		            } catch (MySQLIntegrityConstraintViolationException ex) {
+		            } catch (SQLException ex) {
 		            	logger.warn("Failed to commit attribute update request: key="+update.getKey().getValues()[1]+" channel="+update.getKey().getValues()[0]+" value="+update.getValue(), ex);
 		            	continue;
 		            }
@@ -223,7 +222,7 @@ public class ChannelDataUpdater {
 					attrDeleteQuery.setString(2, key);
 		            try {
 		            	attrDeleteQuery.execute();
-		            } catch (MySQLIntegrityConstraintViolationException ex) {
+		            } catch (SQLException ex) {
 		            	logger.warn("Failed to commit attribute removal request: "+removal, ex);
 		            	continue;
 		            }            
