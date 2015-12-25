@@ -34,6 +34,8 @@ public class ChannelGroup {
 	private static final Logger logger = Logger.getLogger(ChannelGroup.class);
 	
     public static final Map<Integer, ChannelGroup> defaultGroups = new HashMap<>(12);
+    
+    public static final ChannelGroup UNKNOWN_GROUP = new ChannelGroup(50, -2, "Unknown", ChannelGroupType.NORMAL);
 	
 	public static final int DEFAULT_GROUP = 1;//The group that all users will be automatically assigned when they are added as a channel member
     public static final int GUEST_GROUP = 0;//The group that any users who are not on the channel's member list will receive

@@ -18,20 +18,13 @@
  *******************************************************************************/
 package com.sundays.chat.server;
 
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.sundays.chat.io.ChannelGroupType;
-import com.sundays.chat.server.channel.ChannelGroup;
 import com.sundays.chat.utils.GeneralTools;
 
 public class Settings {	
-    public static final Map<Integer, ChannelGroup> systemGroups = new HashMap<Integer, ChannelGroup>();
     public static final short PERMISSION_VERSION = 2, RANK_NAME_VERSION = 2;
     public static final String VERSION_NAME = "0.36";
     public static final int VERSION_NUMBER = 25;
@@ -46,18 +39,9 @@ public class Settings {
     	}
 		return settings;
     }
-    /*Integer parameters*/
-    public enum IntParam {
-    	CHANNEL_CLEANUP_FREQUENCY (100),
-    	CHANNEL_CACHE_SIZE1 (100);
-    	public int def;
-    	IntParam (int def) { this.def = def; }
-    }
     
     public int CHANNEL_CLEANUP_FREQUENCY;
 	public int CHANNEL_CACHE_SIZE1;
-    
-    public EnumMap<IntParam, Integer> intParams = new EnumMap<IntParam, Integer>(IntParam.class);
     
     private Settings (Properties p) {
     	String[] ipn = new String[]{"channel_cleanup_frequency","rank_name_max","rank_name_min","channel_cache_size"};
@@ -74,45 +58,5 @@ public class Settings {
 			Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Invalid or missing parameter given for 'channel_cache_size'. Expected positive integer.");
 			CHANNEL_CACHE_SIZE1 = 100; 
 		}
-    	
-    	for (IntParam pr : IntParam.values()) {
-    		String key = pr.name().toLowerCase(Locale.ENGLISH);
-    		if (p.containsKey(key) && GeneralTools.isInteger(p.getProperty(key))) {
-    			intParams.put(pr, Integer.parseInt(p.getProperty(key)));
-    		} else {
-    			
-    		}
-    	}
-    }
-    
-    //Predefine the IDs for commonly used rank levels (aka 'system ranks')
-    public enum PresetRanks {
-    	GUEST_RANK (0),
-    	DEFAULT_RANK (1),
-    	MOD_RANK (5),
-    	ADMIN_RANK (9),
-    	OWNER_RANK (11);
-    	byte id;
-    	PresetRanks(int id) {
-    		this.id = (byte) id;
-    	}
-    	
-    	public byte value() { return id; }
-    	
-    	protected void setValue (byte value) { this.id = value; }
-    	
-    	@Override
-    	public String toString () { return Integer.toString(id); }
-    }
-    
-
-    public enum ReportTypes {
-    	CHANNEL,
-    	USER
-    }
-    
-    static {       
-    	systemGroups.clear();
-    	systemGroups.put(53, new ChannelGroup(50, -2, "Unknown", ChannelGroupType.NORMAL));
     }
 }

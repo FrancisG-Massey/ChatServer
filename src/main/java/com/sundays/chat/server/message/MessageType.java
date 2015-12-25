@@ -70,7 +70,7 @@ public enum MessageType {
 	 * 
 	 * Contains the following properties:
 	 * <ul>
-	 * <li>userID - The ID of the user to add.</li>
+	 * <li>userId - The ID of the user to add.</li>
 	 * <li>username - The name of the user to add.</li>
 	 * <li>group - The group which the user belongs to.</li>
 	 * <li>rank - The legacy rank ID of the user (NOTE: This is deprecated and may be removed in the future).</li>
@@ -83,7 +83,7 @@ public enum MessageType {
 	 * 
 	 * Contains the following properties:
 	 * <ul>
-	 * <li>userID - The ID of the user to remove.</li>
+	 * <li>userId - The ID of the user to remove.</li>
 	 * </ul>
 	 */
 	CHANNEL_LIST_REMOVAL(7),
@@ -93,7 +93,7 @@ public enum MessageType {
 	 * 
 	 * Contains the following properties:
 	 * <ul>
-	 * <li>userID - The ID of the user to update.</li>
+	 * <li>userId - The ID of the user to update.</li>
 	 * <li>username - The new username of the user.</li>
 	 * <li>group - The new group which the user belongs to.</li>
 	 * <li>rank - The legacy rank ID of the user (NOTE: This is deprecated and may be removed in the future).</li>
@@ -114,7 +114,7 @@ public enum MessageType {
 	 * 
 	 * Contains the following properties:
 	 * <ul>
-	 * <li>userID - The ID of the user to add.</li>
+	 * <li>userId - The ID of the user to add.</li>
 	 * <li>username - The name of the user to add.</li>
 	 * <li>group - The group which the user belongs to.</li>
 	 * <li>rank - The legacy rank ID of the user (NOTE: This is deprecated and may be removed in the future).</li>
@@ -127,7 +127,7 @@ public enum MessageType {
 	 * 
 	 * Contains the following properties:
 	 * <ul>
-	 * <li>userID - The ID of the user to remove.</li>
+	 * <li>userId - The ID of the user to remove.</li>
 	 * </ul>
 	 */
 	RANK_LIST_REMOVAL(12),
@@ -137,7 +137,7 @@ public enum MessageType {
 	 * 
 	 * Contains the following properties:
 	 * <ul>
-	 * <li>userID - The ID of the user to update.</li>
+	 * <li>userId - The ID of the user to update.</li>
 	 * <li>username - The new username of the user.</li>
 	 * <li>group - The new group which the user belongs to.</li>
 	 * <li>rank - The legacy rank ID of the user (NOTE: This is deprecated and may be removed in the future).</li>
@@ -150,7 +150,7 @@ public enum MessageType {
 	 * 
 	 * Contains the following properties:
 	 * <ul>
-	 * <li>userID - The ID of the user to add.</li>
+	 * <li>userId - The ID of the user to add.</li>
 	 * <li>username - The name of the user to add.</li>
 	 * </ul>
 	 */
@@ -161,7 +161,7 @@ public enum MessageType {
 	 * 
 	 * Contains the following properties:
 	 * <ul>
-	 * <li>userID - The ID of the user to remove.</li>
+	 * <li>userId - The ID of the user to remove.</li>
 	 * </ul>
 	 */
 	BAN_LIST_REMOVAL(15),
@@ -186,7 +186,7 @@ public enum MessageType {
 	 * 
 	 * Contains the following properties:
 	 * <ul>
-	 * <li>userID - The ID of the user to change the rank of.</li>
+	 * <li>userId - The ID of the user to change the rank of.</li>
 	 * <li>rank - The rank to change to.</li>
 	 * </ul>
 	 */

@@ -34,7 +34,6 @@ import com.google.common.cache.CacheBuilder;
 import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
-import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.message.MessagePayload;
 
 /**
@@ -231,7 +230,7 @@ public final class Channel {
     	} else if (members.containsKey(userID)) {
         	group = groups.get(members.get(userID));//Manually selected group
         } else if (permBans.contains(userID)) {
-        	group = new ChannelGroup(Settings.systemGroups.get(53));//Permanently banned users
+        	group = ChannelGroup.UNKNOWN_GROUP;//Permanently banned users
         }
     	return group;
     }
@@ -277,6 +276,10 @@ public final class Channel {
         	rank = -3;
         }
         return rank;
+    }
+    
+    public boolean canActionUser (ChannelUser user, int targetId) {
+    	return getUserRank(targetId) >= getUserRank(user);
     }
     
     public boolean isUserBanned (int userID) {

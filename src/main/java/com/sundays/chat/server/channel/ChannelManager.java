@@ -20,7 +20,11 @@ package com.sundays.chat.server.channel;
 
 import java.awt.Color;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -51,25 +55,34 @@ import com.sundays.chat.server.user.UserManager;
  */
 public class ChannelManager {
 	
+	/**
+	 * 
+	 */
 	private static final Logger logger = Logger.getLogger(ChannelManager.class);
 	
-    //Creates a map linking the channel ID with the channel's class
+    /**
+     * Creates a map linking the channel ID with the channel's class
+     */
     private final ConcurrentHashMap<Integer, Channel> channels = new ConcurrentHashMap<Integer, Channel>();
     
-    //A map which contains all valid channel IDs and names. It is used for resolving channel names into IDs
+    /**
+     * A map which contains all valid channel IDs and names. It is used for resolving channel names into IDs
+     */
     private final ChannelIndex channelIndex;
-    
-    //private final Launcher server;
     
     private final UserManager userManager;
     
-    //A joinLock can be applied to prevent users from joining new channels.
+    /**
+     * A joinLock can be applied to prevent users from joining new channels.
+     */
     protected boolean joinLock = false;
     
-    //The interface used to connect to the channel permanent data back-end
+    /**
+     * The interface used to connect to the channel permanent data back-end
+     */
     private final ChannelDataIO channelIO;
     
-    private final ArrayList<Channel> channelUnloadQueue = new ArrayList<Channel>();
+    private final List<Channel> channelUnloadQueue = new ArrayList<Channel>();
 	
 	private final ChannelPacketFactory messageFactory;
     
@@ -93,12 +106,7 @@ public class ChannelManager {
     			logger.info("Server is shutting down. Running final channel cleanup tasks.");
 		    	joinLock = true;
 		    	for (Channel c : channels.values()) {
-		    		try {
-						unloadChannel(c);
-					} catch (JSONException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+		    		unloadChannel(c);
 		    	}
 		    	
     		}
@@ -111,8 +119,8 @@ public class ChannelManager {
     			
     			try {
 					channelIO.commitChanges();
-				} catch (IOException e) {
-					e.printStackTrace();
+				} catch (IOException ex) {
+					logger.error("Error commiting channel changes within the backend", ex);
 				}
     		}
     	}, TaskPriority.HIGH);//Sets synchronising the channel permanent data as a high-priority shutdown task
@@ -127,12 +135,6 @@ public class ChannelManager {
 					if (c.getUserCount() == 0) {
 						//Unloads any empty channels that were not automatically unloaded
 						queueChannelUnload(c.getId());
-						/*try {
-							unloadChannel(c);
-						} catch (JSONException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}*/
 					} else {
 						//Runs through other cleanup tasks
 						for (Entry<Integer, Long> ban : c.getTempBans().entrySet()) {
@@ -146,9 +148,8 @@ public class ChannelManager {
 							//c.flushPermissions();
 							try {
 								channelIO.updateDetails(c.getId(), c.getChannelDetails());
-							} catch (IOException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
+							} catch (IOException ex) {
+								logger.error("Error updating details for channel "+c.getId(), ex);
 							}
 							c.flushRequired = false;
 						}
@@ -166,12 +167,7 @@ public class ChannelManager {
 				}
 				synchronized (channelUnloadQueue) {
 					for (Channel c : channelUnloadQueue) {
-						try {
-							unloadChannel(c);
-						} catch (JSONException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
+						unloadChannel(c);
 					}
 					channelUnloadQueue.clear();
 				}
@@ -241,7 +237,7 @@ public class ChannelManager {
     	return false;
     }
 
-    private void unloadChannel (Channel c) throws JSONException {    
+    private void unloadChannel (Channel c) {    
         if (c != null) {
 	    	c.unloadInitialised = true;
             for (ChannelUser u : c.getUsers()) {
@@ -249,7 +245,7 @@ public class ChannelManager {
             	leaveChannel(u);
             }            
             channels.remove(c.getId());
-            System.out.println("Channel '"+c.getName()+"' has been unloaded from the server.");
+            logger.info("Channel '"+c.getName()+"' has been unloaded from the server.");
         }
     }
     
@@ -323,8 +319,8 @@ public class ChannelManager {
     }
     
     
-    protected void logChannelAction (int channelID, ChannelUser reporter, String message) throws JSONException {
-
+    protected void logChannelAction (int channelID, ChannelUser reporter, String message) {
+    	//TODO: Implement
     }
     
     /*
@@ -411,78 +407,57 @@ public class ChannelManager {
     /*
      * Basic functions (join, leave, send message)
      */
-    public JSONObject joinChannel (User user, int channelID) throws JSONException {
+    public ChannelResponse joinChannel (User user, int channelID) {
         Channel channel = getChannel(channelID);
-        JSONObject response = new JSONObject();
         if (channel == null) {
             //Checks if the channel is currently loaded
             if (!channelExists(channelID)) {
                 //Checks if the channel actually exists
-            	response.put("status", 404);
-            	response.put("msgCode", 100);
-            	response.put("message", "The channel you have attempted to join does not exist.");
-                return response;
+            	//100 The channel you have attempted to join does not exist.
+                return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_FOUND, "channelNotFound");
             } else {
                 //If the channel exists but is not loaded, load the channel
                 try {
 					loadChannel(channelID);
 				} catch (IOException ex) {
 					logger.error("Failed to load channel "+channelID, ex);
-					return null;
+					return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, "joinError");
 				}
                 channel = getChannel(channelID);
             }            
         }
         if (channel == user.getChannel()) {
-        	response.put("status", 409);
-        	response.put("msgCode", 166);
-			response.put("message", "You are already in this channel.\nJoining it again will have no effect.");
-			return response;
+			//166 You are already in this channel.\nJoining it again will have no effect.
+			return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, "joinInProgressError");
         }
         if (channel.unloadInitialised || joinLock) {
             //Checks if the channel is currently being unloaded, or if a joinLock has been applied (we don't want people joining during this period, as it may stop the unload process from working)
-        	response.put("status", 503);
-        	response.put("msgCode", 101);
-        	response.put("message", "You cannot join the channel at this time.\nPlease try again in a few minutes.");
-            return response;
+        	//101 You cannot join the channel at this time.\nPlease try again in a few minutes.
+            return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, "joinError");
         }
         if (channel.isUserBanned(user.getUserID())) {
         	//User has been permanently banned from the channel
-        	response.put("status", 403);
-        	response.put("msgCode", 102);
-        	response.put("message", "You are permanently banned from this channel.");
-            if (channel.getUsers().isEmpty()) {                
-                queueChannelUnload(channel.getId());
-            }
-            return response;
+            //102 You are permanently banned from this channel.
+            return new ChannelResponse(ChannelResponseType.BANNED, "joinBanned");
         }
         if (!channel.userHasPermission(user, ChannelPermission.JOIN)) {
             //Check if user has permission to join (0 = join permission)
-        	response.put("status", 403);
-        	response.put("msgCode", 103);
-        	response.put("message", "You do not have a high enough rank to join this channel.");
-            /*if (channel.getUsers().isEmpty()) {                
-                channelManager.cueChannelUnload(channel.channelID);
-            }*/
-            return response;
+            //103 You do not have a high enough rank to join this channel.
+            return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "joinNeedsPermission");
         }
         if (channel.getLockExpireTime() > System.currentTimeMillis() && channel.getUserRank(user) <= channel.getLockRank()) {
         	//Checks if the channel is locked to new users.
-        	response.put("status", 403);
-        	response.put("msgCode", 174);
-        	response.put("message", "This channel has been locked for anyone holding the rank of "+channel.getGroupName(channel.getLockRank())+" or below.");
-        	return response;
+        	//174 This channel has been locked for anyone holding the rank of "+channel.getGroupName(channel.getLockRank())+" or below.
+        	Map<String, Serializable> args = new HashMap<>();
+        	args.put("lockGroup", channel.getGroupName(channel.getLockRank()));
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "cantJoinLocked", args);
         }
         if (channel.getBanExpireTime(user.getUserID()) > System.currentTimeMillis()) {
             //Check if user is temporarily banned from the channel
-            long timeRemaining = channel.getBanExpireTime(user.getUserID()) - System.currentTimeMillis();
-            response.put("status", 403);
-        	response.put("msgCode", 104);
-        	response.put("message", "You are temporarily banned from the channel ("+(timeRemaining/(60*1000)+1)+" minute(s) remaining).");
-            /*if (channel.getUsers().isEmpty()) {                
-                channelManager.cueChannelUnload(channel.channelID);
-            }*/
-            return response;
+            //104 You are temporarily banned from the channel ("+(timeRemaining/(60*1000)+1)+" minute(s) remaining).
+            Map<String, Serializable> args = new HashMap<>();
+        	args.put("banExpires", channel.getBanExpireTime(user.getUserID())*1000);
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "joinBannedTemp", args);
         }
         channel.addUser(user);//Adds the user to the channel
         //Send a notification of the current user joining to all users currently in the channel
@@ -492,11 +467,13 @@ public class ChannelManager {
         }
         user.setChannel(channel);//Sets the user's channel to the current one
         user.clearMessageQueue(channelID);
-        response.put("status", 200);
-        response.put("group", messageFactory.createGroupDetails(channel.getUserGroup(user)));
-        response.put("details", messageFactory.createDetailsMessage(channel, userManager));
+
         sendChannelLocalMessage(user, channel.getAttribute("welcomeMessage"), 40, channelID);//Sends the opening message to the user
-        return response;
+        
+        Map<String, Serializable> args = new HashMap<>();
+    	args.put("group", messageFactory.createGroupDetails(channel.getUserGroup(user)));
+    	args.put("details", messageFactory.createDetailsMessage(channel, userManager));
+        return new ChannelResponse(ChannelResponseType.SUCCESS, "joinSuccess", args);
     }
     
     public JSONObject sendMessage (ChannelUser user, String message) throws JSONException {
@@ -533,7 +510,7 @@ public class ChannelManager {
         return response;
     }
 
-    public StatusMessage leaveChannel (ChannelUser user) {
+    public ChannelResponse leaveChannel (ChannelUser user) {
         Channel channel = user.getChannel();
         if (channel != null) {
         	channel.removeUser(user);
@@ -553,113 +530,88 @@ public class ChannelManager {
         user.sendMessage(MessageType.CHANNEL_REMOVAL, channel.getId(), new MessagePayload());
         
         //Returns successful
-        return new StatusMessage(177, "You have left the channel.");
+        //177, "You have left the channel."
+        return new ChannelResponse(ChannelResponseType.SUCCESS, "leftChannel");
     }
     
     /*
      * Moderator functions
      */
-    public JSONObject resetChannel (final ChannelUser u, final int channelID) throws JSONException {
-    	JSONObject response = new JSONObject();
-        Channel c = getChannel(channelID);
-        if (c == null) {
-        	//The channel is not currently loaded
-        	response.put("status", 404);
-        	response.put("msgCode", 107);
-        	response.put("message", "The channel you have attempted to reset is not loaded.\nResetting will have no effect.");
-            return response;
+    public ChannelResponse resetChannel (ChannelUser user, int channelId) {
+        Channel channel = getChannel(channelId);
+        if (channel == null) {//The channel is not currently loaded
+        	//107 The channel you have attempted to reset is not loaded.\nResetting will have no effect.
+            return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED, "resetChannelNotLoaded");
         }
-        if (!c.userHasPermission(u, ChannelPermission.RESET)) {
+        if (!channel.userHasPermission(user, ChannelPermission.RESET)) {
         	//Check if user has ability to reset the channel (5 = reset permission)
-        	response.put("status", 403);
-        	response.put("msgCode", 108);
-        	response.put("message", "You do not have the appropriate permissions reset this channel.");
-            return response;
+        	//108 You do not have the appropriate permissions reset this channel.
+            return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "resetChannelNoPermission");
         }
         sendChannelGlobalMessage("This channel will be reset within the next "+Settings.channelCleanupThreadFrequency+" seconds.\n"
-        		+ "All members will be removed.\nYou may join again after the reset.", 109, c.getId(), Color.BLUE);
-        queueChannelUnload(channelID);
-        c.resetLaunched = true;
+        		+ "All members will be removed.\nYou may join again after the reset.", 109, channel.getId(), Color.BLUE);
+        queueChannelUnload(channelId);
+        channel.resetLaunched = true;
         //Unloads the channel, then loads it again
         
         //Returns successful
-        response.put("status", 202);
-    	response.put("msgCode", 110);
-    	response.put("message", "Your request to reset this channel has been accepted.");
-        return response;
+    	//110 Your request to reset this channel has been accepted.
+        return new ChannelResponse(ChannelResponseType.SUCCESS, "resetChannelAccepted");
     }
     
-    public JSONObject kickUser (ChannelUser u, int cID, int kUID) throws JSONException {
-    	JSONObject response = new JSONObject();
-        Channel c = getChannel(cID);
-        if (c == null) {
-        	//The channel is not currently loaded
-        	response.put("status", 404);
-        	response.put("msgCode", 111);
-        	response.put("message", "The channel you have attempted to kick this user from is not loaded.");
-            return response;
+    public ChannelResponse kickUser (ChannelUser user, int channelId, int kickTargetId) {
+        Channel channel = getChannel(channelId);
+        if (channel == null) {//The channel is not currently loaded
+        	//111 The channel you have attempted to kick this user from is not loaded.
+        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED, "kickChannelNotLoaded");
         }
-        if (!c.userHasPermission(u, ChannelPermission.KICK)) {
-        	//Check if user has ability to kick users (2 = kick permission)
-        	response.put("status", 403);
-        	response.put("msgCode", 112);
-        	response.put("message", "You do not have the appropriate permissions to kick people from this channel.");
-            return response;
+        if (!channel.userHasPermission(user, ChannelPermission.KICK)) {//Check if user has ability to kick users (2 = kick permission)
+        	//112 You do not have the appropriate permissions to kick people from this channel.
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "kickNeedsPermission");
         }
-        ChannelUser kickedUser = userManager.getUser(kUID);//Retrieves the user object of the user being kicked
-        if (kickedUser == null || !c.getUsers().contains(kickedUser)) {
+        ChannelUser kickedUser = userManager.getUser(kickTargetId);//Retrieves the user object of the user being kicked
+        if (kickedUser == null || !channel.getUsers().contains(kickedUser)) {
         	//Checks if the user is currently logged in and is in the channel
-        	response.put("status", 403);
-        	response.put("msgCode", 113);
-        	response.put("message", "This user is not currently in the channel.");
-            return response;
+        	
+        	//113 This user is not currently in the channel.
+            return new ChannelResponse(ChannelResponseType.USER_NOT_IN_CHANNEL, "kickNoUser");
         }
-        response.put("kickedUser", kickedUser.getUsername());
-        if (c.getUserRank(kickedUser) >= c.getUserRank(u)) {
-        	//Checks if the user kicking holds a lower or equal rank than the user being kicked
-        	response.put("status", 403);
-        	response.put("msgCode", 114);
-        	response.put("message", "You can only kick users with a lower rank level than yours.");
-            return response;
+        if (channel.canActionUser(user, kickTargetId)) {
+        	//Checks if the user banning is allowed to action the target user
+
+        	//114 You can only kick users with a lower rank level than yours.
+            return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_SPECIFIC, "kickInvalidUser");
         }
         leaveChannel(kickedUser);
-        sendChannelLocalMessage(kickedUser, "You have been kicked from the channel.", 115, cID, Color.RED);
-        c.setTempBan(kUID, 60_000);//Sets a 60 second temporary ban (gives the user performing the kick a chance to choose whether or not to temporarily ban)
+        sendChannelLocalMessage(kickedUser, "You have been kicked from the channel.", 115, channelId, Color.RED);
+        channel.setTempBan(kickTargetId, 60_000);//Sets a 60 second temporary ban (gives the user performing the kick a chance to choose whether or not to temporarily ban)
         
-        response.put("status", 200);
-    	response.put("msgCode", 116);
-    	response.put("message", "Your attempt to kick "+kickedUser.getUsername()+" from this channel was successful.");
-		return response;
+    	//116 Your attempt to kick "+kickedUser.getUsername()+" from this channel was successful.
+    	Map<String, Serializable> args = new HashMap<>();
+    	args.put("kickedUser", kickedUser.getUsername());
+        return new ChannelResponse(ChannelResponseType.SUCCESS, "kickSuccess", args);
     }
     
-    public JSONObject tempBanUser (ChannelUser u, int cID, int bannedUser, int durationMins) throws JSONException {
-    	JSONObject response = new JSONObject();
-        Channel c = getChannel(cID);
-        if (c == null) {
-        	//The channel is not currently loaded
-        	response.put("status", 404);
-        	response.put("msgCode", 117);
-        	response.put("message", "The channel you have attempted to temporarily ban this user from is not loaded.");
-            return response;
+    public ChannelResponse tempBanUser (ChannelUser user, int channelId, int banTargetId, int durationMins) {
+        Channel channel = getChannel(channelId);
+        if (channel == null) {//The channel is not currently loaded
+        	//117 The channel you have attempted to temporarily ban this user from is not loaded.
+            return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED, "tempBanChannelNotLoaded");
         }
-    	String bannedName = userManager.getUsername(bannedUser);
+    	String bannedName = userManager.getUsername(banTargetId);
     	if (bannedName == null) {
     		bannedName = "[user not found]";
         }
-    	response.put("bannedName", bannedName);
-        if (!c.userHasPermission(u, ChannelPermission.TEMPBAN)) {
+
+        if (!channel.userHasPermission(user, ChannelPermission.TEMPBAN)) {
         	//Check if user has ability to temp-ban users (3 = temp-ban permission)
-        	response.put("status", 403);
-        	response.put("msgCode", 118);
-        	response.put("message", "You cannot temporarily ban people from this channel.");
-            return response;
+        	//118 You cannot temporarily ban people from this channel.
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "tempBanNeedsPermission");
         }
-        if (c.getUserRank(bannedUser) >= c.getUserRank(u)) {
-        	//Checks if the user banning holds a lower or equal rank than the user being banned
-        	response.put("status", 403);
-        	response.put("msgCode", 119);
-        	response.put("message", "You can only temporarily ban users with a lower rank level than yours.");
-            return response;
+        if (channel.canActionUser(user, banTargetId)) {
+        	//Checks if the user banning is allowed to action the target user
+        	//119 You can only temporarily ban users with a lower rank level than yours.
+            return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_SPECIFIC, "tempBanInvalidUser");
         }
         if (durationMins < 1) {
         	//1 minute ban minimum
@@ -669,44 +621,36 @@ public class ChannelManager {
         	//6 hour maximum ban
             durationMins = 60*6;
         }
-        c.setTempBan(bannedUser, durationMins*60_000);//Sets a temporary ban as specified by durationMins
-    	response.put("status", 200);
-    	response.put("msgCode", 120);
-    	response.put("message", "You have successfully temporarily banned "+bannedName+" from the channel for "+durationMins+" minutes.\n"
-    			+"Their ban will be lifted after the specified time, or if the channel is reset.");
-		return response;
+        channel.setTempBan(banTargetId, durationMins*60_000);//Sets a temporary ban as specified by durationMins
+
+    	//120 You have successfully temporarily banned "+bannedName+" from the channel for "+durationMins+" minutes.\n"
+		//+"Their ban will be lifted after the specified time, or if the channel is reset.
+    	Map<String, Serializable> args = new HashMap<>();
+    	args.put("durationMins", durationMins);
+    	args.put("bannedName", bannedName);
+		return new ChannelResponse(ChannelResponseType.SUCCESS, "tempBanSuccess", args);
     }
     
-    public JSONObject lockChannel (ChannelUser u, int cID, int highestRank, int durationMins) throws JSONException {
-    	JSONObject response = new JSONObject();
-    	Channel c = getChannel(cID);
-    	if (c == null) {
-        	//The channel is not currently loaded
-        	response.put("status", 404);
-        	response.put("msgCode", 168);
-        	response.put("message", "The channel you have attempted to lock is not currently loaded on this server.");
-            return response;
+    public ChannelResponse lockChannel (ChannelUser user, int channelId, int highestRank, int durationMins) throws JSONException {
+    	Channel channel = getChannel(channelId);
+    	if (channel == null) {//The channel is not currently loaded
+        	//168 The channel you have attempted to lock is not currently loaded on this server.
+        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED, "lockChannelNotLoaded");
         }
-    	if (!c.userHasPermission(u, ChannelPermission.LOCKCHANNEL)) {
+    	if (!channel.userHasPermission(user, ChannelPermission.LOCKCHANNEL)) {
         	//Check if user has ability to lock the channel (9 = lock permission)
-        	response.put("status", 403);
-        	response.put("msgCode", 169);
-        	response.put("message", "You cannot lock this channel.");
-            return response;
+        	//169 You cannot lock this channel.
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "lockNeedsPermission");
         }
-        if (highestRank >= c.getUserRank(u)) {
+        if (highestRank >= channel.getUserRank(user)) {
         	//Checks if the user is trying to lock the channel to a rank higher than or equal to their own
-        	response.put("status", 403);
-        	response.put("msgCode", 170);
-        	response.put("message", "You can only lock the channel to ranks below your level.");
-            return response;
+        	//170 You can only lock the channel to ranks below your level.
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_SPECIFIC, "lockInvalidRank");
         }
-        if (c.getLockRank() >= c.getUserRank(u)) {
+        if (channel.getLockRank() >= channel.getUserRank(user)) {
         	//Checks if there is an existing lock in place, which is set higher than the user's rank
-        	response.put("status", 403);
-        	response.put("msgCode", 171);
-        	response.put("message", "An existing lock which affects your rank is already in place. This lock must be removed before you can place a new lock.");
-            return response;
+        	//171 An existing lock which affects your rank is already in place. This lock must be removed before you can place a new lock.
+        	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, "lockCantChange");
         }
         if (durationMins < 1) {
         	//1 minute lock minimum
@@ -716,19 +660,19 @@ public class ChannelManager {
         	//1 hour maximum lock
             durationMins = 60;
         }
-        c.setChannelLock(highestRank, durationMins*60_000);
+        channel.setChannelLock(highestRank, durationMins*60_000);
         sendChannelGlobalMessage("This channel has been locked for all members with a rank of "
-        +c.getGroupName(highestRank)+" and below.\nAnyone holding these ranks cannot rejoin the channel if they leave, until the lock is removed.", 173, cID);
+        		+channel.getGroupName(highestRank)+" and below.\nAnyone holding these ranks cannot rejoin the channel if they leave, until the lock is removed.", 173, channelId);
         
-        response.put("status", 200);
-    	response.put("msgCode", 172);
-    	response.put("highestRank", "{\"name\":\""+c.getGroupName(highestRank)+"\",\"id\":"+highestRank+"}");
-    	response.put("duration", durationMins);
-    	response.put("message", "A lock has been successfully placed on new members with the rank of "
-    	+c.getGroupName(highestRank)+" or below entering the channel for "+durationMins+" minutes.");
-		return response;
+        //172 "A lock has been successfully placed on new members with the rank of "
+		//+channel.getGroupName(highestRank)+" or below entering the channel for "+durationMins+" minutes."
+    	Map<String, Serializable> args = new HashMap<>();
+    	args.put("durationMins", durationMins);
+    	args.put("highestRank", highestRank);
+		return new ChannelResponse(ChannelResponseType.SUCCESS, "lockSuccess", args);
     }
     
+    @Deprecated
     public JSONObject setWelcomeMessage (ChannelUser user, int channelID, String message, Color newColour) throws JSONException {
     	JSONObject response = new JSONObject();
         Channel channel = getChannel(channelID);
