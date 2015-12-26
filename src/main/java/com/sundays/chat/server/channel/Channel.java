@@ -19,6 +19,7 @@
 package com.sundays.chat.server.channel;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -106,7 +107,6 @@ public final class Channel {
         this.groups = loadGroups(io.getChannelGroups(id));
         this.permBans = loadBanList();//Bans MUST be loaded before ranks. This ensures that people on the ban list take priority over people on the rank list
         this.members = loadMembers();
-        logger.info("Successfully loaded channel: " + this.name);
     }
         
     /**
@@ -215,8 +215,8 @@ public final class Channel {
     	return getUserGroup(user).hasPermission(permission);
     }
     
-    protected ChannelGroup getUserGroup (ChannelUser u) {
-    	return getUserGroup(u.getUserID());
+    protected ChannelGroup getUserGroup (ChannelUser user) {
+    	return getUserGroup(user.getId());
     }
     
     protected ChannelGroup getGroup (int groupID) {
@@ -256,7 +256,7 @@ public final class Channel {
      */
     @Deprecated
     public int getUserRank (ChannelUser user) {
-        return getUserRank(user.getUserID());
+        return getUserRank(user.getId());
     }
 
     /**
@@ -287,7 +287,7 @@ public final class Channel {
     }    
     
     //Loading stages
-    private Map<Integer, ChannelGroup> loadGroups (Set<ChannelGroupData> groupData) {
+    private Map<Integer, ChannelGroup> loadGroups (Collection<ChannelGroupData> groupData) {
     	
     	Map<Integer, ChannelGroup> responseGroups = new HashMap<>(ChannelGroup.defaultGroups);    	
     	
@@ -347,7 +347,7 @@ public final class Channel {
     }
     
     private Set<Integer> loadBanList () throws IOException {
-    	return io.getChannelBans(id);//Load the bans from the back-end
+    	return new HashSet<Integer>(io.getChannelBans(id));//Load the bans from the back-end
     	
     	/*logger.info(bans.size() + " permanent ban(s) found for this channel.");
     	Set<Integer> banSet = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());

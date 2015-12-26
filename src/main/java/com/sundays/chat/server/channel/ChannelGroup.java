@@ -96,6 +96,9 @@ public class ChannelGroup {
 		boolean hasAllPermissions = false;
 		for (String permissionName : data.getPermissions()) {
 			ChannelPermission permission = ChannelPermission.getByName(permissionName.trim());
+			if (permission == null) {
+				logger.warn("Invalid permission: "+permissionName+".");
+			}
 			if (permission == ChannelPermission.ALL) {
 				permissions.addAll(EnumSet.allOf(ChannelPermission.class));
 				hasAllPermissions = true;
@@ -156,4 +159,14 @@ public class ChannelGroup {
 	protected void setType(ChannelGroupType type) {
 		this.type = type;
 	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "ChannelGroup [permissions=" + permissions + ", name=" + name + ", id=" + id + ", type=" + type + "]";
+	}
+	
+	
 }

@@ -38,7 +38,7 @@ public enum ChannelResponseType {
 	 * Indicates the user on whom the specified action was to be performed is not currently in the channel.
 	 * This response does not guarentee that the user exists.
 	 */
-	USER_NOT_IN_CHANNEL(6),
+	TARGET_NOT_IN_CHANNEL(6),
 	
 	/**
 	 * Indicates that the user has been blocked from joining the channel
@@ -63,7 +63,12 @@ public enum ChannelResponseType {
 	/**
 	 * Indicates an error occurred while processing the action but no specific type was determined
 	 */
-	UNKNOWN_ERROR(11);
+	UNKNOWN_ERROR(11),
+	
+	/**
+	 * Indicates the action could not be completed due to a temporary lock
+	 */
+	LOCKED(12);
 	
 	private final int id;
 	

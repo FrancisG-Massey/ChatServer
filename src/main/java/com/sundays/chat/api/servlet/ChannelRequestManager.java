@@ -376,6 +376,65 @@ public class ChannelRequestManager extends HttpServlet {
 		}
 	}
 	
+	private void processChannelRequest(int channelId, User user, JSONObject jsonRequest, HttpServletResponse httpResponse) throws IOException {
+		String action = jsonRequest.optString("action");
+		if (action == null) {
+			httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
+			return;
+		}
+		ChannelResponse response;
+		switch (action) {
+		case "join"://Request to join channel
+			response = channelManager.joinChannel(user, channelId);					
+			break;
+		case "leave"://Request to leave channel
+			response = channelManager.leaveChannel(user, user.getChannelId());
+			break;
+		case "reset"://Request to reset the channel
+			response = channelManager.resetChannel(user, channelId);
+			break;
+		case "kick"://Request to kick a user from the channel (also applies a 60 second ban)
+			int kickTargetId = jsonRequest.optInt("userId", -1);
+			if (kickTargetId == -1) {
+				//177 Invalid or missing parameter for userID; expected: Integer, found: null.
+				httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing userID from kick request arguments.");
+				return;
+			}
+			response = channelManager.kickUser(user, channelId, kickTargetId);
+			break;
+		case "tempban":
+			int banTargetId = jsonRequest.optInt("userId", -1);//Tries to extract the user ID. If no userID is found, returns -1
+			int banDuration = jsonRequest.optInt("duration", -1);
+			if (banTargetId == -1) {
+				//If no user ID was specified, checks for a username.
+				String banTargetName = jsonRequest.optString("username", null);
+				if (banTargetName == null) {
+					httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing userID or username from temporary ban request arguments.");
+					return;
+				}
+				//If a username was specified, attempt to resolve it to an ID
+				banTargetId = launcher.getUserManager().getUserID(banTargetName);
+			}
+			if (banTargetId == -1) {
+				response = new ChannelResponse(ChannelResponseType.USER_NOT_FOUND, "tempBanUserNotFound");
+			} else {
+				response = channelManager.tempBanUser(user, channelId, banTargetId, banDuration);
+			}
+			break;
+		case "lock":
+			//Request to lock the channel down, preventing new people of a certain rank from entering while keeping all existing members with that rank
+			int rank = jsonRequest.optInt("rank", ChannelGroup.GUEST_GROUP);
+			int durationMins = jsonRequest.optInt("duration", 15);
+			//If no parameters (or invalid parameters) are supplied, default to locking out new guests for 15 minutes.
+			response = channelManager.lockChannel(user, channelId, rank, durationMins);
+			break;
+		default:
+			httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
+			return;
+		}
+		sendResponseAsJSON(httpResponse, response);
+	}
+	
 	private void processPostRequest (String[] requestParams, int channelID, User user, JSONObject requestJSON, HttpServletResponse httpResponse) throws ServletException, JSONException, IOException {
 		JSONObject responseJSON = new JSONObject();
 		
@@ -393,6 +452,11 @@ public class ChannelRequestManager extends HttpServlet {
 			}
 		}
 		ChannelResponse response = null;
+		String action = requestJSON.optString("action");
+		if (action == null) {
+			processGetRequest(requestParams, channelID, httpResponse);//Relay the request as a get request
+			return;
+		}
 		
 		if (requestParams.length > 2) {//Process any double-parameter requests first
 			if ("openingmessage".equalsIgnoreCase(requestParams[1]) && "change".equalsIgnoreCase(requestParams[2])) {
@@ -416,7 +480,7 @@ public class ChannelRequestManager extends HttpServlet {
 				response = channelManager.joinChannel(user, channelID);					
 				break;
 			case "leave"://Request to leave channel
-				response = channelManager.leaveChannel(user);
+				response = channelManager.leaveChannel(user, user.getChannelId());
 				break;
 			case "reset"://Request to reset the channel
 				response = channelManager.resetChannel(user, channelID);

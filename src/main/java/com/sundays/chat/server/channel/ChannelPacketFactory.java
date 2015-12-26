@@ -96,9 +96,9 @@ public class ChannelPacketFactory {
     	List<MessagePayload> userData = new ArrayList<>();
     	for (ChannelUser u1 : channel.getUsers()) {
     		MessagePayload member = new MessagePayload();
-			member.put("userID", u1.getUserID());
-			member.put("username", u1.getUsername());
-			ChannelGroup group = channel.getUserGroup(u1.getUserID());
+			member.put("userID", u1.getId());
+			member.put("username", u1.getName());
+			ChannelGroup group = channel.getUserGroup(u1.getId());
 			member.put("group", createGroupDetails(group));
 			userData.add(member);
 		}
@@ -115,10 +115,10 @@ public class ChannelPacketFactory {
     public MessagePayload createChannelUserAddition (ChannelUser user, Channel channel) {
     	MessagePayload message = new MessagePayload();
     	
-    	message.put("userID", user.getUserID());//User ID of the user joining the channel
-    	message.put("username", user.getUsername());//Username of the user joining the channel
+    	message.put("userID", user.getId());//User ID of the user joining the channel
+    	message.put("username", user.getName());//Username of the user joining the channel
     	
-    	ChannelGroup group = channel.getUserGroup(user.getUserID());
+    	ChannelGroup group = channel.getUserGroup(user.getId());
     	message.put("group", createGroupDetails(group));
 		return message;            
     }
@@ -132,7 +132,7 @@ public class ChannelPacketFactory {
     public MessagePayload createChannelUserRemoval (ChannelUser user, Channel channel) {
     	MessagePayload message = new MessagePayload();
     	
-    	message.put("userID", user.getUserID());
+    	message.put("userID", user.getId());
 		return message;
     }
     
@@ -145,10 +145,10 @@ public class ChannelPacketFactory {
     public MessagePayload createChannelUserUpdate (ChannelUser user, Channel channel) {
     	MessagePayload message = new MessagePayload();
     	
-		message.put("userID", user.getUserID());
-		message.put("username", user.getUsername());
+		message.put("userID", user.getId());
+		message.put("username", user.getName());
 		
-		ChannelGroup group = channel.getUserGroup(user.getUserID());
+		ChannelGroup group = channel.getUserGroup(user.getId());
 		message.put("group", createGroupDetails(group));//New information about the group the user is in
 		message.put("rank", group.getId());
 		return message;

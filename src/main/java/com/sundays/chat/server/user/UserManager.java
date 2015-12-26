@@ -176,9 +176,9 @@ public final class UserManager implements UserLookup {
     	    		return response;
     			}
     			user = new User(userID, userDetails);
-    			if (connectedUsers.containsKey(user.getUserID())) {
+    			if (connectedUsers.containsKey(user.getId())) {
     				//If the user is already logged in, forcefully log out the user
-    				manageLogout(user.getUserID());  				
+    				manageLogout(user.getId());  				
     				/*response.put("status", 409);
     				response.put("message", "Your account is already logged into this server.");
     				return response;*/
@@ -204,50 +204,50 @@ public final class UserManager implements UserLookup {
     	}    	
     	user.setSessionID(sessionID);
     	userSessions.put(sessionID, user);
-    	connectedUsers.put(user.getUserID(), user);
+    	connectedUsers.put(user.getId(), user);
         /*if (u.defaultChannel != 0) {
             ChatServer.getInstance().channelAPI().joinChannel(u, u.defaultChannel);
         	response.put("defaultChannelRank", u.getChannel().getUserRank(u));
         	response.put("defaultChannelDetails", ChatServer.getInstance().channelAPI().getChannelDetails(u.getChannel().channelID));
         }*/
-    	cachedUsernames.put(user.getUserID(), user.getUsername());
-        lookupByUsername.put(user.getUsername().toLowerCase(), user.getUserID());
+    	cachedUsernames.put(user.getId(), user.getName());
+        lookupByUsername.put(user.getName().toLowerCase(), user.getId());
     	response.put("status", 200);
     	response.put("session", sessionID);
-    	response.put("userID", user.getUserID());
-    	response.put("username", user.getUsername());
+    	response.put("userID", user.getId());
+    	response.put("username", user.getName());
     	response.put("defaultChannel", user.getDefaultChannel());
 		return response;    	
     }
     
-    public void manageLogout (int uID) {
-    	User u = connectedUsers.get(uID);
-    	if (u == null) {
+    public void manageLogout (int userId) {
+    	User user = connectedUsers.get(userId);
+    	if (user == null) {
     		//User has already logged out
     		return;
     	}
-    	userSessions.remove(u.getSessionID());//Removes the user from the session map
-    	connectedUsers.remove(uID);//Removes the user from the userID map
-    	u.connected = false;//Sets the status of the user to disconnected (just in case some other thread tries to send data to the user)
+    	userSessions.remove(user.getSessionID());//Removes the user from the session map
+    	connectedUsers.remove(userId);//Removes the user from the userID map
+    	user.connected = false;//Sets the status of the user to disconnected (just in case some other thread tries to send data to the user)
         int currentChannel = 0;
-        if (u.getChannel() != null) {
+        if (user.getChannelId() != -1) {
         	//If the user is in a channel, make them leave it
-            currentChannel = u.getChannel().getId();
-            server.getChannelManager().leaveChannel(u);
+            currentChannel = user.getChannelId();
+            server.getChannelManager().leaveChannel(user, currentChannel);
         }
-        if (u.getDefaultChannel() != -1 && u.getDefaultChannel() != currentChannel) {
+        if (user.getDefaultChannel() != -1 && user.getDefaultChannel() != currentChannel) {
             /*
              * If the user is currently in a channel, and their current channel differs from their default channel,
              * set the user's default channel to the last one they were in (so they will automatically join it when they next connect)
              */
         	try {
         		UserDetails details = new UserDetails();
-        		details.setUserID(u.getUserID());
-        		details.setUsername(u.getUsername());
+        		details.setUserID(user.getId());
+        		details.setUsername(user.getName());
         		details.setDefaultChannel(currentChannel);
         		userIO.saveUserData(details);
         	} catch (IOException ex) {
-        		logger.error("Failed to save details for user "+u.getUserID(), ex);
+        		logger.error("Failed to save details for user "+user, ex);
         	}      	
         }
     }

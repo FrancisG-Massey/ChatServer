@@ -65,7 +65,7 @@ public class ConnectionManager implements AutoCloseable {
     	this.username = username;
     	this.password = password;
         connect();
-        ServletLauncher.getInstance().serverTaskScheduler().scheduleStandardTask(new Runnable () {
+        ServletLauncher.getInstance().getTaskScheduler().scheduleStandardTask(new Runnable () {
 			@Override
 			public void run() {
 				if (con != null) {

@@ -23,13 +23,13 @@ import com.sundays.chat.server.message.MessageType;
 
 public interface ChannelUser {
 
-	public abstract String getUsername();
+	public String getName();
 
-	public abstract int getUserID();
+	public int getId();
 
-	public abstract Channel getChannel();
+	public int getChannelId();
 
-	public abstract void setChannel(Channel newchannel);
+	public void setChannel(int channelId);
 
 	/**
 	 * Sends a message to the user. 
@@ -38,10 +38,9 @@ public interface ChannelUser {
 	 * @param channelID The ID of the channel the message is from.
 	 * @param payload The payload data for the message.
 	 */
-	public abstract void sendMessage(MessageType type, int channelID, MessagePayload payload);
+	public void sendMessage(MessageType type, int channelID, MessagePayload payload);
 
-	public abstract int getDefaultChannel();
+	public int getDefaultChannel();
 
-	public abstract void setDefaultChannel(int defaultChannel);
-
+	public void setDefaultChannel(int defaultChannel);
 }

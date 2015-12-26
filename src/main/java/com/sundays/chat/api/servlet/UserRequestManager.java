@@ -119,7 +119,7 @@ public class UserRequestManager extends HttpServlet {
 					responseJSON.put("status", HttpServletResponse.SC_BAD_REQUEST);//No session ID provided
 					responseJSON.put("message", "You have not provided a session ID, which is required in order to log out.");
 				} else if (um.getUserSession(sessionID) != null) {
-					um.manageLogout(um.getUserSession(sessionID).getUserID());//Logs out the user
+					um.manageLogout(um.getUserSession(sessionID).getId());//Logs out the user
 					responseJSON.put("status", 200);//Returns successful
 				}				
 			} catch (JSONException e) {

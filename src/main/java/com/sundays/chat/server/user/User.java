@@ -24,7 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.sundays.chat.io.UserDetails;
-import com.sundays.chat.server.channel.Channel;
 import com.sundays.chat.server.channel.ChannelUser;
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.message.MessageType;
@@ -36,7 +35,7 @@ import com.sundays.chat.server.message.MessageType;
  */
 public class User implements ChannelUser {
     private final int userID;
-    private Channel currentChannel;
+    private int currentChannel;
     //private UserSession session;
     private String sessionID;
     private ConcurrentHashMap<Integer, List<UserMessageWrapper>> queuedMessages = new ConcurrentHashMap<>();
@@ -61,7 +60,7 @@ public class User implements ChannelUser {
 	 * @see com.sundays.chat.server.user.ChannelUser#getUsername()
 	 */
     @Override
-	public String getUsername () {
+	public String getName () {
         return this.username;
     }
     
@@ -69,7 +68,7 @@ public class User implements ChannelUser {
 	 * @see com.sundays.chat.server.user.ChannelUser#getUserID()
 	 */
     @Override
-	public int getUserID () {
+	public int getId () {
         return this.userID;
     }
     
@@ -85,7 +84,7 @@ public class User implements ChannelUser {
 	 * @see com.sundays.chat.server.user.ChannelUser#getChannel()
 	 */
     @Override
-	public Channel getChannel () {
+	public int getChannelId () {
         return this.currentChannel;
     }
     
@@ -93,18 +92,18 @@ public class User implements ChannelUser {
 	 * @see com.sundays.chat.server.user.ChannelUser#setChannel(com.sundays.chat.server.channel.Channel)
 	 */
     @Override
-	public void setChannel (Channel newchannel) {
-        this.currentChannel = newchannel;
+	public void setChannel (int channelId) {
+        this.currentChannel = channelId;
         if (!connected) {
             return;
         }
-        if (newchannel == null) {
+        if (channelId == -1) {
         	//Disconnect from channel. Now handled in the ChannelManager.leaveChannel() method 
         } else {
         	//Connected to channel
-        	if (this.queuedMessages.get(newchannel.getId()) == null) {
+        	if (this.queuedMessages.get(channelId) == null) {
         		//If there is no message queue for this channel, create it.
-        		this.queuedMessages.put(newchannel.getId(), new ArrayList<UserMessageWrapper>());
+        		this.queuedMessages.put(channelId, new ArrayList<UserMessageWrapper>());
         	}
         }                
     }
@@ -177,5 +176,13 @@ public class User implements ChannelUser {
 	@Override
 	public void setDefaultChannel(int defaultChannel) {
 		this.defaultChannel = defaultChannel;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "User [userID=" + userID + ", connected=" + connected + ", username=" + username + "]";
 	}
 }

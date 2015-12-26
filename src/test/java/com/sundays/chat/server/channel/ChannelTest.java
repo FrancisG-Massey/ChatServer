@@ -42,13 +42,13 @@ import com.sundays.chat.server.user.User;
 
 public class ChannelTest {
 	
-	private ChannelDataIO channelIO;
-	private Channel channel;
-	
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 		BasicConfigurator.configure();//Initialise logging
 	}
+	
+	private ChannelDataIO channelIO;
+	private Channel channel;
 
 	@Before
 	public void setUp() throws Exception {

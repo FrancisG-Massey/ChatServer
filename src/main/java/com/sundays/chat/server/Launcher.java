@@ -38,7 +38,7 @@ public abstract class Launcher {
 	
 	public ChannelManager getChannelManager() {
 		if (channelManager == null) {
-			channelManager = new ChannelManager(ioManager, this);
+			channelManager = new ChannelManager(getIO(), getUserManager(), getTaskScheduler());
 		}
 		return channelManager;
 	}
@@ -50,7 +50,7 @@ public abstract class Launcher {
 		return userManager;
 	}
 	
-	public TaskScheduler serverTaskScheduler() {
+	public TaskScheduler getTaskScheduler() {
 		if (serverTaskScheduler == null) {
 			serverTaskScheduler = new TaskScheduler();
 		}
@@ -58,12 +58,12 @@ public abstract class Launcher {
 	}
 	
 	public void shutdown() throws Exception {// Clean up resources here
-		this.serverTaskScheduler().lock();// Prevents new tasks from being cued
+		this.getTaskScheduler().lock();// Prevents new tasks from being cued
 		// channelManager().shutdown();//Run the final cleanup tasks
 		if (ioManager != null) {
 			ioManager.close();// Shutdown the persistence layer resources (to prevent exceptions from being thrown).
 		}
-		this.serverTaskScheduler().shutdown();// Runs all pending server tasks
+		this.getTaskScheduler().shutdown();// Runs all pending server tasks
 												// instantly then shuts down the
 												// timer cue
 	}
