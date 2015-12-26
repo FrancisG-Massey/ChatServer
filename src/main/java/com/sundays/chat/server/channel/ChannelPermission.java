@@ -38,39 +38,68 @@ import com.sundays.chat.io.ChannelGroupType;
  * @author Francis
  */
 public enum ChannelPermission {
+	/**
+	 * Groups with this permission are allowed to join this channel.
+	 */
+	JOIN(0, "join", ChannelGroupType.NORMAL, ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
 	
-	JOIN(0, "join", "Groups with this permission are allowed to join this channel.", 		
-			new ChannelGroupType[]{ChannelGroupType.NORMAL, ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM}),
-	TALK(1, "talk", "Groups with this permission are allowed to send messages in this channel.", 		
-			new ChannelGroupType[]{ChannelGroupType.NORMAL, ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM}),
-	KICK(2, "kick", "Groups with this permission are allowed to remove other users from this channel.", 			
-			new ChannelGroupType[]{ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM}),
-	TEMPBAN(3, "tempban", "Groups with this permission are allowed to temporarily prevent other users from joining this channel.", 		
-			new ChannelGroupType[]{ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM}),
-	PERMBAN(4, "permban", "Groups with this permission are allowed to permanently prevent other users from joining this channel.", 	
-			new ChannelGroupType[]{ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM}),
-	RESET(5, "reset", "Groups with this permission are allowed to clear this channel, causing all instanced data (including temporary bans) to be removed.", 		
-			new ChannelGroupType[]{ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM}),
-	RANKCHANGE(6, "memberedit", "Groups with this permission are allowed to change the groups of other users in this channel.", 			
-			new ChannelGroupType[]{ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM}),
-	PERMISSIONCHANGE(7, "", "Groups with this permission are allowed to change other groups in this channel.",	
-			new ChannelGroupType[]{ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM}),
-	DETAILCHANGE(8, "detailedit", "Groups with this permission are allowed to change the basic details of this channel.", 		
-			new ChannelGroupType[]{ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM}),
-	LOCKCHANNEL(9, "lockchannel", "Groups with this permission are allowed to lock this channel, which prevents any new users from joining.", 
-			new ChannelGroupType[]{ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM}),
-	ALL(10, "all", "Groups with this permission will inherit all permissions that are avaliable to them.",	
-			new ChannelGroupType[]{ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM});
+	/**
+	 * Groups with this permission are allowed to send messages in this channel.
+	 */
+	TALK(1, "talk", ChannelGroupType.NORMAL, ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	
+	/**
+	 * Groups with this permission are allowed to remove other users from this channel.
+	 */
+	KICK(2, "kick", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	
+	/**
+	 * Groups with this permission are allowed to temporarily prevent other users from joining this channel.
+	 */
+	TEMPBAN(3, "tempban", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	
+	/**
+	 * Groups with this permission are allowed to permanently prevent other users from joining this channel.
+	 */
+	PERMBAN(4, "permban", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	
+	/**
+	 * Groups with this permission are allowed to clear this channel, causing all instanced data (including temporary bans) to be removed.
+	 */
+	RESET(5, "reset", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	
+	/**
+	 * Groups with this permission are allowed to change the groups of other users in this channel.
+	 */
+	MEMBEREDIT(6, "memberedit", ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	
+	/**
+	 * Groups with this permission are allowed to change other groups in this channel.
+	 */
+	GROUPEDIT(7, "groupedit", ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	
+	/**
+	 * Groups with this permission are allowed to change the basic details of this channel.
+	 */
+	DETAILEDIT(8, "detailedit", ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	
+	/**
+	 * Groups with this permission are allowed to lock this channel, which prevents any new users from joining.
+	 */
+	LOCKCHANNEL(9, "lockchannel", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	
+	/**
+	 * Groups with this permission will inherit all permissions that are avaliable to them.
+	 */
+	ALL(10, "all", ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM);
 	
 	private final int id;
 	private final String name;
-	private String description;
 	private Set<ChannelGroupType> avaliableTo;
 	
-	ChannelPermission (int id, String name, String description, ChannelGroupType[] avaliableTo) {
+	ChannelPermission (int id, String name, ChannelGroupType... avaliableTo) {
 		this.id = id;
 		this.name = name;
-		this.description = description;
 		this.avaliableTo = new HashSet<>(Arrays.asList(avaliableTo));
 	}
 	
@@ -82,15 +111,11 @@ public enum ChannelPermission {
 		return name;
 	}
 	
-	public String description () { 
-		return this.description; 
-	}
-	
 	public boolean canHold (ChannelGroupType type) {
 		return avaliableTo.contains(type);
 	}
     
-    public static ChannelPermission getPermissionFromID (int id) {
+    public static ChannelPermission getByID (int id) {
     	ChannelPermission p = null;
     	for (ChannelPermission p1 : ChannelPermission.values()) {
     		if (p1.getId() == id) {
