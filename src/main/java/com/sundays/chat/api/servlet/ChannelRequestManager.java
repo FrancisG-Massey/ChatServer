@@ -18,7 +18,6 @@
  *******************************************************************************/
 package com.sundays.chat.api.servlet;
 
-import java.awt.Color;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
@@ -52,8 +51,6 @@ public class ChannelRequestManager extends HttpServlet {
 
 	private static final Logger logger = Logger.getLogger(ChannelRequestManager.class);
 	
-	private ServletLauncher launcher;
-	
 	private ChannelManager channelManager;
 	
 	private UserManager userManager;
@@ -68,11 +65,12 @@ public class ChannelRequestManager extends HttpServlet {
     @Override
     public void init (ServletConfig config) throws ServletException {
     	super.init(config);
-    	launcher = ServletLauncher.getInstance();
+    	ServletLauncher launcher = ServletLauncher.getInstance();
     	if (!launcher.initalised) {
     		launcher.init(config);
     	}
     	channelManager = launcher.getChannelManager();
+    	userManager = launcher.getUserManager();
     }
     
 	/**
@@ -122,43 +120,48 @@ public class ChannelRequestManager extends HttpServlet {
 			httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST);
 			return;
 		}
-		int channelID = 0;
+		int channelId = -1;
 		try {
-			channelID = Integer.parseInt(requestParams[0]);
+			channelId = Integer.parseInt(requestParams[0]);
 		} catch (NumberFormatException e) {//Channel ID is not a number
 			httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST);
 			return;
 		}
-		if (!channelManager.channelExists(channelID)) {
-			httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND, "Channel not found: "+channelID);
+		if (!channelManager.channelExists(channelId)) {
+			httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND, "Channel not found: "+channelId);
 			return;
 		}
-		if (requestParams.length == 1) {
-			//Request for channel details
-			doGet(request, httpResponse);//Relays the request as a get request			
-		} else if (request.getContentType().split(";")[0].equals("application/json")) {	
-			JSONObject requestJSON = null;
+		if (!request.getContentType().split(";")[0].equals("application/json")) {
+			httpResponse.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE);
+		} else {
+			JSONObject jsonRequest = null;
 			try {
-				requestJSON = HttpRequestTools.getRequestJSON(request);
+				jsonRequest = HttpRequestTools.getRequestJSON(request);
 			} catch (JSONException e) {
 				httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST);
-			}
-			try {				
-				User user = userManager.getUserSession(requestJSON.optString("session", null));
-				if (user == null) {
-					//User string does not match a valid, currently logged in user
-					httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "You must be logged in to use this method.");
-				} else {
-					processPostRequest(requestParams, channelID, user, requestJSON, httpResponse);
-				}	
-				
-			} catch (JSONException ex) {
-				logger.error("Failed to pack response for channel request "+channelID, ex);
-				httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				return;
 			}
-		} else {
-			httpResponse.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE);
+			User user = userManager.getUserSession(jsonRequest.optString("session", null));
+			if (user == null) {
+				//User string does not match a valid, currently logged in user
+				httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "You must be logged in to use this method.");
+				return;
+			}
+			if (requestParams.length == 1) {
+				processChannelRequest(channelId, user, jsonRequest, httpResponse);
+			} else {
+				switch (requestParams[1]) {
+				case "members":
+					processMemberRequest(jsonRequest, channelId, user, httpResponse);
+					return;
+				case "bans":
+					processBanRequest(jsonRequest, channelId, user, httpResponse);
+					return;
+				case "messages":
+					processMessageRequest(requestParams, jsonRequest, channelId, user, httpResponse);
+					return;
+				}
+			}
 		}
 	}
 	
@@ -167,23 +170,26 @@ public class ChannelRequestManager extends HttpServlet {
 		if (requestParams.length == 1) {
 			//Request for channel details
 			responseMessage = new JSONObject(channelManager.getChannelDetails(channelID));			
-		} else if ("users".equalsIgnoreCase(requestParams[1])) {
-			//Request for channel list
-			responseMessage = new JSONObject(channelManager.getUserList(channelID));	
-		} else if ("members".equalsIgnoreCase(requestParams[1])) {
-			//Request for channel member list
-			responseMessage = new JSONObject(channelManager.getMemberList(channelID));
-		} else if ("bans".equalsIgnoreCase(requestParams[1])) {
-			//Request for channel permissions
-			responseMessage = new JSONObject(channelManager.getBanList(channelID));
-		} else if ("groups".equalsIgnoreCase(requestParams[1])) {
-			//Request for channel groups
-			responseMessage = new JSONObject(channelManager.getChannelGroups(channelID));
 		} else {
-			httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
-			return;
+			switch (requestParams[1]) {
+			case "users"://Request for channel list
+				responseMessage = new JSONObject(channelManager.getUserList(channelID));
+				break;
+			case "members"://Request for channel member list
+				responseMessage = new JSONObject(channelManager.getMemberList(channelID));
+				break;
+			case "bans"://Request for channel permissions
+				responseMessage = new JSONObject(channelManager.getBanList(channelID));
+				break;
+			case "groups"://Request for channel groups
+				responseMessage = new JSONObject(channelManager.getChannelGroups(channelID));
+				break;
+			default:
+				httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
+				return;
+			}			
 		}
-		HttpRequestTools.sendResponseJSON(httpResponse, responseMessage);
+		sendResponseJSON(httpResponse, responseMessage);
 	}
 	
 	private boolean processMessageRequest (String[] requestParams, JSONObject requestMessage, int channelID, User user, HttpServletResponse response) throws IOException {
@@ -204,7 +210,7 @@ public class ChannelRequestManager extends HttpServlet {
 					responseMessage = channelManager.sendMessage(user, message);
 				}
 			} else if ("get".equalsIgnoreCase(requestParams[2])) {
-				//Request to collect cued messages (NOTE: This will remove everything currently in the cue)
+				//Request to collect queued messages (NOTE: This will remove everything currently in the queue)
 				if (user.hasCuedMessages(channelID)) {
 					responseMessage.put("status", HttpServletResponse.SC_OK);
 					List<UserMessageWrapper> messages = user.getQueuedMessages(channelID, true);
@@ -228,7 +234,7 @@ public class ChannelRequestManager extends HttpServlet {
 			} else {
 				return false;
 			}
-			HttpRequestTools.sendResponseJSON(response, responseMessage);
+			sendResponseJSON(response, responseMessage);
 			return true;
 		} catch (JSONException ex) {
 			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -239,7 +245,8 @@ public class ChannelRequestManager extends HttpServlet {
 	private void processChannelRequest(int channelId, User user, JSONObject jsonRequest, HttpServletResponse httpResponse) throws IOException {
 		String action = jsonRequest.optString("action");
 		if (action == null) {
-			httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
+			JSONObject response = new JSONObject(channelManager.getChannelDetails(channelId));
+			sendResponseJSON(httpResponse, response);
 			return;
 		}
 		ChannelResponse response;
@@ -273,7 +280,7 @@ public class ChannelRequestManager extends HttpServlet {
 					return;
 				}
 				//If a username was specified, attempt to resolve it to an ID
-				banTargetId = launcher.getUserManager().getUserID(banTargetName);
+				banTargetId = userManager.getUserID(banTargetName);
 			}
 			if (banTargetId == -1) {
 				response = new ChannelResponse(ChannelResponseType.USER_NOT_FOUND, "tempBanUserNotFound");
@@ -298,18 +305,18 @@ public class ChannelRequestManager extends HttpServlet {
 	/**
 	 * Processes a request relating to the channel member list.
 	 * 
-	 * @param requestParams A string array containing the request arguments (0=channelID, 1=arg1, 2=arg2)
 	 * @param jsonRequest A JSON object containing the POST request body
 	 * @param channelID The channel ID
 	 * @param user The user who commited the request
-	 * @param response A {@link HttpServletResponse} object used for sending the reply to the user 
+	 * @param httpResponse A {@link HttpServletResponse} object used for sending the reply to the user 
 	 * @return True if the the request was handled (even if an error occured), false otherwise
 	 * @throws IOException If the response could not be sent due to an error.
 	 */
-	private void processMemberRequest (String[] requestParams, JSONObject jsonRequest, int channelID, User user, HttpServletResponse httpResponse) throws IOException {
+	private void processMemberRequest (JSONObject jsonRequest, int channelID, User user, HttpServletResponse httpResponse) throws IOException {
 		String action = jsonRequest.optString("action");
 		if (action == null) {
-			httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
+			JSONObject response = new JSONObject(channelManager.getMemberList(channelID));
+			sendResponseJSON(httpResponse, response);
 			return;
 		}
 		ChannelResponse response;
@@ -366,7 +373,8 @@ public class ChannelRequestManager extends HttpServlet {
 	private void processBanRequest (JSONObject jsonRequest, int channelID, User user, HttpServletResponse httpResponse) throws IOException {
 		String action = jsonRequest.optString("action");
 		if (action == null) {
-			httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
+			JSONObject response = new JSONObject(channelManager.getBanList(channelID));
+			sendResponseJSON(httpResponse, response);
 			return;
 		}
 		ChannelResponse response;
@@ -407,104 +415,6 @@ public class ChannelRequestManager extends HttpServlet {
 		sendResponseAsJSON(httpResponse, response);
 	}
 	
-	private void processPostRequest (String[] requestParams, int channelID, User user, JSONObject requestJSON, HttpServletResponse httpResponse) throws ServletException, JSONException, IOException {
-		JSONObject responseJSON = new JSONObject();
-		
-		if ("messages".equalsIgnoreCase(requestParams[1])) {
-			if (processMessageRequest(requestParams, requestJSON, channelID, user, httpResponse)) {
-				return;
-			}
-		} else if ("members".equalsIgnoreCase(requestParams[1])) {
-			processMemberRequest(requestParams, requestJSON, channelID, user, httpResponse);
-			return;
-		} else if ("bans".equalsIgnoreCase(requestParams[1])) {
-			processBanRequest(requestJSON, channelID, user, httpResponse);
-			return;
-		}
-		ChannelResponse response = null;
-		String action = requestJSON.optString("action");
-		if (action == null) {
-			processGetRequest(requestParams, channelID, httpResponse);//Relay the request as a get request
-			return;
-		}
-		
-		if (requestParams.length > 2) {//Process any double-parameter requests first
-			if ("openingmessage".equalsIgnoreCase(requestParams[1]) && "change".equalsIgnoreCase(requestParams[2])) {
-				//Request to change channel permissions
-				String message = requestJSON.optString("message", null);
-				if (message == null) {
-					responseJSON.put("status", HttpServletResponse.SC_BAD_REQUEST);
-					responseJSON.put("msgArgs", "arg=message,expected=String,found=null");
-					responseJSON.put("msgCode", 177);
-					responseJSON.put("message", "Invalid or missing parameter for message; expected: String, found: null."); 
-				} else {
-					responseJSON = channelManager.setWelcomeMessage(user, channelID, message, Color.black);
-				}
-			} else {
-				processGetRequest(requestParams, channelID, httpResponse);//Relays the request as a get request
-				return;
-			} 
-		} else if (requestParams.length > 1) {
-			switch (requestParams[1]) {
-			case "join"://Request to join channel
-				response = channelManager.joinChannel(user, channelID);					
-				break;
-			case "leave"://Request to leave channel
-				response = channelManager.leaveChannel(user, user.getChannelId());
-				break;
-			case "reset"://Request to reset the channel
-				response = channelManager.resetChannel(user, channelID);
-				break;
-			case "kick"://Request to kick a user from the channel (also applies a 60 second ban)
-				int kickTargetId = requestJSON.optInt("userId", -1);
-				if (kickTargetId == -1) {
-					//177 Invalid or missing parameter for userID; expected: Integer, found: null.
-					httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing userID from kick request arguments.");
-					return;
-				}
-				response = channelManager.kickUser(user, channelID, kickTargetId);
-				break;
-			case "tempban":
-				int banTargetId = requestJSON.optInt("userId", -1);//Tries to extract the user ID. If no userID is found, returns -1
-				int banDuration = requestJSON.optInt("duration", -1);
-				if (banTargetId == -1) {
-					//If no user ID was specified, checks for a username.
-					String banTargetName = requestJSON.optString("username", null);
-					if (banTargetName == null) {
-						httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing userID or username from temporary ban request arguments.");
-						return;
-					}
-					//If a username was specified, attempt to resolve it to an ID
-					banTargetId = launcher.getUserManager().getUserID(banTargetName);
-				}
-				if (banTargetId == -1) {
-					response = new ChannelResponse(ChannelResponseType.USER_NOT_FOUND, "tempBanUserNotFound");
-				} else {
-					response = channelManager.tempBanUser(user, channelID, banTargetId, banDuration);
-				}
-				break;
-			case "lock":
-				//Request to lock the channel down, preventing new people of a certain rank from entering while keeping all existing members with that rank
-				int rank = requestJSON.optInt("rank", ChannelGroup.GUEST_GROUP);
-				int durationMins = requestJSON.optInt("duration", 15);
-				//If no parameters (or invalid parameters) are supplied, default to locking out new guests for 15 minutes.
-				response = channelManager.lockChannel(user, channelID, rank, durationMins);
-				break;
-			default:
-				processGetRequest(requestParams, channelID, httpResponse);//Relays the request as a get request
-				return;
-			}
-		} else {
-			processGetRequest(requestParams, channelID, httpResponse);//Relays the request as a get request
-			return;
-		}	
-		if (response != null) {
-			sendResponseAsJSON(httpResponse, response);
-		} else {
-			HttpRequestTools.sendResponseJSON(httpResponse, responseJSON);
-		}
-	}
-	
 	private void sendResponseAsJSON(HttpServletResponse httpResponse, ChannelResponse response) {
 		JSONObject json = new JSONObject(response.getParams());
 		try {
@@ -515,6 +425,16 @@ public class ChannelRequestManager extends HttpServlet {
 			PrintWriter out = httpResponse.getWriter();
 			out.println(json.toString());
 		} catch (JSONException | IOException ex) {
+			logger.error("Error sending response", ex);
+		}
+	}
+	
+	private void sendResponseJSON (HttpServletResponse response, JSONObject responseJSON) {
+		try {
+			response.setContentType("application/json");
+			PrintWriter out = response.getWriter();
+			out.println(responseJSON.toString());
+		} catch (IOException ex) {
 			logger.error("Error sending response", ex);
 		}
 	}
