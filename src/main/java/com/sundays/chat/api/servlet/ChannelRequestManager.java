@@ -236,146 +236,6 @@ public class ChannelRequestManager extends HttpServlet {
 		}
 	}
 	
-	/**
-	 * Processes a request relating to the channel member list.
-	 * 
-	 * @param requestParams A string array containing the request arguments (0=channelID, 1=arg1, 2=arg2)
-	 * @param requestMessage A JSON object containing the POST request body
-	 * @param channelID The channel ID
-	 * @param user The user who commited the request
-	 * @param response A {@link HttpServletResponse} object used for sending the reply to the user 
-	 * @return True if the the request was handled (even if an error occured), false otherwise
-	 * @throws IOException If the response could not be sent due to an error.
-	 */
-	private boolean processMemberRequest (String[] requestParams, JSONObject requestMessage, int channelID, User user, HttpServletResponse httpResponse) throws IOException {
-		if (requestParams.length < 3) {
-			return false;
-		}
-		JSONObject responseMessage = new JSONObject();
-		try {
-			if ("add".equalsIgnoreCase(requestParams[2])) {
-				//Request to add a rank to the rank list
-				int uID = requestMessage.optInt("user", 0);//Tries to extract the user ID. If no userID is found, returns 0
-				if (uID == 0) {
-					//If no user ID was specified, checks for a username.
-					String un = requestMessage.optString("username", null);
-					if (un != null) {
-						//If a username was specified, attempt to resolve it to an ID
-						uID = userManager.getUserID(un);
-						if (uID != 0) {
-							//If a userID was found, use the specified ID
-							responseMessage = channelManager.addMember(user, channelID, uID);
-						} else {
-							responseMessage.put("status", 404);
-							responseMessage.put("msgCode", 159);
-							responseMessage.put("message", "The user you have attempted to rank was not found.");
-						}
-					} else {
-						//If no userID or username was specified, send back an error message.
-						responseMessage.put("status", HttpServletResponse.SC_BAD_REQUEST);
-						responseMessage.put("msgArgs", "arg=userID OR username,expected=Integer OR String,found=neither");
-						responseMessage.put("msgCode", 177);
-						responseMessage.put("message", "Invalid or missing parameter for userID OR username; expected: Integer OR String, found: neither.");
-					}
-				} else {
-					responseMessage = channelManager.addMember(user, channelID, uID);
-				}
-			} else if ("remove".equalsIgnoreCase(requestParams[2])) {
-				//Request to add a rank to the rank list
-				int uID = requestMessage.optInt("user", 0);
-				if (uID == 0) {
-					responseMessage.put("status", HttpServletResponse.SC_BAD_REQUEST);
-					responseMessage.put("msgArgs", "arg=userID,expected=Integer,found=null");
-					responseMessage.put("msgCode", 177);
-					responseMessage.put("message", "Invalid or missing parameter for userID; expected: Integer, found: null."); 
-				} else {
-					responseMessage = channelManager.removeMember(user, channelID, uID);
-				}					
-			} else if ("update".equalsIgnoreCase(requestParams[2])) {
-				//Request to add a rank to the rank list
-				int uID = requestMessage.optInt("user", 0);
-				int groupID = requestMessage.optInt("group", Integer.MAX_VALUE);
-				if (uID == 0) {
-					responseMessage.put("status", HttpServletResponse.SC_BAD_REQUEST);
-					responseMessage.put("msgArgs", "arg=user,expected=int,found=null");
-					responseMessage.put("msgCode", 177);
-					responseMessage.put("message", "Invalid or missing parameter for user; expected: Integer, found: null."); 
-				} else if (groupID > Byte.MAX_VALUE || groupID < Byte.MIN_VALUE) {
-					responseMessage.put("status", HttpServletResponse.SC_BAD_REQUEST);
-					responseMessage.put("msgArgs", "arg=group,expected=int,found=null");
-					responseMessage.put("msgCode", 177);
-					responseMessage.put("message", "Invalid or missing parameter for group; expected: byte, found: null."); 
-				} else {
-					responseMessage = channelManager.updateMember(user, channelID, uID, (byte) groupID);
-				}
-				
-			} else {
-				return false;
-			}
-			HttpRequestTools.sendResponseJSON(httpResponse, responseMessage);
-			return true;
-		} catch (JSONException ex) {
-			httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			return true;
-		}
-	}
-	
-	private boolean processBanRequest (String[] requestParams, JSONObject requestMessage, int channelID, User user, HttpServletResponse httpResponse) throws IOException {
-		if (requestParams.length < 3) {
-			return false;
-		}
-		JSONObject responseMessage = new JSONObject();
-		try {
-			if ("add".equalsIgnoreCase(requestParams[2])) {
-				//Request to add a rank to the rank list
-				int uID = requestMessage.optInt("user", 0);//Tries to extract the user ID. If no userID is found, returns 0
-				if (uID == 0) {
-					//If no user ID was specified, checks for a username.
-					String un = requestMessage.optString("username", null);
-					if (un != null) {
-						//If a username was specified, attempt to resolve it to an ID
-						uID = userManager.getUserID(un);
-						if (uID != 0) {
-							//If a userID was found, use the specified ID
-							responseMessage = channelManager.addBan(user, channelID, uID);
-						} else {
-							responseMessage.put("status", 404);
-							responseMessage.put("msgCode", 160);
-							responseMessage.put("message", "The user you have attempted to ban was not found.");
-						}
-					} else {
-						//If no userID or username was specified, send back an error message.
-						responseMessage.put("status", HttpServletResponse.SC_BAD_REQUEST);
-						responseMessage.put("msgArgs", "arg=userID OR username,expected=Integer OR String,found=neither");
-						responseMessage.put("msgCode", 177);
-						responseMessage.put("message", "Invalid or missing parameter for userID OR username; expected: Integer OR String, found: neither.");
-					}
-				} else {
-					responseMessage = channelManager.addBan(user, channelID, uID);
-				}
-			} else if ("remove".equalsIgnoreCase(requestParams[2])) {
-				//Request to add a rank to the rank list
-				int uID = requestMessage.optInt("user", 0);
-				if (uID == 0) {
-					responseMessage.put("status", HttpServletResponse.SC_BAD_REQUEST);
-					responseMessage.put("msgArgs", "arg=userID,expected=Integer,found=null");
-					responseMessage.put("msgCode", 177);
-					responseMessage.put("message", "Invalid or missing parameter for userID; expected: Integer, found: null."); 
-				} else {
-					responseMessage = channelManager.removeBan(user, channelID, uID);
-				}
-			
-			} else {
-				return false;
-			}
-			HttpRequestTools.sendResponseJSON(httpResponse, responseMessage);
-			return true;
-		} catch (JSONException ex) {
-			httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			return true;
-		}
-	}
-	
 	private void processChannelRequest(int channelId, User user, JSONObject jsonRequest, HttpServletResponse httpResponse) throws IOException {
 		String action = jsonRequest.optString("action");
 		if (action == null) {
@@ -435,6 +295,118 @@ public class ChannelRequestManager extends HttpServlet {
 		sendResponseAsJSON(httpResponse, response);
 	}
 	
+	/**
+	 * Processes a request relating to the channel member list.
+	 * 
+	 * @param requestParams A string array containing the request arguments (0=channelID, 1=arg1, 2=arg2)
+	 * @param jsonRequest A JSON object containing the POST request body
+	 * @param channelID The channel ID
+	 * @param user The user who commited the request
+	 * @param response A {@link HttpServletResponse} object used for sending the reply to the user 
+	 * @return True if the the request was handled (even if an error occured), false otherwise
+	 * @throws IOException If the response could not be sent due to an error.
+	 */
+	private void processMemberRequest (String[] requestParams, JSONObject jsonRequest, int channelID, User user, HttpServletResponse httpResponse) throws IOException {
+		String action = jsonRequest.optString("action");
+		if (action == null) {
+			httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
+			return;
+		}
+		ChannelResponse response;
+		int targetMemberId;
+		switch (action) {
+		case "add"://Request to add a user to the member list
+			targetMemberId = jsonRequest.optInt("userId", -1);//Tries to extract the user ID. If no userID is found, returns -1
+			if (targetMemberId == -1) {
+				//If no user ID was specified, checks for a username.
+				String memberTargetName = jsonRequest.optString("username", null);
+				if (memberTargetName == null) {
+					httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing userId or username from member request arguments.");
+					return;
+				}
+				//If a username was specified, attempt to resolve it to an ID
+				targetMemberId = userManager.getUserID(memberTargetName);
+			}
+			if (targetMemberId == -1) {
+				//159 The user you have attempted to rank was not found.
+				response = new ChannelResponse(ChannelResponseType.USER_NOT_FOUND, "memberUserNotFound");
+			} else {
+				response = channelManager.addMember(user, channelID, targetMemberId);
+			}
+			break;
+		case "remove"://Request to remove a user from the member list
+			targetMemberId = jsonRequest.optInt("userId", -1);
+			if (targetMemberId == -1) {
+				httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing userId from member removal request arguments.");
+				return;
+			} else {
+				response = channelManager.removeMember(user, channelID, targetMemberId);
+			}
+			break;
+		case "update"://Request to add a rank to the rank list
+			if (!jsonRequest.has("userId")) {
+				httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing userId from member update request arguments.");
+				return;
+			}
+			if (!jsonRequest.has("groupId")) {
+				httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing groupId from member update request arguments.");
+				return;
+			}
+			targetMemberId = jsonRequest.optInt("userId", -1);
+			int groupId = jsonRequest.optInt("groupId", -1);
+			response = channelManager.updateMember(user, channelID, targetMemberId, groupId);
+			break;
+		default:
+			httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
+			return;
+		}
+		sendResponseAsJSON(httpResponse, response);
+	}
+	
+	private void processBanRequest (JSONObject jsonRequest, int channelID, User user, HttpServletResponse httpResponse) throws IOException {
+		String action = jsonRequest.optString("action");
+		if (action == null) {
+			httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
+			return;
+		}
+		ChannelResponse response;
+		switch (action) {
+		case "add"://Request to add a user to the ban list
+			int banTargetId = jsonRequest.optInt("userId", -1);//Tries to extract the user ID. If no userID is found, returns -1
+			if (banTargetId == -1) {
+				//If no user ID was specified, checks for a username.
+				String banTargetName = jsonRequest.optString("username", null);
+				if (banTargetName == null) {
+					httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing userID or username from ban request arguments.");
+					return;
+				}
+				//If a username was specified, attempt to resolve it to an ID
+				banTargetId = userManager.getUserID(banTargetName);
+			}
+			
+			if (banTargetId == -1) {
+				//160 The user you have attempted to ban was not found.
+				response = new ChannelResponse(ChannelResponseType.USER_NOT_FOUND, "banUserNotFound");
+			} else {
+				response = channelManager.addBan(user, channelID, banTargetId);
+			}		
+			break;
+		case "remove":
+			int banRemoveTargetId = jsonRequest.optInt("userId", -1);
+			if (banRemoveTargetId == -1) {
+				//177 Invalid or missing parameter for userID; expected: Integer, found: null.
+				httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing userID from ban removal request arguments.");
+				return;
+			}
+			response = channelManager.removeBan(user, channelID, banRemoveTargetId);
+			break;
+		default:
+			httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
+			return;
+		}
+		sendResponseAsJSON(httpResponse, response);
+	}
+	
 	private void processPostRequest (String[] requestParams, int channelID, User user, JSONObject requestJSON, HttpServletResponse httpResponse) throws ServletException, JSONException, IOException {
 		JSONObject responseJSON = new JSONObject();
 		
@@ -443,13 +415,11 @@ public class ChannelRequestManager extends HttpServlet {
 				return;
 			}
 		} else if ("members".equalsIgnoreCase(requestParams[1])) {
-			if (processMemberRequest(requestParams, requestJSON, channelID, user, httpResponse)) {
-				return;
-			}
+			processMemberRequest(requestParams, requestJSON, channelID, user, httpResponse);
+			return;
 		} else if ("bans".equalsIgnoreCase(requestParams[1])) {
-			if (processBanRequest(requestParams, requestJSON, channelID, user, httpResponse)) {
-				return;
-			}
+			processBanRequest(requestJSON, channelID, user, httpResponse);
+			return;
 		}
 		ChannelResponse response = null;
 		String action = requestJSON.optString("action");

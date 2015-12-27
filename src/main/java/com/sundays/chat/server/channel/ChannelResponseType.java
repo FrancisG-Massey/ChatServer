@@ -68,7 +68,13 @@ public enum ChannelResponseType {
 	/**
 	 * Indicates the action could not be completed due to a temporary lock
 	 */
-	LOCKED(12);
+	LOCKED(12),
+	
+	/**
+	 * Indicates the action couldn not be completed as the target user is in an invalid state.
+	 * For example, this response is returned when trying to edit a user who isn't a channel member.
+	 */
+	TARGET_INVALID_STATE(13);
 	
 	private final int id;
 	

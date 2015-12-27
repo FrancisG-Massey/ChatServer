@@ -716,310 +716,268 @@ public class ChannelManager {
         return response;
     }
     
-    public JSONObject addMember (ChannelUser user, int channelID, int uID) throws JSONException {
-    	JSONObject response = new JSONObject();
-        Channel channel = getChannel(channelID);
+    public ChannelResponse addMember (ChannelUser user, int channelID, int userId) {
+    	Channel channel = getChannel(channelID);
         if (channel == null) {
         	//If the channel was not found, send an error message
-        	response.put("status", 404);
-        	response.put("msgCode", 158);
-        	response.put("message", "The channel must be loaded before you can modify rank data.\nTry joining the channel first.");
-            return response;
+        	//158 The channel must be loaded before you can modify member data.\nTry joining the channel first.
+        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED, "memberChannelNotLoaded");
         }
-    	String rankedName = userManager.getUsername(uID);
-    	if (rankedName == null) {
-    		rankedName = "[user not found]";
-        }
-    	response.put("rankedName", rankedName);
         if (!channel.userHasPermission(user, ChannelPermission.MEMBEREDIT)) {
         	//Check if user has ability to change ranks (6 = change ranks)
-        	response.put("status", 403);
-        	response.put("msgCode", 130);
-        	response.put("message", "You do not have the ability to grant ranks to people in this channel.");
-            return response;
+        	//130 You do not have the ability to grant ranks to people in this channel.
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "memberAddNeedsPermission");
         }
-        if (channel.getUserRank(uID) > 0) {
-        	//User already holds a rank.
-        	response.put("status", 400);
-        	response.put("msgCode", 131);
-        	response.put("message", rankedName+" is already ranked in the channel.\nYou can change their rank using the channel settings interface.");
-            return response;
+        String targetName = userManager.getUsername(userId);
+    	if (targetName == null) {
+    		targetName = "[user not found]";
         }
-        if (channel.isUserBanned(uID)) {
-        	//Cannot rank a banned user
-        	response.put("status", 400);
-        	response.put("msgCode", 132);        	
-        	response.put("message", rankedName+" has been permanently banned from the channel.\nPlease remove their name from the permanent ban list first.");
-            return response;
+    	Map<String, Serializable> args = new HashMap<>();
+    	args.put("memberName", targetName);
+    	
+        if (channel.isUserBanned(userId)) {
+        	//Cannot add a banned user as member
+
+        	//132 rankedName+" has been permanently banned from the channel.\nPlease remove their name from the permanent ban list first."
+        	return new ChannelResponse(ChannelResponseType.TARGET_INVALID_STATE, "addBannedMember", args);
+        }
+    	
+        if (channel.isUserMember(userId)) {
+        	//User is already a member of the channel.
+        	//131 rankedName+" is already ranked in the channel.\nYou can change their rank using the channel settings interface."
+        	return new ChannelResponse(ChannelResponseType.NO_CHANGE, "alreadyMember", args);
         }
         
-        if (!channel.addMember(uID)) {        	
+        if (!channel.addMember(userId)) {        	
         	//Returns false if an error occurred in the rank changing process
-        	response.put("status", 500);
-        	response.put("msgCode", 134); 
-        	response.put("message", "Could rank "+rankedName+" due to a system error.");
-        	return response;
+
+        	//134 Could add "+rankedName+" due to a system error.
+        	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, "memberAddError", args);
         }
         //Notifies everyone in the channel of the rank list addition
-        MessagePayload messagePayload = messageFactory.createRankListAddition(uID, channel, userManager);
+        MessagePayload messagePayload = messageFactory.createRankListAddition(userId, channel, userManager);
         for (ChannelUser u1 : channel.getUsers()) {//Sends the updated rank to everyone in the channel
         	u1.sendMessage(MessageType.RANK_LIST_ADDITION, channelID, messagePayload);
         }
-        if (userManager.getUser(uID) != null) {
-        	ChannelUser newRank = userManager.getUser(uID);
-        	if (channel.getUsers().contains(newRank)) {
-        		messagePayload = messageFactory.createChannelUserUpdate(newRank, channel);//Updates the user's channel rank
+        if (userManager.getUser(userId) != null) {
+        	ChannelUser newMember = userManager.getUser(userId);
+        	if (channel.getUsers().contains(newMember)) {
+        		messagePayload = messageFactory.createChannelUserUpdate(newMember, channel);//Updates the user's channel rank
         		for (ChannelUser u1 : channel.getUsers()) {
         			u1.sendMessage(MessageType.CHANNEL_LIST_UPDATE, channelID, messagePayload);
                 }
-        		//Sends a packet to the user, informing them of the rank change
-        		messagePayload = new MessagePayload();        		
-        		messagePayload.put("userID", newRank.getId());
-        		messagePayload.put("rank", channel.getUserGroup(newRank).getId());
-        		messagePayload.put("notice", "This message type is deprecated and will be removed in future versions. Clients should use channel list updates to identify changes to their own rank.");
-        		
-        		newRank.sendMessage(MessageType.RANK_UPDATE, channelID, messagePayload);
         	}
         }
-        response.put("status", 200);
-    	response.put("msgCode", 133); 
-    	response.put("message", rankedName+" has been successfully ranked in this channel.");
-		return response;
+    	//133 rankedName+" has been successfully ranked in this channel."
+        return new ChannelResponse(ChannelResponseType.SUCCESS, "memberAddSuccess", args);
     }
     
-    public JSONObject removeMember (ChannelUser u, int channelID, int uID) throws JSONException {
-    	JSONObject response = new JSONObject();
-        Channel channel = getChannel(channelID);
-        String targetUsername = userManager.getUsername(uID);
+    public ChannelResponse updateMember (ChannelUser user, int channelId, int userId, int groupId) {
+        Channel channel = getChannel(channelId);
         if (channel == null) {
-        	//If the channel was not found, send an error message
-        	response.put("status", 404);
-        	response.put("msgCode", 158);
-        	response.put("message", "The channel must be loaded before you can modify rank data.\nTry joining the channel first.");
-            return response;
-        }
-        if (!channel.userHasPermission(u, ChannelPermission.MEMBEREDIT)) {
+        	//158 The channel must be loaded before you can modify rank data.\nTry joining the channel first.
+        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED, "memberChannelNotLoaded");
+        }       
+        if (!channel.userHasPermission(user, ChannelPermission.MEMBEREDIT)) {
         	//Check if user has ability to change ranks (6 = change ranks)
-        	response.put("status", 403);
-        	response.put("msgCode", 135);
-        	response.put("message", "You do not have the ability to revoke ranks from people in this channel.");
-            return response;
+        	
+        	//141 You do not have the ability to change the ranks of other users in this channel.
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "memberEditNeedsPermission");
         }
-        if (channel.getUserRank(uID) <= 0) {
-        	//Checks if the user is already off the rank list
-        	response.put("status", 400);
-        	response.put("msgCode", 136);
-        	response.put("message", "This user does not currently have a rank in the channel.");
-            return response;
+        ChannelGroup targetGroup = channel.getGroup(groupId);
+        if (targetGroup == null) {
+        	return new ChannelResponse(ChannelResponseType.ILLEGAL_ARGUMENT, "memberEditInvalidGroup");
         }
-        if (channel.getUserRank(uID) >= channel.getUserRank(u)) {
-        	//Checks if the user's current rank is higher than the user attempting to revoke the rank
-        	response.put("status", 403);
-        	response.put("msgCode", 137);
-        	response.put("message", "You cannot revoke the rank of someone with the same or higher rank than your own.");
-            return response;
+        String targetName = userManager.getUsername(userId);
+        if (targetName == null) {
+    		targetName = "[user not found]";
         }
-        if (!channel.removeMember(uID)) {
+    	Map<String, Serializable> args = new HashMap<>();
+    	args.put("memberName", targetName);
+    	args.put("targetGroup", messageFactory.createGroupDetails(targetGroup));
+        ChannelGroup currentGroup = channel.getUserGroup(userId);
+    	args.put("currentGroup", messageFactory.createGroupDetails(currentGroup));
+        
+        if (!channel.isUserMember(userId)) {//Checks if the user is on the member list
+        	//140 You must add this user to the rank list before setting their rank.
+        	return new ChannelResponse(ChannelResponseType.TARGET_INVALID_STATE, "memberEditNotMember", args);
+        }
+        if (!channel.canActionUser(user, userId)) {
+        	//Checks if the user is able to edit the target user
+        	
+        	//143 You cannot alter the rank of someone with the same or higher rank than your own.
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_SPECIFIC, "memberEditInvalidUser", args);
+        }
+        if (!channel.canAssignGroup(user, targetGroup)) {
+        	//Checks if a rank level BETWEEN the user's current rank level and 0 is selected
+        	//142 Invalid rank level specified.\nYou must choose a rank between your current level and 0
+        	return new ChannelResponse(ChannelResponseType.ILLEGAL_ARGUMENT, "memberEditInvalidGroup");
+        }
+        if (!channel.setMemberGroup(userId, groupId)) {
         	//Returns false if an error occurred in the rank changing process
-        	response.put("status", 500);
-        	response.put("msgCode", 138); 
-        	response.put("message", "Could not remove rank due to a system error.");
-        	return response;
+        	//145 Could not change rank due to a system error.
+        	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, "memberEditError", args);
+        }
+        MessagePayload messagePayload = messageFactory.createRankListUpdate(userId, channel, userManager);
+        for (ChannelUser u1 : channel.getUsers()) {//Sends the rank update to everyone in the channel
+        	u1.sendMessage(MessageType.RANK_LIST_UPDATE, channelId, messagePayload);
+        }
+        if (userManager.getUser(userId) != null) {//Checks if the user is online
+        	ChannelUser newRank = userManager.getUser(userId);
+        	if (channel.getUsers().contains(newRank)) {//Checks if the user is in the channel
+        		messagePayload = messageFactory.createChannelUserUpdate(newRank, channel);//Updates the user's channel rank
+        		for (ChannelUser u1 : channel.getUsers()) {
+        			u1.sendMessage(MessageType.CHANNEL_LIST_UPDATE, channelId, messagePayload);
+                }
+        	}
+        }
+
+    	//144 The rank for "+targetName+" has been changed successfully.
+        return new ChannelResponse(ChannelResponseType.SUCCESS, "memberEditSuccess", args);
+    }
+    
+    public ChannelResponse removeMember (ChannelUser user, int channelID, int userId) {
+    	Channel channel = getChannel(channelID);
+        if (channel == null) {//If the channel was not found, send an error message
+        	//158 The channel must be loaded before you can modify rank data.\nTry joining the channel first.
+        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED, "memberChannelNotLoaded");
+        }
+        if (!channel.userHasPermission(user, ChannelPermission.MEMBEREDIT)) {
+        	//Check if user has ability to change ranks (6 = change ranks)
+
+        	//135 You do not have the ability to revoke ranks from people in this channel.
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "memberRemoveNeedsPermission");
+        }
+        
+        String targetName = userManager.getUsername(userId);
+        if (targetName == null) {
+    		targetName = "[user not found]";
+        }
+    	Map<String, Serializable> args = new HashMap<>();
+    	args.put("memberName", targetName);
+    	
+        if (!channel.isUserMember(userId)) {
+        	//Checks if the user is already off the rank list
+
+        	//136 This user does not currently have a rank in the channel.
+        	return new ChannelResponse(ChannelResponseType.NO_CHANGE, "memberRemoveNoChange", args);
+        }
+        if (!channel.canActionUser(user, userId)) {
+        	//Checks if the user's current rank is higher than the user attempting to revoke the rank
+
+        	//137 You cannot revoke the rank of someone with the same or higher rank than your own.
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_SPECIFIC, "memberRemoveInvalidUser", args);
+        }
+        if (!channel.removeMember(userId)) {
+        	//Returns false if an error occurred in the rank changing process
+
+        	//138 Could not remove rank due to a system error.
+        	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, "memberRemoveError", args);
         }
         //Notifies everyone in the channel of the rank list addition
-        MessagePayload messagePayload = messageFactory.createRankListRemoval(uID, channel);
+        MessagePayload messagePayload = messageFactory.createRankListRemoval(userId, channel);
         for (ChannelUser u1 : channel.getUsers()) {//Sends the rank removal to everyone in the channel
         	u1.sendMessage(MessageType.RANK_LIST_REMOVAL, channelID, messagePayload);
         }
         
-        if (userManager.getUser(uID) != null) {//Checks if the user is online
-        	ChannelUser newRank = userManager.getUser(uID);
-        	if (channel.getUsers().contains(newRank)) {//Checks if the user is in the channel
-        		messagePayload = messageFactory.createChannelUserUpdate(newRank, channel);//Updates the user's channel rank
+        if (userManager.getUser(userId) != null) {//Checks if the user is online
+        	ChannelUser targetMember = userManager.getUser(userId);
+        	if (channel.getUsers().contains(targetMember)) {//Checks if the user is in the channel
+        		messagePayload = messageFactory.createChannelUserUpdate(targetMember, channel);//Updates the user's channel rank
         		for (ChannelUser u1 : channel.getUsers()) {
         			u1.sendMessage(MessageType.CHANNEL_LIST_UPDATE, channelID, messagePayload);
                 }
-        		//Sends a packet to the user, informing them of the rank change
-        		messagePayload = new MessagePayload();        		
-        		messagePayload.put("userID", newRank.getId());
-        		messagePayload.put("rank", channel.getUserGroup(newRank).getId());
-        		messagePayload.put("notice", "This message type is deprecated and will be removed in future versions. Clients should use channel list updates to identify changes to their own rank.");
-        		
-        		newRank.sendMessage(MessageType.RANK_UPDATE, channelID, messagePayload);
         	}
         }
-        response.put("status", 200);
-    	response.put("msgCode", 138);
-    	response.put("message", "The rank for "+targetUsername+" has been revoked successfully.");
-		return response;
+
+    	//138 The rank for "+targetUsername+" has been revoked successfully.
+        return new ChannelResponse(ChannelResponseType.SUCCESS, "memberRemoveSuccess", args);
     }
     
-    public JSONObject updateMember (ChannelUser u, int channelID, int uID, byte rank) throws JSONException {
-    	JSONObject response = new JSONObject();
-        Channel channel = getChannel(channelID);
-        String targetUsername = userManager.getUsername(uID);
-        if (channel == null) {
-        	response.put("status", 404);
-        	response.put("msgCode", 158);
-        	response.put("message", "The channel must be loaded before you can modify rank data.\nTry joining the channel first.");
-            return response;
-        }
-        if (!channel.userHasPermission(u, ChannelPermission.MEMBEREDIT)) {
-        	//Check if user has ability to change ranks (6 = change ranks)
-        	response.put("status", 403);
-        	response.put("msgCode", 141);
-        	response.put("message", "You do not have the ability to change the ranks of other users in this channel.");
-            return response;
-        }
-        int currentRank = channel.getUserRank(uID);
-        if (channel.getUserRank(uID) <= 0) {
-        	//Checks if the user is on the rank list
-        	response.put("status", 400);
-        	response.put("msgCode", 140);
-        	response.put("message", "You must add this user to the rank list before setting their rank.");
-            return response;
-        }
-        if (rank >= channel.getUserRank(u) || rank < 1) {
-        	//Checks if a rank level BETWEEN the user's current rank level and 0 is selected
-        	response.put("status", 400);
-        	response.put("msgCode", 142);
-        	response.put("message", "Invalid rank level specified.\nYou must choose a rank between your current level and 0");
-            return response;
-        }
-        if (currentRank >= channel.getUserRank(u)) {
-        	//Checks if the user's current rank is higher than the user attempting to change the rank
-        	response.put("status", 403);
-        	response.put("msgCode", 143);
-        	response.put("message", "You cannot alter the rank of someone with the same or higher rank than your own.");
-            return response;
-        }
-        if (!channel.setMemberGroup(uID, rank)) {
-        	//Returns false if an error occurred in the rank changing process
-        	response.put("status", 500);
-        	response.put("msgCode", 145); 
-        	response.put("message", "Could not change rank due to a system error.");
-        	return response;
-        }
-        MessagePayload messagePayload = messageFactory.createRankListUpdate(uID, channel, userManager);
-        for (ChannelUser u1 : channel.getUsers()) {//Sends the rank update to everyone in the channel
-        	u1.sendMessage(MessageType.RANK_LIST_UPDATE, channelID, messagePayload);
-        }
-        if (userManager.getUser(uID) != null) {//Checks if the user is online
-        	ChannelUser newRank = userManager.getUser(uID);
-        	if (channel.getUsers().contains(newRank)) {//Checks if the user is in the channel
-        		messagePayload = messageFactory.createChannelUserUpdate(newRank, channel);//Updates the user's channel rank
-        		for (ChannelUser u1 : channel.getUsers()) {
-        			u1.sendMessage(MessageType.CHANNEL_LIST_UPDATE, channelID, messagePayload);
-                }
-        		//Sends a packet to the user, informing them of the rank change
-        		messagePayload = new MessagePayload();        		
-        		messagePayload.put("userID", newRank.getId());
-        		messagePayload.put("rank", channel.getUserGroup(newRank).getId());
-        		messagePayload.put("notice", "This message type is deprecated and will be removed in future versions. Clients should use channel list updates to identify changes to their own rank.");
-        		
-        		newRank.sendMessage(MessageType.RANK_UPDATE, channelID, messagePayload);
-        	}
-        }
-        response.put("status", 200);
-    	response.put("msgCode", 144);
-    	response.put("message", "The rank for "+targetUsername+" has been changed successfully.");
-        return response;
-    }
-    
-    public JSONObject addBan (ChannelUser user, int channelID, int userID) throws JSONException {
-    	JSONObject response = new JSONObject();
+    public ChannelResponse addBan (ChannelUser user, int channelID, int userID) {
         Channel channel = getChannel(channelID);
         if (channel == null) {
-        	response.put("status", 404);
-        	response.put("msgCode", 161);
-        	response.put("message", "The channel must be loaded before you can modify ban data.\nTry joining the channel first.");
-            return response;
+        	//161 The channel must be loaded before you can modify ban data.\nTry joining the channel first.
+            return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED, "banChannelNotLoaded");
         }
+    	
+        if (!channel.userHasPermission(user, ChannelPermission.PERMBAN)) {
+        	//Check if user has ability to permanently ban (4 = modify bans)
+        	//146 You do not have the ability to permanently ban people from this channel.
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "banNeedsPermission");
+        }
+        
     	String bannedName = userManager.getUsername(userID);
     	if (bannedName == null) {
     		bannedName = "[user not found]";
         }
-    	response.put("bannedName", bannedName);
-        if (!channel.userHasPermission(user, ChannelPermission.PERMBAN)) {
-        	//Check if user has ability to permanently ban (4 = modify bans)
-        	response.put("status", 403);
-        	response.put("msgCode", 146);        	
-        	response.put("message", "You do not have the ability to permanently ban people from this channel.");
-            return response;
-        }
+    	Map<String, Serializable> args = new HashMap<>();
+    	args.put("bannedName", bannedName);
+    	
         if (channel.isUserBanned(userID)) {
         	//Check if the user is already permanently banned from the channel
-        	response.put("status", 400);
-        	response.put("msgCode", 147);
-        	response.put("message", bannedName+" is already on the permanent ban list for this channel.");
-            return response;
+
+        	//147 bannedName+" is already on the permanent ban list for this channel."
+        	return new ChannelResponse(ChannelResponseType.NO_CHANGE, "alreadyBanned", args);
         }
-        if (channel.getUserRank(userID) > 0) {
+        if (channel.isUserMember(userID)) {
         	//Checks if user is currently ranked (must revoke rank before they can be permanently banned)
-        	response.put("status", 400);
-        	response.put("msgCode", 148);
-        	response.put("message", bannedName+" currently holds a rank in the channel.\nPlease remove their name from the rank list first.");
-            return response;
+
+        	//148 bannedName+" currently holds a rank in the channel.\nPlease remove their name from the rank list first."
+        	return new ChannelResponse(ChannelResponseType.TARGET_INVALID_STATE, "cantBanMember", args);
         }
         if (!channel.addBan(userID)) {
         	//Returns false if an error occurred in the ban changing process
-        	response.put("status", 500);
-        	response.put("msgCode", 150); 
-        	response.put("message", "Could permanently ban this user due to a system error.");
-        	return response;
+        	//150 Could not permanently ban this user due to a system error.
+        	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, "banError", args);
         }        
         MessagePayload messagePayload = messageFactory.createBanListAddition(userID, channel, userManager);
         for (ChannelUser u1 : channel.getUsers()) {//Sends the ban list addition to everyone in the channel
         	u1.sendMessage(MessageType.BAN_LIST_ADDITION, channelID, messagePayload);
         }
-        response.put("status", 200);
-    	response.put("msgCode", 149);
-    	response.put("message", bannedName+" has been permanently banned from this channel.\nTheir ban will take effect when they leave the channel.");
-		return response;
+        
+    	//149 bannedName+" has been permanently banned from this channel.\nTheir ban will take effect when they leave the channel."
+        return new ChannelResponse(ChannelResponseType.SUCCESS, "banSuccess", args);
     }
     
-    public JSONObject removeBan (ChannelUser user, int channelID, int userID) throws JSONException {
-    	JSONObject response = new JSONObject();
+    public ChannelResponse removeBan (ChannelUser user, int channelID, int userID) {
         Channel channel = getChannel(channelID);
         if (channel == null) {
-        	response.put("status", 404);
-        	response.put("msgCode", 161);
-        	response.put("message", "The channel must be loaded before you can modify ban data.\nTry joining the channel first.");
-            return response;
+        	//161 The channel must be loaded before you can modify ban data.\nTry joining the channel first.
+        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED, "banChannelNotLoaded");
         }
+        if (!channel.userHasPermission(user, ChannelPermission.PERMBAN)) {
+        	//Check if user has ability to remove users from the permanent ban list (4 = modify bans)
+        	
+        	//151 You do not have the ability to revoke permanent bans for people in this channel.
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "banRemoveNeedsPermission");
+        }        
+        
     	String bannedName = userManager.getUsername(userID);
     	if (bannedName == null) {
     		bannedName = "[user not found]";
         }
-    	response.put("bannedName", bannedName);
-        if (!channel.userHasPermission(user, ChannelPermission.PERMBAN)) {
-        	//Check if user has ability to remove users from the permanent ban list (4 = modify bans)
-        	response.put("status", 403);
-        	response.put("msgCode", 151); 
-        	response.put("message", "You do not have the ability to revoke permanent bans for people in this channel.");
-            return response;
-        }
+    	Map<String, Serializable> args = new HashMap<>();
+    	args.put("bannedName", bannedName);
+    	
         if (!channel.isUserBanned(userID)) {
         	//Checks if the specified user is already banned
-        	response.put("status", 400);
-        	response.put("msgCode", 152);
-        	response.put("message", bannedName+" is not currently permanently banned from the channel.");
-            return response;
+
+        	//152 bannedName+" is not currently permanently banned from the channel."
+        	return new ChannelResponse(ChannelResponseType.NO_CHANGE, "banRemoveNoChange", args);
         }
         if (!channel.removeBan(userID)) {
         	//Returns false if an error occurred in the ban changing process
-            response.put("status", 200);
-        	response.put("msgCode", 154);
-        	response.put("message", "Could unban this user due to a system error.");
-        	return response;
+
+        	//154 Could unban this user due to a system error.
+        	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, "banRemoveError", args);
         } 
         MessagePayload messagePayload = messageFactory.createBanListRemoval(userID, channel);
         for (ChannelUser u1 : channel.getUsers()) {//Sends the ban list removal to everyone in the channel
         	u1.sendMessage(MessageType.BAN_LIST_REMOVAL, channelID, messagePayload);
         }
-        response.put("status", 200);
-    	response.put("msgCode", 153);
-    	response.put("message", "The permanent ban for "+bannedName+" has been removed successfully.");
-        return response;
+
+    	//153 The permanent ban for "+bannedName+" has been removed successfully.
+        return new ChannelResponse(ChannelResponseType.SUCCESS, "banRemoveSuccess", args);
     }
 }

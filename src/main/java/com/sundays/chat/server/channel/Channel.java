@@ -35,6 +35,7 @@ import com.google.common.cache.CacheBuilder;
 import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
+import com.sundays.chat.io.ChannelGroupType;
 import com.sundays.chat.server.message.MessagePayload;
 
 /**
@@ -282,9 +283,39 @@ public final class Channel {
     	return getUserRank(targetId) >= getUserRank(user);
     }
     
+    public boolean isUserMember (int userID) {
+        return members.containsKey(userID) || userID == ownerID;
+    }  
+    
     public boolean isUserBanned (int userID) {
         return permBans.contains(userID);
     }    
+    
+    public boolean canAssignGroup (ChannelUser user, ChannelGroup group) {
+    	if (group.getId() == ChannelGroup.GUEST_GROUP) {
+    		return false;
+    	}
+    	if (group.getType() == ChannelGroupType.OWNER) {
+    		return false;
+    	}
+    	return canActionGroup(user, group);
+    }
+    
+    public boolean canActionGroup (ChannelUser user, ChannelGroup group) {
+    	ChannelGroupType userGroupType = getUserGroup(user).getType();
+    	switch (group.getType()) {
+		case OWNER:
+		case ADMINISTRATOR:
+			return userGroupType == ChannelGroupType.OWNER || userGroupType == ChannelGroupType.SYSTEM;
+		case MODERATOR:
+			return userGroupType != ChannelGroupType.NORMAL && userGroupType != ChannelGroupType.MODERATOR;
+		case NORMAL:
+			return userGroupType != ChannelGroupType.NORMAL;
+		case SYSTEM:
+			return false;
+    	}
+    	return false;
+    }
     
     //Loading stages
     private Map<Integer, ChannelGroup> loadGroups (Collection<ChannelGroupData> groupData) {
