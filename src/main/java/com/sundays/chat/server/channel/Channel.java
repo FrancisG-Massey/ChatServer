@@ -280,7 +280,7 @@ public final class Channel {
     }
     
     public boolean canActionUser (ChannelUser user, int targetId) {
-    	return getUserRank(targetId) >= getUserRank(user);
+    	return canActionGroup(user, getUserGroup(targetId));
     }
     
     public boolean isUserMember (int userID) {
@@ -292,7 +292,7 @@ public final class Channel {
     }    
     
     public boolean canAssignGroup (ChannelUser user, ChannelGroup group) {
-    	if (group.getId() == ChannelGroup.GUEST_GROUP) {
+    	if (group.getType() == ChannelGroupType.GUEST) {
     		return false;
     	}
     	if (group.getType() == ChannelGroupType.OWNER) {
@@ -303,18 +303,11 @@ public final class Channel {
     
     public boolean canActionGroup (ChannelUser user, ChannelGroup group) {
     	ChannelGroupType userGroupType = getUserGroup(user).getType();
-    	switch (group.getType()) {
-		case OWNER:
-		case ADMINISTRATOR:
-			return userGroupType == ChannelGroupType.OWNER || userGroupType == ChannelGroupType.SYSTEM;
-		case MODERATOR:
-			return userGroupType != ChannelGroupType.NORMAL && userGroupType != ChannelGroupType.MODERATOR;
-		case NORMAL:
-			return userGroupType != ChannelGroupType.NORMAL;
-		case SYSTEM:
-			return false;
+    	if (group.getType() == ChannelGroupType.OWNER && userGroupType == ChannelGroupType.OWNER) {
+    		//Owner can action their own group
+    		return true;
     	}
-    	return false;
+    	return userGroupType.getLevel() > group.getType().getLevel();
     }
     
     //Loading stages

@@ -19,20 +19,28 @@
 package com.sundays.chat.io;
 
 public enum ChannelGroupType {
-	NORMAL("normal"),
-	MODERATOR("moderator"),
-	ADMINISTRATOR("admin"),
-	OWNER("owner"),
-	SYSTEM("system");
+	GUEST("guest", -1),
+	NORMAL("normal", 0),
+	MODERATOR("moderator", 1),
+	ADMINISTRATOR("admin", 2),
+	OWNER("owner", 3),
+	SYSTEM("system", 4);
 	
 	private final String simpleName;
+	
+	private final int level;
 
-	ChannelGroupType (String name) {
+	ChannelGroupType (String name, int level) {
 		this.simpleName = name;
+		this.level = level;
 	}
 
 	public String getSimpleName() {
 		return simpleName;
+	}
+	
+	public int getLevel () {
+		return level;
 	}
 	
 	public static ChannelGroupType getByName (String name) {

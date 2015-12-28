@@ -579,7 +579,7 @@ public class ChannelManager {
         	//113 This user is not currently in the channel.
             return new ChannelResponse(ChannelResponseType.TARGET_NOT_IN_CHANNEL, "kickNoUser");
         }
-        if (channel.canActionUser(user, kickTargetId)) {
+        if (!channel.canActionUser(user, kickTargetId)) {
         	//Checks if the user banning is allowed to action the target user
 
         	//114 You can only kick users with a lower rank level than yours.
@@ -611,7 +611,7 @@ public class ChannelManager {
         	//118 You cannot temporarily ban people from this channel.
         	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "tempBanNeedsPermission");
         }
-        if (channel.canActionUser(user, banTargetId)) {
+        if (!channel.canActionUser(user, banTargetId)) {
         	//Checks if the user banning is allowed to action the target user
         	//119 You can only temporarily ban users with a lower rank level than yours.
             return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_SPECIFIC, "tempBanInvalidUser");

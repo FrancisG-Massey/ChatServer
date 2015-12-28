@@ -315,7 +315,7 @@ public class ChannelRequestTest {
 		ChannelUser target = mock(ChannelUser.class);
 		when(target.getId()).thenReturn(88);
 
-		mockChannelGroup(channelIO, 101, ChannelGroup.GUEST_GROUP, ChannelGroupType.NORMAL, "join");
+		mockChannelGroup(channelIO, 101, ChannelGroup.GUEST_GROUP, ChannelGroupType.GUEST, "join");
 		mockChannelDetails(channelIO, 101);
 		channelManager.loadChannel(101);
 		assumeFalse(channelManager.getChannel(101) == null);
@@ -438,6 +438,160 @@ public class ChannelRequestTest {
 		
 		assertEquals(ChannelResponseType.SUCCESS, response.getType());
 		assertEquals(ChannelGroup.DEFAULT_GROUP, channel.getUserGroup(88).getId());//Make sure the user's group wasn't changed
+	}
+
+	@Test
+	public void testMemberEditChannelNotLoaded() {
+		assumeTrue(channelManager.getChannel(101) == null);
+		ChannelResponse response = channelManager.updateMember(user, 101, 88, ChannelGroup.MOD_GROUP);
+		
+		assertEquals(ChannelResponseType.CHANNEL_NOT_LOADED, response.getType());
+	}
+
+	@Test
+	public void testMemberEditNoPermission() throws IOException {
+		mockMember(channelIO, 101, 88, ChannelGroup.DEFAULT_GROUP);
+		mockChannelDetails(channelIO, 101);
+		channelManager.loadChannel(101);
+		Channel channel = channelManager.getChannel(101);
+		assumeTrue(channel.getUserGroup(88).getId() == ChannelGroup.DEFAULT_GROUP);
+		
+		ChannelResponse response = channelManager.updateMember(user, 101, 88, ChannelGroup.MOD_GROUP);
+		
+		assertEquals(ChannelResponseType.NOT_AUTHORISED_GENERAL, response.getType());
+		assertEquals(ChannelGroup.DEFAULT_GROUP, channel.getUserGroup(88).getId());//Make sure the user's group has not changed
+	}
+
+	@Test
+	public void testMemberEditNotMember() throws IOException {
+		mockMember(channelIO, 101, user.getId(), ChannelGroup.ADMIN_GROUP);
+		mockChannelGroup(channelIO, 101, ChannelGroup.ADMIN_GROUP, ChannelGroupType.ADMINISTRATOR, "memberedit");
+		mockChannelDetails(channelIO, 101);
+		channelManager.loadChannel(101);
+		Channel channel = channelManager.getChannel(101);
+		assumeFalse(channel.isUserMember(88));
+		
+		ChannelResponse response = channelManager.updateMember(user, 101, 88, ChannelGroup.MOD_GROUP);
+		
+		assertEquals(ChannelResponseType.TARGET_INVALID_STATE, response.getType());
+		assertFalse(channel.isUserMember(88));//Make sure the user's still isn't a member
+	}
+
+	@Test
+	public void testMemberEditHigherRights() throws IOException {
+		mockMember(channelIO, 101, user.getId(), ChannelGroup.ADMIN_GROUP);
+		mockMember(channelIO, 101, 88, ChannelGroup.ADMIN_GROUP);
+		mockChannelGroup(channelIO, 101, ChannelGroup.ADMIN_GROUP, ChannelGroupType.ADMINISTRATOR, "memberedit");
+		mockChannelDetails(channelIO, 101);
+		channelManager.loadChannel(101);
+		Channel channel = channelManager.getChannel(101);
+		assumeTrue(channel.getUserGroup(88).getId() == ChannelGroup.ADMIN_GROUP);
+		
+		ChannelResponse response = channelManager.updateMember(user, 101, 88, ChannelGroup.MOD_GROUP);
+		
+		assertEquals(ChannelResponseType.NOT_AUTHORISED_SPECIFIC, response.getType());
+		assertEquals(ChannelGroup.ADMIN_GROUP, channel.getUserGroup(88).getId());//Make sure the user's group hasn't changed
+	}
+
+	@Test
+	public void testMemberEditHigherGroup() throws IOException {
+		mockMember(channelIO, 101, user.getId(), ChannelGroup.ADMIN_GROUP);
+		mockMember(channelIO, 101, 88, ChannelGroup.MOD_GROUP);
+		mockChannelGroup(channelIO, 101, ChannelGroup.ADMIN_GROUP, ChannelGroupType.ADMINISTRATOR, "memberedit");
+		mockChannelDetails(channelIO, 101);
+		channelManager.loadChannel(101);
+		Channel channel = channelManager.getChannel(101);
+		assumeTrue(channel.getUserGroup(88).getId() == ChannelGroup.MOD_GROUP);
+		
+		ChannelResponse response = channelManager.updateMember(user, 101, 88, ChannelGroup.OWNER_GROUP);
+		
+		assertEquals(ChannelResponseType.INVALID_ARGUMENT, response.getType());
+		assertEquals(ChannelGroup.MOD_GROUP, channel.getUserGroup(88).getId());//Make sure the user's group hasn't changed
+	}
+
+	@Test
+	public void testMemberEditSuccess() throws IOException {
+		mockMember(channelIO, 101, user.getId(), ChannelGroup.ADMIN_GROUP);
+		mockMember(channelIO, 101, 88, ChannelGroup.DEFAULT_GROUP);
+		mockChannelGroup(channelIO, 101, ChannelGroup.ADMIN_GROUP, ChannelGroupType.ADMINISTRATOR, "memberedit");
+		mockChannelDetails(channelIO, 101);
+		channelManager.loadChannel(101);
+		Channel channel = channelManager.getChannel(101);
+		assumeTrue(channel.getUserGroup(88).getId() == ChannelGroup.DEFAULT_GROUP);
+		
+		ChannelResponse response = channelManager.updateMember(user, 101, 88, ChannelGroup.MOD_GROUP);
+		
+		assertEquals(ChannelResponseType.SUCCESS, response.getType());
+		assertEquals(ChannelGroup.MOD_GROUP, channel.getUserGroup(88).getId());//Make sure the user belongs to the new group
+	}
+
+	@Test
+	public void testMemberRemoveChannelNotLoaded() {
+		assumeTrue(channelManager.getChannel(101) == null);
+		ChannelResponse response = channelManager.removeMember(user, 101, 88);
+		
+		assertEquals(ChannelResponseType.CHANNEL_NOT_LOADED, response.getType());
+	}
+
+	@Test
+	public void testMemberRemoveNoPermission() throws IOException {
+		mockMember(channelIO, 101, 88, ChannelGroup.DEFAULT_GROUP);
+		mockChannelDetails(channelIO, 101);
+		channelManager.loadChannel(101);
+		Channel channel = channelManager.getChannel(101);
+		assumeTrue(channel.getUserGroup(88).getId() == ChannelGroup.DEFAULT_GROUP);
+		
+		ChannelResponse response = channelManager.removeMember(user, 101, 88);
+		
+		assertEquals(ChannelResponseType.NOT_AUTHORISED_GENERAL, response.getType());
+		assertTrue(channel.isUserMember(88));//Make sure the user is still a member
+	}
+
+	@Test
+	public void testMemberRemoveNotMember() throws IOException {
+		mockMember(channelIO, 101, user.getId(), ChannelGroup.ADMIN_GROUP);
+		mockChannelGroup(channelIO, 101, ChannelGroup.ADMIN_GROUP, ChannelGroupType.ADMINISTRATOR, "memberedit");
+		mockChannelDetails(channelIO, 101);
+		channelManager.loadChannel(101);
+		Channel channel = channelManager.getChannel(101);
+		assumeFalse(channel.isUserMember(88));
+		
+		ChannelResponse response = channelManager.removeMember(user, 101, 88);
+		
+		assertEquals(ChannelResponseType.NO_CHANGE, response.getType());
+		assertFalse(channel.isUserMember(88));//Make sure the user's still isn't a member
+	}
+
+	@Test
+	public void testMemberRemoveInvalidGroup() throws IOException {
+		mockMember(channelIO, 101, user.getId(), ChannelGroup.ADMIN_GROUP);
+		mockMember(channelIO, 101, 88, ChannelGroup.ADMIN_GROUP);
+		mockChannelGroup(channelIO, 101, ChannelGroup.ADMIN_GROUP, ChannelGroupType.ADMINISTRATOR, "memberedit");
+		mockChannelDetails(channelIO, 101);
+		channelManager.loadChannel(101);
+		Channel channel = channelManager.getChannel(101);
+		assumeTrue(channel.getUserGroup(88).getId() == ChannelGroup.ADMIN_GROUP);
+		
+		ChannelResponse response = channelManager.removeMember(user, 101, 88);
+		
+		assertEquals(ChannelResponseType.NOT_AUTHORISED_SPECIFIC, response.getType());
+		assertEquals(ChannelGroup.ADMIN_GROUP, channel.getUserGroup(88).getId());//Make sure the user's group hasn't changed
+	}
+
+	@Test
+	public void testMemberRemoveSuccess() throws IOException {
+		mockMember(channelIO, 101, user.getId(), ChannelGroup.ADMIN_GROUP);
+		mockMember(channelIO, 101, 88, ChannelGroup.DEFAULT_GROUP);
+		mockChannelGroup(channelIO, 101, ChannelGroup.ADMIN_GROUP, ChannelGroupType.ADMINISTRATOR, "memberedit");
+		mockChannelDetails(channelIO, 101);
+		channelManager.loadChannel(101);
+		Channel channel = channelManager.getChannel(101);
+		assumeTrue(channel.getUserGroup(88).getId() == ChannelGroup.DEFAULT_GROUP);
+		
+		ChannelResponse response = channelManager.removeMember(user, 101, 88);
+		
+		assertEquals(ChannelResponseType.SUCCESS, response.getType());
+		assertFalse(channel.isUserMember(88));//Make sure the user is no longer a channel member
 	}
 
 }

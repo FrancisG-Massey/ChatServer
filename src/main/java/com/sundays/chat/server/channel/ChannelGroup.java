@@ -47,7 +47,7 @@ public class ChannelGroup {
     
     static {       
     	defaultGroups.clear();
-    	defaultGroups.put(GUEST_GROUP, new ChannelGroup(-1, GUEST_GROUP, "Guest", ChannelGroupType.NORMAL));
+    	defaultGroups.put(GUEST_GROUP, new ChannelGroup(-1, GUEST_GROUP, "Guest", ChannelGroupType.GUEST));
     	defaultGroups.put(DEFAULT_GROUP, new ChannelGroup(-1, DEFAULT_GROUP, "Rank one", ChannelGroupType.NORMAL));
     	defaultGroups.put(2, new ChannelGroup(-1, 2, "Rank two", ChannelGroupType.NORMAL));
         defaultGroups.put(3, new ChannelGroup(-1, 3, "Rank three", ChannelGroupType.NORMAL));
