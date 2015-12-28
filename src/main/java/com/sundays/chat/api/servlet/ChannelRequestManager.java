@@ -169,7 +169,7 @@ public class ChannelRequestManager extends HttpServlet {
 		JSONObject responseMessage;
 		if (requestParams.length == 1) {
 			//Request for channel details
-			responseMessage = new JSONObject(channelManager.getChannelDetails(channelID));			
+			responseMessage = new JSONObject(channelManager.getChannelDetails(channelID, true));			
 		} else {
 			switch (requestParams[1]) {
 			case "users"://Request for channel list
@@ -245,7 +245,7 @@ public class ChannelRequestManager extends HttpServlet {
 	private void processChannelRequest(int channelId, User user, JSONObject jsonRequest, HttpServletResponse httpResponse) throws IOException {
 		String action = jsonRequest.optString("action");
 		if (action == null) {
-			JSONObject response = new JSONObject(channelManager.getChannelDetails(channelId));
+			JSONObject response = new JSONObject(channelManager.getChannelDetails(channelId, true));
 			sendResponseJSON(httpResponse, response);
 			return;
 		}

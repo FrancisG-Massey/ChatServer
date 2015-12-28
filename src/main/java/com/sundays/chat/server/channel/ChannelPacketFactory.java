@@ -54,7 +54,9 @@ public class ChannelPacketFactory {
     	}
     	MessagePayload message = new MessagePayload();
     	
-    	message.put("name", channel.getName());
+    	message.put("memberCount", channel.getUserCount());
+    	message.put("guestsCanJoin", channel.getGroup(ChannelGroup.GUEST_GROUP).hasPermission(ChannelPermission.JOIN));
+		message.put("name", channel.getName());
     	message.put("welcomeMessage", channel.getAttribute("welcomeMessage"));
     	message.put("messageColour", channel.getAttribute("welcomeMessage.colour"));
     	

@@ -183,20 +183,6 @@ public class ChannelManager {
     public int getChannelID (String name) {
     	return channelIndex.lookupByName(name);
     }
-    
-    public JSONObject getChannelInformation (int cID) throws JSONException {
-    	JSONObject response = new JSONObject();
-    	Channel channel = channels.get(cID);
-    	if (channel == null) {
-    		response.put("isLoaded", false);//Channel is not loaded
-    	} else {
-    		response.put("isLoaded", true);
-    		response.put("memberCount", channel.getUserCount());
-    		response.put("guestsCanJoin", channel.getGroup(ChannelGroup.GUEST_GROUP).hasPermission(ChannelPermission.JOIN));
-    		response.put("details", messageFactory.createDetailsMessage(channel, userManager));
-    	}    	
-    	return response;
-    }
 
     protected void loadChannel (int channelID) throws IOException {
         if (!channels.containsKey(channelID)) {
@@ -323,9 +309,12 @@ public class ChannelManager {
     /*
      * Channel information requests
      */
-    public MessagePayload getChannelDetails (int channelID) {
+    public MessagePayload getChannelDetails (int channelID, boolean load) {
         Channel channel = getChannel(channelID);
         if (channel == null) {
+        	if (!load) {
+        		return null;
+        	}
         	try {
 				loadChannel(channelID);
 			} catch (IOException ex) {
@@ -339,7 +328,7 @@ public class ChannelManager {
         }
         return messageFactory.createDetailsMessage(channel, userManager);
     }
-    
+        
     public MessagePayload getUserList (int channelID) {
     	Channel channel = getChannel(channelID);
         MessagePayload channelList;

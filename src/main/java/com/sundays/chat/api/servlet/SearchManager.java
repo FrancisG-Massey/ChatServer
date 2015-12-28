@@ -35,6 +35,7 @@ import org.json.JSONObject;
 import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.io.ChannelIndex.SearchType;
 import com.sundays.chat.server.channel.ChannelManager;
+import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.utils.HttpRequestTools;
 
 /**
@@ -113,7 +114,13 @@ public class SearchManager extends HttpServlet {
 					responseJSON.put("status", HttpServletResponse.SC_NOT_FOUND);
 					responseJSON.put("message", "Channel not found.");
 				} else {
-					responseJSON = cm.getChannelInformation(cID);
+					MessagePayload channelDetails = cm.getChannelDetails(cID, false);
+					if (channelDetails == null) {
+						responseJSON.put("isLoaded", false);
+					} else {
+						responseJSON = new JSONObject(channelDetails);
+						responseJSON.put("isLoaded", true);						
+					}
 					responseJSON.put("status", HttpServletResponse.SC_OK);
 					responseJSON.put("type", "exact");
 					responseJSON.put("keyName", channelName);
@@ -124,7 +131,15 @@ public class SearchManager extends HttpServlet {
 				Map<String, Integer> channels = getChannelIndex().search(searchTerm, SearchType.CONTAINS, 100);
 				List<JSONObject> matchingChannels = new ArrayList<JSONObject>();
 				for (Map.Entry<String, Integer> c : channels.entrySet()) {
-					JSONObject returnChannel = cm.getChannelInformation(c.getValue());
+					MessagePayload channelDetails = cm.getChannelDetails(c.getValue(), false);
+					JSONObject returnChannel;
+					if (channelDetails == null) {
+						returnChannel = new JSONObject(channelDetails);
+						returnChannel.put("isLoaded", false);
+					} else {
+						returnChannel = new JSONObject(channelDetails);
+						returnChannel.put("isLoaded", true);						
+					}
 					returnChannel.put("keyName", c.getKey());
 					returnChannel.put("id", c.getValue());
 					matchingChannels.add(returnChannel);
@@ -136,7 +151,15 @@ public class SearchManager extends HttpServlet {
 				Map<String, Integer> channels = getChannelIndex().search("", SearchType.ALL, 100);
 				List<JSONObject> matchingChannels = new ArrayList<JSONObject>();
 				for (Map.Entry<String, Integer> c : channels.entrySet()) {
-					JSONObject returnChannel = cm.getChannelInformation(c.getValue());
+					MessagePayload channelDetails = cm.getChannelDetails(c.getValue(), false);
+					JSONObject returnChannel;
+					if (channelDetails == null) {
+						returnChannel = new JSONObject(channelDetails);
+						returnChannel.put("isLoaded", false);
+					} else {
+						returnChannel = new JSONObject(channelDetails);
+						returnChannel.put("isLoaded", true);						
+					}
 					returnChannel.put("keyName", c.getKey());
 					returnChannel.put("id", c.getValue());
 					matchingChannels.add(returnChannel);
