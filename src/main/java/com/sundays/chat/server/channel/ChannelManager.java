@@ -739,7 +739,7 @@ public class ChannelManager {
         	//Cannot add a banned user as member
 
         	//132 rankedName+" has been permanently banned from the channel.\nPlease remove their name from the permanent ban list first."
-        	return new ChannelResponse(ChannelResponseType.TARGET_INVALID_STATE, "addBannedMember", args);
+        	return new ChannelResponse(ChannelResponseType.TARGET_BANNED, "addBannedMember", args);
         }
     	
         if (channel.isUserMember(userId)) {
@@ -748,7 +748,7 @@ public class ChannelManager {
         	return new ChannelResponse(ChannelResponseType.NO_CHANGE, "alreadyMember", args);
         }
         
-        if (!channel.addMember(userId)) {        	
+        if (!channel.addMember(userId, ChannelGroup.DEFAULT_GROUP)) {        	
         	//Returns false if an error occurred in the rank changing process
 
         	//134 Could add "+rankedName+" due to a system error.
@@ -757,7 +757,7 @@ public class ChannelManager {
         //Notifies everyone in the channel of the rank list addition
         MessagePayload messagePayload = messageFactory.createRankListAddition(userId, channel, userManager);
         for (ChannelUser u1 : channel.getUsers()) {//Sends the updated rank to everyone in the channel
-        	u1.sendMessage(MessageType.RANK_LIST_ADDITION, channelID, messagePayload);
+        	u1.sendMessage(MessageType.MEMBER_LIST_ADDITION, channelID, messagePayload);
         }
         if (userManager.getUser(userId) != null) {
         	ChannelUser newMember = userManager.getUser(userId);
@@ -786,7 +786,7 @@ public class ChannelManager {
         }
         ChannelGroup targetGroup = channel.getGroup(groupId);
         if (targetGroup == null) {
-        	return new ChannelResponse(ChannelResponseType.ILLEGAL_ARGUMENT, "memberEditInvalidGroup");
+        	return new ChannelResponse(ChannelResponseType.INVALID_ARGUMENT, "memberEditInvalidGroup");
         }
         String targetName = userManager.getUsername(userId);
         if (targetName == null) {
@@ -811,7 +811,7 @@ public class ChannelManager {
         if (!channel.canAssignGroup(user, targetGroup)) {
         	//Checks if a rank level BETWEEN the user's current rank level and 0 is selected
         	//142 Invalid rank level specified.\nYou must choose a rank between your current level and 0
-        	return new ChannelResponse(ChannelResponseType.ILLEGAL_ARGUMENT, "memberEditInvalidGroup");
+        	return new ChannelResponse(ChannelResponseType.INVALID_ARGUMENT, "memberEditInvalidGroup");
         }
         if (!channel.setMemberGroup(userId, groupId)) {
         	//Returns false if an error occurred in the rank changing process
@@ -820,7 +820,7 @@ public class ChannelManager {
         }
         MessagePayload messagePayload = messageFactory.createRankListUpdate(userId, channel, userManager);
         for (ChannelUser u1 : channel.getUsers()) {//Sends the rank update to everyone in the channel
-        	u1.sendMessage(MessageType.RANK_LIST_UPDATE, channelId, messagePayload);
+        	u1.sendMessage(MessageType.MEMBER_LIST_UPDATE, channelId, messagePayload);
         }
         if (userManager.getUser(userId) != null) {//Checks if the user is online
         	ChannelUser newRank = userManager.getUser(userId);
@@ -877,7 +877,7 @@ public class ChannelManager {
         //Notifies everyone in the channel of the rank list addition
         MessagePayload messagePayload = messageFactory.createRankListRemoval(userId, channel);
         for (ChannelUser u1 : channel.getUsers()) {//Sends the rank removal to everyone in the channel
-        	u1.sendMessage(MessageType.RANK_LIST_REMOVAL, channelID, messagePayload);
+        	u1.sendMessage(MessageType.MEMBER_LIST_REMOVAL, channelID, messagePayload);
         }
         
         if (userManager.getUser(userId) != null) {//Checks if the user is online

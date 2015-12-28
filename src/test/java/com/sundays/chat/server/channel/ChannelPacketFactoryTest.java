@@ -147,7 +147,7 @@ public class ChannelPacketFactoryTest {
 	@Test
 	public void testMemberList () {
 		for (int i=0;i<10;i++) {
-			dummyChannel.addMember(110+i);
+			dummyChannel.addMember(110+i, ChannelGroup.DEFAULT_GROUP);
 			when(userLookup.getUsername(110+i)).thenReturn("Test"+i);
 		}
 		assumeTrue(dummyChannel.getMembers().size() == 10);//Assume all members were added properly.
@@ -169,7 +169,7 @@ public class ChannelPacketFactoryTest {
 
 	@Test
 	public void testMemberAddition() {
-		dummyChannel.addMember(102);
+		dummyChannel.addMember(102, ChannelGroup.DEFAULT_GROUP);
 		when(userLookup.getUsername(102)).thenReturn("Test");
 		
 		assumeTrue(dummyChannel.getUserGroup(102).getId() == ChannelGroup.DEFAULT_GROUP);
@@ -184,7 +184,7 @@ public class ChannelPacketFactoryTest {
 
 	@Test
 	public void testMemberUpdate() {
-		dummyChannel.addMember(102);
+		dummyChannel.addMember(102, ChannelGroup.DEFAULT_GROUP);
 		dummyChannel.setMemberGroup(102, ChannelGroup.ADMIN_GROUP);
 		when(userLookup.getUsername(102)).thenReturn("Test");
 		

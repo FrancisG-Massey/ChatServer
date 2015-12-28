@@ -472,9 +472,10 @@ public final class Channel {
      * Adds the user to the channel's member list.
      * If the request to add the member in the persistence layer fails, no changes will be made to the channel.
      * @param userID The user ID of the member to add
+     * @param groupId The desired group of the member to add
      * @return true if the member was added, false if the member could not be added (either due to an error, because the user was already added, or the user is banned).
      */
-    protected boolean addMember(int userID) {
+    protected boolean addMember(int userID, int groupId) {
     	synchronized (members) {//Make sure only one thread is trying to modify rank data at a time
 	        if (members.containsKey(userID)) {
 	            return false;
@@ -483,12 +484,12 @@ public final class Channel {
 	            return false;
 	        }
 	        try {
-				io.addMember(id, userID, ChannelGroup.DEFAULT_GROUP);
+				io.addMember(id, userID, groupId);
 			} catch (IOException ex) {
 				logger.error("Failed to add member "+userID, ex);
 				return false;
 			}
-	        members.put(userID, ChannelGroup.DEFAULT_GROUP);
+	        members.put(userID, groupId);
     	}
         return true;
     }

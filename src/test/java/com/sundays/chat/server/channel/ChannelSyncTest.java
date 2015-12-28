@@ -50,7 +50,7 @@ public class ChannelSyncTest {
 
 	@Test
 	public void testAddMember() throws IOException {
-		channel.addMember(102);
+		channel.addMember(102, ChannelGroup.DEFAULT_GROUP);
 		assumeTrue(channel.getUserGroup(102).getId() == ChannelGroup.DEFAULT_GROUP);//Assume the addition succeeded
 		
 		verify(channelIO).addMember(100, 102, ChannelGroup.DEFAULT_GROUP);
@@ -58,7 +58,7 @@ public class ChannelSyncTest {
 
 	@Test
 	public void testUpdateMember() throws IOException {
-		channel.addMember(102);
+		channel.addMember(102, ChannelGroup.DEFAULT_GROUP);
 		assumeTrue(channel.getUserGroup(102).getId() == ChannelGroup.DEFAULT_GROUP);
 		
 		channel.setMemberGroup(102, ChannelGroup.MOD_GROUP);
@@ -69,7 +69,7 @@ public class ChannelSyncTest {
 
 	@Test
 	public void testRemoveMember() throws IOException {
-		channel.addMember(102);
+		channel.addMember(102, ChannelGroup.DEFAULT_GROUP);
 		assumeTrue(channel.getUserGroup(102).getId() == ChannelGroup.DEFAULT_GROUP);
 		
 		channel.removeMember(102);

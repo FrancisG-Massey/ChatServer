@@ -178,13 +178,13 @@ public class ChannelTest {
 
 	@Test
 	public void testAddMember() {
-		channel.addMember(100);
+		channel.addMember(100, ChannelGroup.DEFAULT_GROUP);
 		assertEquals(ChannelGroup.DEFAULT_GROUP, channel.getUserGroup(100).getId());
 	}
 
 	@Test
 	public void testRemoveMember() {
-		channel.addMember(100);
+		channel.addMember(100, ChannelGroup.DEFAULT_GROUP);
 		assumeTrue(channel.getUserGroup(100).getId() == ChannelGroup.DEFAULT_GROUP);
 		channel.removeMember(100);
 		assertEquals(ChannelGroup.GUEST_GROUP, channel.getUserGroup(100).getId());
@@ -192,7 +192,7 @@ public class ChannelTest {
 
 	@Test
 	public void testUpdateMember() {
-		channel.addMember(100);
+		channel.addMember(100, ChannelGroup.DEFAULT_GROUP);
 		assumeTrue(channel.getUserGroup(100).getId() == ChannelGroup.DEFAULT_GROUP);
 		channel.setMemberGroup(100, ChannelGroup.ADMIN_GROUP);
 		assertEquals(ChannelGroup.ADMIN_GROUP, channel.getUserGroup(100).getId());

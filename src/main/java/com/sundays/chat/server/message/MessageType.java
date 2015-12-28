@@ -110,40 +110,38 @@ public enum MessageType {
 	CHANNEL_REMOVAL(10),
 	
 	/**
-	 * Adds a user to the channel rank list.<br /><br />
+	 * Adds a user to the channel member list.<br /><br />
 	 * 
 	 * Contains the following properties:
 	 * <ul>
 	 * <li>userId - The ID of the user to add.</li>
 	 * <li>username - The name of the user to add.</li>
 	 * <li>group - The group which the user belongs to.</li>
-	 * <li>rank - The legacy rank ID of the user (NOTE: This is deprecated and may be removed in the future).</li>
 	 * </ul>
 	 */
-	RANK_LIST_ADDITION(11),
+	MEMBER_LIST_ADDITION(11),
 	
 	/**
-	 * Removes a user from the channel rank list.<br /><br />
+	 * Removes a user from the channel member list.<br /><br />
 	 * 
 	 * Contains the following properties:
 	 * <ul>
 	 * <li>userId - The ID of the user to remove.</li>
 	 * </ul>
 	 */
-	RANK_LIST_REMOVAL(12),
+	MEMBER_LIST_REMOVAL(12),
 	
 	/**
-	 * Updates a user on the channel rank list.<br /><br />
+	 * Updates a user on the channel member list.<br /><br />
 	 * 
 	 * Contains the following properties:
 	 * <ul>
 	 * <li>userId - The ID of the user to update.</li>
 	 * <li>username - The new username of the user.</li>
 	 * <li>group - The new group which the user belongs to.</li>
-	 * <li>rank - The legacy rank ID of the user (NOTE: This is deprecated and may be removed in the future).</li>
 	 * </ul>
 	 */
-	RANK_LIST_UPDATE(13),
+	MEMBER_LIST_UPDATE(13),
 	
 	/**
 	 * Adds a user to the channel ban list.<br /><br />
@@ -179,19 +177,6 @@ public enum MessageType {
 	@Deprecated
 	RANK_NAME_UPDATE(16),
 	CHANNEL_DETAIL_UPDATE(17),
-	
-	/**
-	 * Updates the rank of the user within the channel.<br />
-	 * NOTE: This message type is deprecated. <br /><br />
-	 * 
-	 * Contains the following properties:
-	 * <ul>
-	 * <li>userId - The ID of the user to change the rank of.</li>
-	 * <li>rank - The rank to change to.</li>
-	 * </ul>
-	 */
-	@Deprecated
-	RANK_UPDATE(18),
 	
 	/**
 	 * Updates a group within the channel.
