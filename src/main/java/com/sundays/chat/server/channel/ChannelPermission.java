@@ -41,57 +41,62 @@ public enum ChannelPermission {
 	/**
 	 * Groups with this permission are allowed to join this channel.
 	 */
-	JOIN(0, "join", ChannelGroupType.NORMAL, ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	JOIN(0, "join", ChannelGroupType.NORMAL, ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR),
 	
 	/**
 	 * Groups with this permission are allowed to send messages in this channel.
 	 */
-	TALK(1, "talk", ChannelGroupType.NORMAL, ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	TALK(1, "talk", ChannelGroupType.NORMAL, ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR),
 	
 	/**
 	 * Groups with this permission are allowed to remove other users from this channel.
 	 */
-	KICK(2, "kick", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	KICK(2, "kick", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR),
 	
 	/**
 	 * Groups with this permission are allowed to temporarily prevent other users from joining this channel.
 	 */
-	TEMPBAN(3, "tempban", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	TEMPBAN(3, "tempban", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR),
 	
 	/**
 	 * Groups with this permission are allowed to permanently prevent other users from joining this channel.
 	 */
-	BANEDIT(4, "banedit", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	BANEDIT(4, "banedit", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR),
 	
 	/**
 	 * Groups with this permission are allowed to clear this channel, causing all instanced data (including temporary bans) to be removed.
 	 */
-	RESET(5, "reset", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	RESET(5, "reset", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR),
 	
 	/**
 	 * Groups with this permission are allowed to change the groups of other users in this channel.
 	 */
-	MEMBEREDIT(6, "memberedit", ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	MEMBEREDIT(6, "memberedit", ChannelGroupType.ADMINISTRATOR),
 	
 	/**
 	 * Groups with this permission are allowed to change other groups in this channel.
 	 */
-	GROUPEDIT(7, "groupedit", ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	GROUPEDIT(7, "groupedit", ChannelGroupType.ADMINISTRATOR),
 	
 	/**
-	 * Groups with this permission are allowed to change the editable attributes of the channel.
+	 * Groups with this permission are allowed to change the detail attributes of the channel.
 	 */
-	ATTRIBUTEEDIT(8, "attributesedit", ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	DETAILEDIT(8, "detailedit", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR),
 	
 	/**
 	 * Groups with this permission are allowed to lock this channel, which prevents any new users from joining.
 	 */
-	LOCKCHANNEL(9, "lockchannel", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	LOCKCHANNEL(9, "lockchannel", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR),
 	
 	/**
-	 * Groups with this permission will inherit all permissions that are avaliable to them.
+	 * Groups with this permission will inherit all permissions that are available to them.
 	 */
-	ALL(10, "all", ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM);
+	ALL(10, "all", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR),
+	
+	/**
+	 * Groups with this permission are able to change the setting attributes of the channel.
+	 */
+	SETTINGEDIT(11, "settingedit", ChannelGroupType.ADMINISTRATOR);
 	
 	private final int id;
 	private final String name;
@@ -101,6 +106,10 @@ public enum ChannelPermission {
 		this.id = id;
 		this.name = name;
 		this.avaliableTo = new HashSet<>(Arrays.asList(avaliableTo));
+		
+		//All permissions are available to the channel owner and system users
+		this.avaliableTo.add(ChannelGroupType.OWNER);
+		this.avaliableTo.add(ChannelGroupType.SYSTEM);
 	}
 	
 	public int getId () { 

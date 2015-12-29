@@ -473,22 +473,20 @@ public class ChannelManager {
         return new ChannelResponse(ChannelResponseType.SUCCESS, args);
     }
     
-    public JSONObject sendMessage (ChannelUser user, String message) throws JSONException {
-    	JSONObject response = new JSONObject();
-    	int channelId = user.getChannelId();
+    public ChannelResponse sendMessage (ChannelUser user, int channelId, String message) {
         Channel channel = getChannel(channelId);
         if (channel == null) {
-        	response.put("status", 404);
-        	response.put("msgCode", 105);
-        	response.put("message", "Cannot send message: not currently in a channel.");
-            return response;
+        	//105 Cannot send message: not currently in a channel.
+        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED);
+        }
+        if (!channel.getUsers().contains(user)) {
+        	return new ChannelResponse(ChannelResponseType.NOT_IN_CHANNEL);
         }
         if (!channel.userHasPermission(user, ChannelPermission.TALK)) {
         	//Checks if user has permission to talk in channel (1 = talk permission)
-        	response.put("status", 403);
-        	response.put("msgCode", 106);
-        	response.put("message", "You do not have the appropriate permissions to send messages in this channel.");
-            return response;
+
+        	//106 You do not have the appropriate permissions to send messages in this channel.
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL);
         }
         
         MessagePayload messagePayload = new MessagePayload();
@@ -504,8 +502,8 @@ public class ChannelManager {
         	//Loops through all the people currently in the channel, sending the message to each of them.
             u1.sendMessage(MessageType.CHANNEL_STANDARD, channel.getId(), messagePayload);
         }
-        response.put("status", 200);
-        return response;
+
+        return new ChannelResponse(ChannelResponseType.SUCCESS);
     }
 
     public ChannelResponse leaveChannel (ChannelUser user, int channelId) {
@@ -578,7 +576,7 @@ public class ChannelManager {
         	//Checks if the user is currently logged in and is in the channel
         	
         	//113 This user is not currently in the channel.
-            return new ChannelResponse(ChannelResponseType.TARGET_NOT_IN_CHANNEL);
+            return new ChannelResponse(ChannelResponseType.NOT_IN_CHANNEL);
         }
         if (!channel.canActionUser(user, kickTargetId)) {
         	//Checks if the user banning is allowed to action the target user
@@ -686,7 +684,7 @@ public class ChannelManager {
         	response.put("message", "Cannot change channel details: channel not found.");
             return response;
         }
-        if (!channel.userHasPermission(user, ChannelPermission.ATTRIBUTEEDIT)) {
+        if (!channel.userHasPermission(user, ChannelPermission.DETAILEDIT)) {
         	//Check if user has ability to change details (8 = change channel details)
         	response.put("status", 403);
         	response.put("msgCode", 125);

@@ -32,7 +32,7 @@ public enum ChannelResponseType {
 	 * Indicates the user on whom the specified action was to be performed is not currently in the channel.
 	 * This response does not guarentee that the user exists.
 	 */
-	TARGET_NOT_IN_CHANNEL(22),
+	NOT_IN_CHANNEL(22),
 	
 	/**
 	 * Indicates the target user is banned from the channel

@@ -198,20 +198,9 @@ public class ChannelRequestManager extends HttpServlet {
 		}
 		JSONObject responseMessage = new JSONObject();
 		try {
-			if ("send".equalsIgnoreCase(requestParams[2])) {
-				//Request to send a message in the channel
-				String message = requestMessage.optString("message", null);
-				if (message == null) {
-					responseMessage.put("status", HttpServletResponse.SC_BAD_REQUEST);
-					responseMessage.put("msgArgs", "arg=message,expected=String,found=null");
-					responseMessage.put("msgCode", 177);
-					responseMessage.put("message", "Invalid or missing parameter for message; expected: String, found: null."); 
-				} else {
-					responseMessage = channelManager.sendMessage(user, message);
-				}
-			} else if ("get".equalsIgnoreCase(requestParams[2])) {
+			if ("get".equalsIgnoreCase(requestParams[2])) {
 				//Request to collect queued messages (NOTE: This will remove everything currently in the queue)
-				if (user.hasCuedMessages(channelID)) {
+				if (user.hasQueuedMessages(channelID)) {
 					responseMessage.put("status", HttpServletResponse.SC_OK);
 					List<UserMessageWrapper> messages = user.getQueuedMessages(channelID, true);
 					if (messages == null) {
@@ -294,6 +283,15 @@ public class ChannelRequestManager extends HttpServlet {
 			int durationMins = jsonRequest.optInt("duration", 15);
 			//If no parameters (or invalid parameters) are supplied, default to locking out new guests for 15 minutes.
 			response = channelManager.lockChannel(user, channelId, rank, durationMins);
+			break;
+		case "sendmessage":
+			String message = jsonRequest.optString("message", null);
+			if (message == null) {
+				httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing message from send message request arguments.");
+				return;
+			} else {
+				response = channelManager.sendMessage(user, channelId, message);
+			}
 			break;
 		default:
 			httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);

@@ -142,7 +142,7 @@ public class User implements ChannelUser {
 		return queuedMessages;
     }
     
-    public boolean hasCuedMessages (int channelID) {
+    public boolean hasQueuedMessages (int channelID) {
     	List<UserMessageWrapper> cuedMessages = this.queuedMessages.get(channelID);
     	if (cuedMessages == null) {
     		return false;

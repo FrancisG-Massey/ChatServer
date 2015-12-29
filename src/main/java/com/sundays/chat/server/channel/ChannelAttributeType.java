@@ -1,26 +1,20 @@
 package com.sundays.chat.server.channel;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public enum ChannelAttributeType {
-	WELCOME_MESSAGE("welcomeMessage");
+	/**
+	 * An attribute representing information about the channel.
+	 * Changing these attributes should not have any impact on the functionality of the channel.
+	 */
+	INFO,
 	
-	private String name;
+	/**
+	 * An attribute used to change the functionality of the channel.
+	 */
+	SETTING,
 	
-	ChannelAttributeType (String name) {
-		this.name = name;
-	}
-	
-	private static Map<String, ChannelAttributeType> lookupMap;
-	
-	public static ChannelAttributeType getByName (String name) {
-		if (lookupMap == null) {
-			lookupMap = new HashMap<>();
-			for (ChannelAttributeType attr : values()) {
-				lookupMap.put(attr.name, attr);
-			}
-		}
-		return lookupMap.get(name);
-	}
+	/**
+	 * An attribute used by the system to track the state of some channel aspect.
+	 * These attributes should not be changed by any channel user; only by the application itself.
+	 */
+	SYSTEM;
 }
