@@ -79,9 +79,9 @@ public enum ChannelPermission {
 	GROUPEDIT(7, "groupedit", ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
 	
 	/**
-	 * Groups with this permission are allowed to change the basic details of this channel.
+	 * Groups with this permission are allowed to change the editable attributes of the channel.
 	 */
-	DETAILEDIT(8, "detailedit", ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	ATTRIBUTEEDIT(8, "attributesedit", ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
 	
 	/**
 	 * Groups with this permission are allowed to lock this channel, which prevents any new users from joining.

@@ -306,8 +306,20 @@ public class ChannelManager {
     	//TODO: Implement
     }
     
-    /*
-     * Channel information requests
+    /**
+     * Gets the basic details for this channel, including the following items:
+     * <ul>
+     * 	<li>memberCount - The number of members belonging to the channel</li>
+     *  <li>guestsCanJoin - True if users who aren't channenl members can join, false otherwise</li>
+     *  <li>name - The name of the channel</li>
+     *  <li>welcomeMessage - The message displayed to users when they join the channel</li>
+     *  <li>messageColour - The colour used to display the welcome message</li>
+     *  <li>owner.id - The user ID of the channel owner</li>
+     *  <li>owner.name - The username of the channel owner</li>
+     * </ul>
+     * @param channelID The ID of the channel to retrieve details for
+     * @param load True if the channel should be loaded (if not already), false otherwise
+     * @return A {@link MessagePayload} containing the channel details, or null if the details couldn't be found
      */
     public MessagePayload getChannelDetails (int channelID, boolean load) {
         Channel channel = getChannel(channelID);
@@ -400,50 +412,50 @@ public class ChannelManager {
             if (!channelExists(channelId)) {
                 //Checks if the channel actually exists
             	//100 The channel you have attempted to join does not exist.
-                return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_FOUND, "channelNotFound");
+                return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_FOUND);
             } else {
                 //If the channel exists but is not loaded, load the channel
                 try {
 					loadChannel(channelId);
 				} catch (IOException ex) {
 					logger.error("Failed to load channel "+channelId, ex);
-					return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, "joinError");
+					return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR);
 				}
                 channel = getChannel(channelId);
             }            
         }
         if (channelId == user.getChannelId()) {
 			//166 You are already in this channel.\nJoining it again will have no effect.
-			return new ChannelResponse(ChannelResponseType.NO_CHANGE, "joinAlreadyInChannel");
+			return new ChannelResponse(ChannelResponseType.NO_CHANGE);
         }
         if (channel.unloadInitialised || joinLock) {
             //Checks if the channel is currently being unloaded, or if a joinLock has been applied (we don't want people joining during this period, as it may stop the unload process from working)
         	//101 You cannot join the channel at this time.\nPlease try again in a few minutes.
-            return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, "joinError");
+            return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR);
         }
         if (channel.isUserBanned(user.getId())) {
         	//User has been permanently banned from the channel
             //102 You are permanently banned from this channel.
-            return new ChannelResponse(ChannelResponseType.BANNED, "joinBanned");
+            return new ChannelResponse(ChannelResponseType.BANNED);
         }
         if (!channel.userHasPermission(user, ChannelPermission.JOIN)) {
             //Check if user has permission to join (0 = join permission)
             //103 You do not have a high enough rank to join this channel.
-            return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "joinNeedsPermission");
+            return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL);
         }
         if (channel.getLockExpireTime() > System.currentTimeMillis() && channel.getUserRank(user) <= channel.getLockRank()) {
         	//Checks if the channel is locked to new users.
         	//174 This channel has been locked for anyone holding the rank of "+channel.getGroupName(channel.getLockRank())+" or below.
         	Map<String, Serializable> args = new HashMap<>();
         	args.put("lockGroup", channel.getGroupName(channel.getLockRank()));
-        	return new ChannelResponse(ChannelResponseType.LOCKED, "joinLocked", args);
+        	return new ChannelResponse(ChannelResponseType.LOCKED, args);
         }
         if (channel.getBanExpireTime(user.getId()) > System.currentTimeMillis()) {
             //Check if user is temporarily banned from the channel
             //104 You are temporarily banned from the channel ("+(timeRemaining/(60*1000)+1)+" minute(s) remaining).
             Map<String, Serializable> args = new HashMap<>();
         	args.put("banExpires", channel.getBanExpireTime(user.getId())*1000);
-        	return new ChannelResponse(ChannelResponseType.BANNED_TEMP, "joinBannedTemp", args);
+        	return new ChannelResponse(ChannelResponseType.BANNED_TEMP, args);
         }
         channel.addUser(user);//Adds the user to the channel
         //Send a notification of the current user joining to all users currently in the channel
@@ -458,7 +470,7 @@ public class ChannelManager {
         Map<String, Serializable> args = new HashMap<>();
     	args.put("group", messageFactory.createGroupDetails(channel.getUserGroup(user)));
     	args.put("details", messageFactory.createDetailsMessage(channel, userManager));
-        return new ChannelResponse(ChannelResponseType.SUCCESS, "joinSuccess", args);
+        return new ChannelResponse(ChannelResponseType.SUCCESS, args);
     }
     
     public JSONObject sendMessage (ChannelUser user, String message) throws JSONException {
@@ -499,11 +511,11 @@ public class ChannelManager {
     public ChannelResponse leaveChannel (ChannelUser user, int channelId) {
         Channel channel = getChannel(channelId);
     	if (channelId == -1) {
-    		return new ChannelResponse(ChannelResponseType.NO_CHANGE, "alreadyLeftChannel");
+    		return new ChannelResponse(ChannelResponseType.NO_CHANGE);
     	}
         if (channel != null) {
         	if (!channel.getUsers().contains(user)) {
-        		return new ChannelResponse(ChannelResponseType.NO_CHANGE, "alreadyLeftChannel");
+        		return new ChannelResponse(ChannelResponseType.NO_CHANGE);
         	}
         	channel.removeUser(user);
             if (channel.getUsers().isEmpty()) {                
@@ -523,7 +535,7 @@ public class ChannelManager {
         
         //Returns successful
         //177, "You have left the channel."
-        return new ChannelResponse(ChannelResponseType.SUCCESS, "leftChannel");
+        return new ChannelResponse(ChannelResponseType.SUCCESS);
     }
     
     /*
@@ -533,12 +545,12 @@ public class ChannelManager {
         Channel channel = getChannel(channelId);
         if (channel == null) {//The channel is not currently loaded
         	//107 The channel you have attempted to reset is not loaded.\nResetting will have no effect.
-            return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED, "resetChannelNotLoaded");
+            return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED);
         }
         if (!channel.userHasPermission(user, ChannelPermission.RESET)) {
         	//Check if user has ability to reset the channel (5 = reset permission)
         	//108 You do not have the appropriate permissions reset this channel.
-            return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "resetChannelNoPermission");
+            return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL);
         }
         sendChannelGlobalMessage("This channel will be reset within the next "+Settings.channelCleanupThreadFrequency+" seconds.\n"
         		+ "All members will be removed.\nYou may join again after the reset.", 109, channel.getId(), Color.BLUE);
@@ -548,31 +560,31 @@ public class ChannelManager {
         
         //Returns successful
     	//110 Your request to reset this channel has been accepted.
-        return new ChannelResponse(ChannelResponseType.SUCCESS, "resetChannelAccepted");
+        return new ChannelResponse(ChannelResponseType.SUCCESS);
     }
     
     public ChannelResponse kickUser (ChannelUser user, int channelId, int kickTargetId) {
         Channel channel = getChannel(channelId);
         if (channel == null) {//The channel is not currently loaded
         	//111 The channel you have attempted to kick this user from is not loaded.
-        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED, "kickChannelNotLoaded");
+        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED);
         }
         if (!channel.userHasPermission(user, ChannelPermission.KICK)) {//Check if user has ability to kick users (2 = kick permission)
         	//112 You do not have the appropriate permissions to kick people from this channel.
-        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "kickNeedsPermission");
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL);
         }
         ChannelUser kickedUser = userManager.getUser(kickTargetId);//Retrieves the user object of the user being kicked
         if (kickedUser == null || !channel.getUsers().contains(kickedUser)) {
         	//Checks if the user is currently logged in and is in the channel
         	
         	//113 This user is not currently in the channel.
-            return new ChannelResponse(ChannelResponseType.TARGET_NOT_IN_CHANNEL, "kickNoUser");
+            return new ChannelResponse(ChannelResponseType.TARGET_NOT_IN_CHANNEL);
         }
         if (!channel.canActionUser(user, kickTargetId)) {
         	//Checks if the user banning is allowed to action the target user
 
         	//114 You can only kick users with a lower rank level than yours.
-            return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_SPECIFIC, "kickInvalidUser");
+            return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_SPECIFIC);
         }
         leaveChannel(kickedUser, channelId);
         sendChannelLocalMessage(kickedUser, "You have been kicked from the channel.", 115, channelId, Color.RED);
@@ -581,14 +593,14 @@ public class ChannelManager {
     	//116 Your attempt to kick "+kickedUser.getUsername()+" from this channel was successful.
     	Map<String, Serializable> args = new HashMap<>();
     	args.put("kickedUser", kickedUser.getName());
-        return new ChannelResponse(ChannelResponseType.SUCCESS, "kickSuccess", args);
+        return new ChannelResponse(ChannelResponseType.SUCCESS, args);
     }
     
     public ChannelResponse tempBanUser (ChannelUser user, int channelId, int banTargetId, int durationMins) {
         Channel channel = getChannel(channelId);
         if (channel == null) {//The channel is not currently loaded
         	//117 The channel you have attempted to temporarily ban this user from is not loaded.
-            return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED, "tempBanChannelNotLoaded");
+            return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED);
         }
     	String bannedName = userManager.getUsername(banTargetId);
     	if (bannedName == null) {
@@ -598,12 +610,12 @@ public class ChannelManager {
         if (!channel.userHasPermission(user, ChannelPermission.TEMPBAN)) {
         	//Check if user has ability to temp-ban users (3 = temp-ban permission)
         	//118 You cannot temporarily ban people from this channel.
-        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "tempBanNeedsPermission");
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL);
         }
         if (!channel.canActionUser(user, banTargetId)) {
         	//Checks if the user banning is allowed to action the target user
         	//119 You can only temporarily ban users with a lower rank level than yours.
-            return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_SPECIFIC, "tempBanInvalidUser");
+            return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_SPECIFIC);
         }
         if (durationMins < 1) {
         	//1 minute ban minimum
@@ -620,29 +632,29 @@ public class ChannelManager {
     	Map<String, Serializable> args = new HashMap<>();
     	args.put("durationMins", durationMins);
     	args.put("bannedName", bannedName);
-		return new ChannelResponse(ChannelResponseType.SUCCESS, "tempBanSuccess", args);
+		return new ChannelResponse(ChannelResponseType.SUCCESS, args);
     }
     
     public ChannelResponse lockChannel (ChannelUser user, int channelId, int highestRank, int durationMins) {
     	Channel channel = getChannel(channelId);
     	if (channel == null) {//The channel is not currently loaded
         	//168 The channel you have attempted to lock is not currently loaded on this server.
-        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED, "lockChannelNotLoaded");
+        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED);
         }
     	if (!channel.userHasPermission(user, ChannelPermission.LOCKCHANNEL)) {
         	//Check if user has ability to lock the channel (9 = lock permission)
         	//169 You cannot lock this channel.
-        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "lockNeedsPermission");
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL);
         }
         if (highestRank >= channel.getUserRank(user)) {
         	//Checks if the user is trying to lock the channel to a rank higher than or equal to their own
         	//170 You can only lock the channel to ranks below your level.
-        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_SPECIFIC, "lockInvalidRank");
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_SPECIFIC);
         }
         if (channel.getLockRank() >= channel.getUserRank(user)) {
         	//Checks if there is an existing lock in place, which is set higher than the user's rank
         	//171 An existing lock which affects your rank is already in place. This lock must be removed before you can place a new lock.
-        	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, "lockCantChange");
+        	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR);
         }
         if (durationMins < 1) {
         	//1 minute lock minimum
@@ -661,7 +673,7 @@ public class ChannelManager {
     	Map<String, Serializable> args = new HashMap<>();
     	args.put("durationMins", durationMins);
     	args.put("highestRank", highestRank);
-		return new ChannelResponse(ChannelResponseType.SUCCESS, "lockSuccess", args);
+		return new ChannelResponse(ChannelResponseType.SUCCESS, args);
     }
     
     @Deprecated
@@ -674,7 +686,7 @@ public class ChannelManager {
         	response.put("message", "Cannot change channel details: channel not found.");
             return response;
         }
-        if (!channel.userHasPermission(user, ChannelPermission.DETAILEDIT)) {
+        if (!channel.userHasPermission(user, ChannelPermission.ATTRIBUTEEDIT)) {
         	//Check if user has ability to change details (8 = change channel details)
         	response.put("status", 403);
         	response.put("msgCode", 125);
@@ -710,12 +722,12 @@ public class ChannelManager {
         if (channel == null) {
         	//If the channel was not found, send an error message
         	//158 The channel must be loaded before you can modify member data.\nTry joining the channel first.
-        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED, "memberChannelNotLoaded");
+        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED);
         }
         if (!channel.userHasPermission(user, ChannelPermission.MEMBEREDIT)) {
         	//Check if user has ability to change ranks (6 = change ranks)
         	//130 You do not have the ability to grant ranks to people in this channel.
-        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "memberAddNeedsPermission");
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL);
         }
         String targetName = userManager.getUsername(userId);
     	if (targetName == null) {
@@ -728,20 +740,20 @@ public class ChannelManager {
         	//Cannot add a banned user as member
 
         	//132 rankedName+" has been permanently banned from the channel.\nPlease remove their name from the permanent ban list first."
-        	return new ChannelResponse(ChannelResponseType.TARGET_BANNED, "addBannedMember", args);
+        	return new ChannelResponse(ChannelResponseType.TARGET_BANNED, args);
         }
     	
         if (channel.isUserMember(userId)) {
         	//User is already a member of the channel.
         	//131 rankedName+" is already ranked in the channel.\nYou can change their rank using the channel settings interface."
-        	return new ChannelResponse(ChannelResponseType.NO_CHANGE, "alreadyMember", args);
+        	return new ChannelResponse(ChannelResponseType.NO_CHANGE, args);
         }
         
         if (!channel.addMember(userId, ChannelGroup.DEFAULT_GROUP)) {        	
         	//Returns false if an error occurred in the rank changing process
 
         	//134 Could add "+rankedName+" due to a system error.
-        	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, "memberAddError", args);
+        	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, args);
         }
         //Notifies everyone in the channel of the rank list addition
         MessagePayload messagePayload = messageFactory.createRankListAddition(userId, channel, userManager);
@@ -758,24 +770,24 @@ public class ChannelManager {
         	}
         }
     	//133 rankedName+" has been successfully ranked in this channel."
-        return new ChannelResponse(ChannelResponseType.SUCCESS, "memberAddSuccess", args);
+        return new ChannelResponse(ChannelResponseType.SUCCESS, args);
     }
     
     public ChannelResponse updateMember (ChannelUser user, int channelId, int userId, int groupId) {
         Channel channel = getChannel(channelId);
         if (channel == null) {
         	//158 The channel must be loaded before you can modify rank data.\nTry joining the channel first.
-        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED, "memberChannelNotLoaded");
+        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED);
         }       
         if (!channel.userHasPermission(user, ChannelPermission.MEMBEREDIT)) {
         	//Check if user has ability to change ranks (6 = change ranks)
         	
         	//141 You do not have the ability to change the ranks of other users in this channel.
-        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "memberEditNeedsPermission");
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL);
         }
         ChannelGroup targetGroup = channel.getGroup(groupId);
         if (targetGroup == null) {
-        	return new ChannelResponse(ChannelResponseType.INVALID_ARGUMENT, "memberEditInvalidGroup");
+        	return new ChannelResponse(ChannelResponseType.INVALID_ARGUMENT);
         }
         String targetName = userManager.getUsername(userId);
         if (targetName == null) {
@@ -789,23 +801,23 @@ public class ChannelManager {
         
         if (!channel.isUserMember(userId)) {//Checks if the user is on the member list
         	//140 You must add this user to the rank list before setting their rank.
-        	return new ChannelResponse(ChannelResponseType.TARGET_INVALID_STATE, "memberEditNotMember", args);
+        	return new ChannelResponse(ChannelResponseType.TARGET_INVALID_STATE, args);
         }
         if (!channel.canActionUser(user, userId)) {
         	//Checks if the user is able to edit the target user
         	
         	//143 You cannot alter the rank of someone with the same or higher rank than your own.
-        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_SPECIFIC, "memberEditInvalidUser", args);
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_SPECIFIC, args);
         }
         if (!channel.canAssignGroup(user, targetGroup)) {
         	//Checks if a rank level BETWEEN the user's current rank level and 0 is selected
         	//142 Invalid rank level specified.\nYou must choose a rank between your current level and 0
-        	return new ChannelResponse(ChannelResponseType.INVALID_ARGUMENT, "memberEditInvalidGroup");
+        	return new ChannelResponse(ChannelResponseType.INVALID_ARGUMENT);
         }
         if (!channel.setMemberGroup(userId, groupId)) {
         	//Returns false if an error occurred in the rank changing process
         	//145 Could not change rank due to a system error.
-        	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, "memberEditError", args);
+        	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, args);
         }
         MessagePayload messagePayload = messageFactory.createRankListUpdate(userId, channel, userManager);
         for (ChannelUser u1 : channel.getUsers()) {//Sends the rank update to everyone in the channel
@@ -822,20 +834,20 @@ public class ChannelManager {
         }
 
     	//144 The rank for "+targetName+" has been changed successfully.
-        return new ChannelResponse(ChannelResponseType.SUCCESS, "memberEditSuccess", args);
+        return new ChannelResponse(ChannelResponseType.SUCCESS, args);
     }
     
     public ChannelResponse removeMember (ChannelUser user, int channelID, int userId) {
     	Channel channel = getChannel(channelID);
         if (channel == null) {//If the channel was not found, send an error message
         	//158 The channel must be loaded before you can modify rank data.\nTry joining the channel first.
-        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED, "memberChannelNotLoaded");
+        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED);
         }
         if (!channel.userHasPermission(user, ChannelPermission.MEMBEREDIT)) {
         	//Check if user has ability to change ranks (6 = change ranks)
 
         	//135 You do not have the ability to revoke ranks from people in this channel.
-        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "memberRemoveNeedsPermission");
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL);
         }
         
         String targetName = userManager.getUsername(userId);
@@ -849,19 +861,19 @@ public class ChannelManager {
         	//Checks if the user is already off the rank list
 
         	//136 This user does not currently have a rank in the channel.
-        	return new ChannelResponse(ChannelResponseType.NO_CHANGE, "memberRemoveNoChange", args);
+        	return new ChannelResponse(ChannelResponseType.NO_CHANGE, args);
         }
         if (!channel.canActionUser(user, userId)) {
         	//Checks if the user's current rank is higher than the user attempting to revoke the rank
 
         	//137 You cannot revoke the rank of someone with the same or higher rank than your own.
-        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_SPECIFIC, "memberRemoveInvalidUser", args);
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_SPECIFIC, args);
         }
         if (!channel.removeMember(userId)) {
         	//Returns false if an error occurred in the rank changing process
 
         	//138 Could not remove rank due to a system error.
-        	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, "memberRemoveError", args);
+        	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, args);
         }
         //Notifies everyone in the channel of the rank list addition
         MessagePayload messagePayload = messageFactory.createRankListRemoval(userId, channel);
@@ -880,20 +892,20 @@ public class ChannelManager {
         }
 
     	//138 The rank for "+targetUsername+" has been revoked successfully.
-        return new ChannelResponse(ChannelResponseType.SUCCESS, "memberRemoveSuccess", args);
+        return new ChannelResponse(ChannelResponseType.SUCCESS, args);
     }
     
     public ChannelResponse addBan (ChannelUser user, int channelID, int userID) {
         Channel channel = getChannel(channelID);
         if (channel == null) {
         	//161 The channel must be loaded before you can modify ban data.\nTry joining the channel first.
-            return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED, "banChannelNotLoaded");
+            return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED);
         }
     	
         if (!channel.userHasPermission(user, ChannelPermission.PERMBAN)) {
         	//Check if user has ability to permanently ban (4 = modify bans)
         	//146 You do not have the ability to permanently ban people from this channel.
-        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "banNeedsPermission");
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL);
         }
         
     	String bannedName = userManager.getUsername(userID);
@@ -907,18 +919,18 @@ public class ChannelManager {
         	//Check if the user is already permanently banned from the channel
 
         	//147 bannedName+" is already on the permanent ban list for this channel."
-        	return new ChannelResponse(ChannelResponseType.NO_CHANGE, "alreadyBanned", args);
+        	return new ChannelResponse(ChannelResponseType.NO_CHANGE, args);
         }
         if (channel.isUserMember(userID)) {
         	//Checks if user is currently ranked (must revoke rank before they can be permanently banned)
 
         	//148 bannedName+" currently holds a rank in the channel.\nPlease remove their name from the rank list first."
-        	return new ChannelResponse(ChannelResponseType.TARGET_INVALID_STATE, "cantBanMember", args);
+        	return new ChannelResponse(ChannelResponseType.TARGET_INVALID_STATE, args);
         }
         if (!channel.addBan(userID)) {
         	//Returns false if an error occurred in the ban changing process
         	//150 Could not permanently ban this user due to a system error.
-        	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, "banError", args);
+        	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, args);
         }        
         MessagePayload messagePayload = messageFactory.createBanListAddition(userID, channel, userManager);
         for (ChannelUser u1 : channel.getUsers()) {//Sends the ban list addition to everyone in the channel
@@ -926,20 +938,20 @@ public class ChannelManager {
         }
         
     	//149 bannedName+" has been permanently banned from this channel.\nTheir ban will take effect when they leave the channel."
-        return new ChannelResponse(ChannelResponseType.SUCCESS, "banSuccess", args);
+        return new ChannelResponse(ChannelResponseType.SUCCESS, args);
     }
     
     public ChannelResponse removeBan (ChannelUser user, int channelID, int userID) {
         Channel channel = getChannel(channelID);
         if (channel == null) {
         	//161 The channel must be loaded before you can modify ban data.\nTry joining the channel first.
-        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED, "banChannelNotLoaded");
+        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED);
         }
         if (!channel.userHasPermission(user, ChannelPermission.PERMBAN)) {
         	//Check if user has ability to remove users from the permanent ban list (4 = modify bans)
         	
         	//151 You do not have the ability to revoke permanent bans for people in this channel.
-        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL, "banRemoveNeedsPermission");
+        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL);
         }        
         
     	String bannedName = userManager.getUsername(userID);
@@ -953,13 +965,13 @@ public class ChannelManager {
         	//Checks if the specified user is already banned
 
         	//152 bannedName+" is not currently permanently banned from the channel."
-        	return new ChannelResponse(ChannelResponseType.NO_CHANGE, "banRemoveNoChange", args);
+        	return new ChannelResponse(ChannelResponseType.NO_CHANGE, args);
         }
         if (!channel.removeBan(userID)) {
         	//Returns false if an error occurred in the ban changing process
 
         	//154 Could unban this user due to a system error.
-        	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, "banRemoveError", args);
+        	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR, args);
         } 
         MessagePayload messagePayload = messageFactory.createBanListRemoval(userID, channel);
         for (ChannelUser u1 : channel.getUsers()) {//Sends the ban list removal to everyone in the channel
@@ -967,6 +979,6 @@ public class ChannelManager {
         }
 
     	//153 The permanent ban for "+bannedName+" has been removed successfully.
-        return new ChannelResponse(ChannelResponseType.SUCCESS, "banRemoveSuccess", args);
+        return new ChannelResponse(ChannelResponseType.SUCCESS, args);
     }
 }

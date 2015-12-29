@@ -283,7 +283,7 @@ public class ChannelRequestManager extends HttpServlet {
 				banTargetId = userManager.getUserID(banTargetName);
 			}
 			if (banTargetId == -1) {
-				response = new ChannelResponse(ChannelResponseType.USER_NOT_FOUND, "tempBanUserNotFound");
+				response = new ChannelResponse(ChannelResponseType.USER_NOT_FOUND);
 			} else {
 				response = channelManager.tempBanUser(user, channelId, banTargetId, banDuration);
 			}
@@ -336,7 +336,7 @@ public class ChannelRequestManager extends HttpServlet {
 			}
 			if (targetMemberId == -1) {
 				//159 The user you have attempted to rank was not found.
-				response = new ChannelResponse(ChannelResponseType.USER_NOT_FOUND, "memberUserNotFound");
+				response = new ChannelResponse(ChannelResponseType.USER_NOT_FOUND);
 			} else {
 				response = channelManager.addMember(user, channelID, targetMemberId);
 			}
@@ -394,7 +394,7 @@ public class ChannelRequestManager extends HttpServlet {
 			
 			if (banTargetId == -1) {
 				//160 The user you have attempted to ban was not found.
-				response = new ChannelResponse(ChannelResponseType.USER_NOT_FOUND, "banUserNotFound");
+				response = new ChannelResponse(ChannelResponseType.USER_NOT_FOUND);
 			} else {
 				response = channelManager.addBan(user, channelID, banTargetId);
 			}		
@@ -419,7 +419,6 @@ public class ChannelRequestManager extends HttpServlet {
 		JSONObject json = new JSONObject(response.getParams());
 		try {
 			json.put("status", response.getType().getId());
-			json.put("messageTemplate", response.getMessageTemplate());
 			
 			httpResponse.setContentType("application/json");
 			PrintWriter out = httpResponse.getWriter();
