@@ -1,5 +1,6 @@
 package com.sundays.chat.server.channel;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,10 +10,12 @@ public enum ChannelAttribute {
 	
 	private String name;
 	private ChannelAttributeType type;
+	private Serializable defaultValue;
 	
-	ChannelAttribute (String name, ChannelAttributeType type, Object defaultValue) {
+	ChannelAttribute (String name, ChannelAttributeType type, Serializable defaultValue) {
 		this.name = name;
 		this.type = type;
+		this.defaultValue = defaultValue;
 	}
 	
 	public String getName() {
@@ -21,6 +24,10 @@ public enum ChannelAttribute {
 
 	public ChannelAttributeType getType() {
 		return type;
+	}
+	
+	public Serializable getDefaultValue() {
+		return defaultValue;
 	}
 
 	private static Map<String, ChannelAttribute> lookupMap;

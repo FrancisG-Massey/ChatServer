@@ -30,8 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelDetails;
@@ -454,7 +452,7 @@ public class ChannelManager {
             //Check if user is temporarily banned from the channel
             //104 You are temporarily banned from the channel ("+(timeRemaining/(60*1000)+1)+" minute(s) remaining).
             Map<String, Serializable> args = new HashMap<>();
-        	args.put("banExpires", channel.getBanExpireTime(user.getId())*1000);
+        	args.put("banExpires", channel.getBanExpireTime(user.getId())/1000);
         	return new ChannelResponse(ChannelResponseType.BANNED_TEMP, args);
         }
         channel.addUser(user);//Adds the user to the channel
@@ -465,7 +463,7 @@ public class ChannelManager {
         }
         user.setChannel(channel.getId());//Sets the user's channel to the current one
 
-        sendChannelLocalMessage(user, channel.getAttribute("welcomeMessage"), 40, channelId);//Sends the opening message to the user
+        sendChannelLocalMessage(user, channel.getAttribute("welcomeMessage").toString(), 40, channelId);//Sends the opening message to the user
         
         Map<String, Serializable> args = new HashMap<>();
     	args.put("group", messageFactory.createGroupDetails(channel.getUserGroup(user)));
@@ -674,45 +672,40 @@ public class ChannelManager {
 		return new ChannelResponse(ChannelResponseType.SUCCESS, args);
     }
     
-    @Deprecated
-    public JSONObject setWelcomeMessage (ChannelUser user, int channelID, String message, Color newColour) throws JSONException {
-    	JSONObject response = new JSONObject();
-        Channel channel = getChannel(channelID);
-        if (channel == null) {
-        	response.put("status", 404);
-        	response.put("msgCode", 165);
-        	response.put("message", "Cannot change channel details: channel not found.");
-            return response;
+    public ChannelResponse setAttribute (ChannelUser user, int channelId, String key, Serializable value) {
+    	Channel channel = getChannel(channelId);
+    	if (channel == null) {//The channel is not currently loaded
+        	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED);
         }
-        if (!channel.userHasPermission(user, ChannelPermission.DETAILEDIT)) {
-        	//Check if user has ability to change details (8 = change channel details)
-        	response.put("status", 403);
-        	response.put("msgCode", 125);
-        	response.put("message", "You do not have the ability to change the details of this channel.");
-            return response;
-        }
-        if (message.length() > 250) {
-        	//Checks the length of the opening message
-        	response.put("status", 403);
-        	response.put("msgCode", 127);
-        	response.put("message", "The opening message you have specified is too long.\nPlease use a shorter message.");
-            return response;
-        }
-        //Add additional checks (such as removing/encoding special characters, filtering bad language, etc) here
-        channel.setAttribute("welcomeMessage", message);//Changes the opening message in the temporarily loaded version of the channel, sets the colour to black (default)
-        channel.flushRequired = true;
+    	ChannelAttribute attribute = ChannelAttribute.getByName(key);
+    	if (attribute == null) {
+    		return new ChannelResponse(ChannelResponseType.INVALID_ARGUMENT);
+    	}
+    	switch (attribute.getType()) {
+		case INFO:
+			if (!channel.userHasPermission(user, ChannelPermission.DETAILEDIT)) {
+	        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL);
+	        }
+			break;
+		case SETTING:
+			if (!channel.userHasPermission(user, ChannelPermission.SETTINGEDIT)) {
+	        	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL);
+	        }
+			break;
+		case SYSTEM:
+			//Categorise system attributes as invalid
+			return new ChannelResponse(ChannelResponseType.INVALID_ARGUMENT);
+    	}
+    	channel.setAttribute(key, value);
+    	channel.flushRequired = true;
         //c.flushChannelDetails();//Applies the message change to the channel database
-        MessagePayload messagePayload = messageFactory.createDetailsMessage(channel, userManager);
+        MessagePayload messagePayload = messageFactory.createAttributeUpdate(channel, attribute);
         for (ChannelUser u1 : channel.getUsers()) {
         	//Loops through all the people currently in the channel, sending the details change to all of them.
-            u1.sendMessage(MessageType.CHANNEL_DETAIL_UPDATE, channelID, messagePayload);
+            u1.sendMessage(MessageType.ATTRIBUTE_UPDATE, channelId, messagePayload);
         }
         
-        //Populates the response as successful
-        response.put("status", 200);//Opening message updated successfully
-        response.put("msgCode", 129);
-        response.put("message", "The opening message for this channel has been updated successfully.");
-        return response;
+    	return new ChannelResponse(ChannelResponseType.SUCCESS);
     }
     
     public ChannelResponse addMember (ChannelUser user, int channelID, int userId) {

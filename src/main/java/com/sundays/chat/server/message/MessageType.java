@@ -164,18 +164,8 @@ public enum MessageType {
 	 */
 	BAN_LIST_REMOVAL(15),
 	
-	/**
-	 * Updates the name of a rank within the channel<br />
-	 * NOTE: This message type is deprecated. Use {@link #GROUP_UPDATE} instead.<br /><br />
-	 * 
-	 * Contains the following properties:
-	 * <ul>
-	 * <li>rankID - The ID of the rank to update.</li>
-	 * <li>rankName - The new name for the rank.</li>
-	 * </ul>
-	 */
-	@Deprecated
-	RANK_NAME_UPDATE(16),
+	ATTRIBUTE_UPDATE(16),
+	
 	CHANNEL_DETAIL_UPDATE(17),
 	
 	/**

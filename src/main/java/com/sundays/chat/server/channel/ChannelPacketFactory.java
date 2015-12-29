@@ -319,6 +319,15 @@ public class ChannelPacketFactory {
 		return message;
     }
     
+    public MessagePayload createAttributeUpdate (Channel channel, ChannelAttribute attribute) {
+    	MessagePayload message = new MessagePayload();
+
+    	message.put("key", attribute.getName());
+    	message.put("value", channel.getAttribute(attribute.getName(), attribute.getDefaultValue()));
+    	
+		return message;
+    }
+    
     /**
      * Packs a {@link MessagePayload} containing data about all groups in the channel
      * @param channel The channel to retrieve data from

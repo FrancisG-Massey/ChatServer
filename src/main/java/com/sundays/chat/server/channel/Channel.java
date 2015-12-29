@@ -19,6 +19,7 @@
 package com.sundays.chat.server.channel;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -56,7 +57,7 @@ public final class Channel {
     private final Set<Integer> permBans;
     private boolean trackMessages = false;
     private final Map<Integer, ChannelGroup> groups;
-    private final Map<String, String> attributes;
+    private final Map<String, Serializable> attributes;
     
     /**
      * Represents the users who are temporarily blocked from joining this channel, and the time (as milliseconds since the Unix epoch) their ban will be lifted.
@@ -102,7 +103,7 @@ public final class Channel {
         this.io = io;
         this.name = details.getName();
         this.ownerID = details.getOwner();
-        this.attributes = io.getChannelAttributes(id);
+        this.attributes = loadAttributes(io.getChannelAttributes(id));
         this.alias = details.getAlias();
         this.trackMessages = details.isTrackMessages();
         this.groups = loadGroups(io.getChannelGroups(id));
@@ -163,7 +164,7 @@ public final class Channel {
 	 * @param key The attribute key to lookup
 	 * @return The attribute value, or null if the attribute has not yet been assigned.
 	 */
-	public String getAttribute(String key) {
+	public Serializable getAttribute(String key) {
         return getAttribute(key, null);
     }
 
@@ -173,7 +174,7 @@ public final class Channel {
 	 * @param defaultValue The string to return if the attribute is not set
 	 * @return The attribute value, or null if the attribute has not yet been assigned.
 	 */
-	public String getAttribute(String key, String defaultValue) {		
+	public Serializable getAttribute(String key, Serializable defaultValue) {		
         return attributes.containsKey(key) ? attributes.get(key) : defaultValue;
     }
     
@@ -310,6 +311,14 @@ public final class Channel {
     	return userGroupType.getLevel() > group.getType().getLevel();
     }
     
+    private Map<String, Serializable> loadAttributes (Map<String, String> attributeData) {
+    	Map<String, Serializable> attributes = new HashMap<>();
+    	for (Map.Entry<String, String> entry : attributeData.entrySet()) {
+    		attributes.put(entry.getKey(), entry.getValue());
+    	}
+    	return attributes;
+    }
+    
     //Loading stages
     private Map<Integer, ChannelGroup> loadGroups (Collection<ChannelGroupData> groupData) {
     	
@@ -444,13 +453,13 @@ public final class Channel {
      * @param value The attribute value
      * @return True if the attribute was set successfully, false if it could not be set due to an error at the persistence layer.
      */
-    protected boolean setAttribute (String key, String value) {
+    protected boolean setAttribute (String key, Serializable value) {
 		synchronized (attributes) {
 			try {
 				if (attributes.containsKey(key)) {
-					io.updateAttribute(id, key, value);
+					io.updateAttribute(id, key, value.toString());
 				} else {
-					io.addAttribute(id, key, value);
+					io.addAttribute(id, key, value.toString());
 				}
 			} catch (IOException ex) {
 				logger.error("Failed to set attribute "+key+" to "+value, ex);
