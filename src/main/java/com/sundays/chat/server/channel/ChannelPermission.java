@@ -61,7 +61,7 @@ public enum ChannelPermission {
 	/**
 	 * Groups with this permission are allowed to permanently prevent other users from joining this channel.
 	 */
-	PERMBAN(4, "permban", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
+	BANEDIT(4, "banedit", ChannelGroupType.MODERATOR, ChannelGroupType.ADMINISTRATOR, ChannelGroupType.OWNER, ChannelGroupType.SYSTEM),
 	
 	/**
 	 * Groups with this permission are allowed to clear this channel, causing all instanced data (including temporary bans) to be removed.

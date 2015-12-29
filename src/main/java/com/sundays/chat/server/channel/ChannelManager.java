@@ -902,7 +902,7 @@ public class ChannelManager {
             return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED);
         }
     	
-        if (!channel.userHasPermission(user, ChannelPermission.PERMBAN)) {
+        if (!channel.userHasPermission(user, ChannelPermission.BANEDIT)) {
         	//Check if user has ability to permanently ban (4 = modify bans)
         	//146 You do not have the ability to permanently ban people from this channel.
         	return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_GENERAL);
@@ -947,7 +947,7 @@ public class ChannelManager {
         	//161 The channel must be loaded before you can modify ban data.\nTry joining the channel first.
         	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED);
         }
-        if (!channel.userHasPermission(user, ChannelPermission.PERMBAN)) {
+        if (!channel.userHasPermission(user, ChannelPermission.BANEDIT)) {
         	//Check if user has ability to remove users from the permanent ban list (4 = modify bans)
         	
         	//151 You do not have the ability to revoke permanent bans for people in this channel.

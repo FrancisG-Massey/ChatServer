@@ -594,4 +594,126 @@ public class ChannelRequestTest {
 		assertFalse(channel.isUserMember(88));//Make sure the user is no longer a channel member
 	}
 
+	@Test
+	public void testBanAddChannelNotLoaded() {
+		assumeTrue(channelManager.getChannel(101) == null);
+		ChannelResponse response = channelManager.addBan(user, 101, 88);
+		
+		assertEquals(ChannelResponseType.CHANNEL_NOT_LOADED, response.getType());
+	}
+
+	@Test
+	public void testBanAddNoPermission() throws IOException {
+		mockChannelDetails(channelIO, 101);
+		channelManager.loadChannel(101);
+		Channel channel = channelManager.getChannel(101);
+		assumeFalse(channel.isUserBanned(88));
+		
+		ChannelResponse response = channelManager.addBan(user, 101, 88);
+		
+		assertEquals(ChannelResponseType.NOT_AUTHORISED_GENERAL, response.getType());
+		assertFalse(channel.isUserBanned(88));//Make sure the user wasn't actually banned
+	}
+
+	@Test
+	public void testBanAddMember() throws IOException {
+		mockMember(channelIO, 101, user.getId(), ChannelGroup.ADMIN_GROUP);
+		mockMember(channelIO, 101, 88, ChannelGroup.DEFAULT_GROUP);
+		mockChannelGroup(channelIO, 101, ChannelGroup.ADMIN_GROUP, ChannelGroupType.ADMINISTRATOR, "banedit");
+		mockChannelDetails(channelIO, 101);
+		channelManager.loadChannel(101);
+		Channel channel = channelManager.getChannel(101);
+		assumeTrue(channel.isUserMember(88));
+		
+		ChannelResponse response = channelManager.addBan(user, 101, 88);
+		
+		assertEquals(ChannelResponseType.TARGET_INVALID_STATE, response.getType());
+		assertFalse(channel.isUserBanned(88));//Make sure the user wasn't banned
+	}
+
+	@Test
+	public void testBanAddAlreadyBanned() throws IOException {
+		mockMember(channelIO, 101, user.getId(), ChannelGroup.ADMIN_GROUP);
+		mockChannelGroup(channelIO, 101, ChannelGroup.ADMIN_GROUP, ChannelGroupType.ADMINISTRATOR, "banedit");
+		mockBan(channelIO, 101, 88);
+		mockChannelDetails(channelIO, 101);
+		channelManager.loadChannel(101);
+		Channel channel = channelManager.getChannel(101);
+		assumeTrue(channel.isUserBanned(88));
+		
+		ChannelResponse response = channelManager.addBan(user, 101, 88);
+		
+		assertEquals(ChannelResponseType.NO_CHANGE, response.getType());
+		assertTrue(channel.isUserBanned(88));//Make sure the user is still banned
+	}
+
+	@Test
+	public void testBanAddSuccess() throws IOException {
+		mockMember(channelIO, 101, user.getId(), ChannelGroup.ADMIN_GROUP);
+		mockChannelGroup(channelIO, 101, ChannelGroup.ADMIN_GROUP, ChannelGroupType.ADMINISTRATOR, "banedit");
+		mockChannelDetails(channelIO, 101);
+		
+		channelManager.loadChannel(101);
+		Channel channel = channelManager.getChannel(101);
+		assumeTrue(channel.getUserGroup(88).getId() == ChannelGroup.GUEST_GROUP);
+		
+		ChannelResponse response = channelManager.addBan(user, 101, 88);
+		
+		assertEquals(ChannelResponseType.SUCCESS, response.getType());
+		assertTrue(channel.isUserBanned(88));//Make sure the user is banned
+	}
+
+	@Test
+	public void testBanRemoveChannelNotLoaded() {
+		assumeTrue(channelManager.getChannel(101) == null);
+		ChannelResponse response = channelManager.removeBan(user, 101, 88);
+		
+		assertEquals(ChannelResponseType.CHANNEL_NOT_LOADED, response.getType());
+	}
+
+	@Test
+	public void testBanRemoveNoPermission() throws IOException {
+		mockBan(channelIO, 101, 88);
+		mockChannelDetails(channelIO, 101);
+		channelManager.loadChannel(101);
+		Channel channel = channelManager.getChannel(101);
+		assumeTrue(channel.isUserBanned(88));
+		
+		ChannelResponse response = channelManager.removeBan(user, 101, 88);
+		
+		assertEquals(ChannelResponseType.NOT_AUTHORISED_GENERAL, response.getType());
+		assertTrue(channel.isUserBanned(88));//Make sure the user is still a member
+	}
+
+	@Test
+	public void testBanRemoveNotBanned() throws IOException {
+		mockMember(channelIO, 101, user.getId(), ChannelGroup.ADMIN_GROUP);
+		mockChannelGroup(channelIO, 101, ChannelGroup.ADMIN_GROUP, ChannelGroupType.ADMINISTRATOR, "banedit");
+		mockChannelDetails(channelIO, 101);
+		channelManager.loadChannel(101);
+		Channel channel = channelManager.getChannel(101);
+		assumeFalse(channel.isUserBanned(88));
+		
+		ChannelResponse response = channelManager.removeBan(user, 101, 88);
+		
+		assertEquals(ChannelResponseType.NO_CHANGE, response.getType());
+		assertFalse(channel.isUserBanned(88));//Make sure the user's still isn't a member
+	}
+
+	@Test
+	public void testBanRemoveSuccess() throws IOException {
+		mockMember(channelIO, 101, user.getId(), ChannelGroup.ADMIN_GROUP);
+		mockBan(channelIO, 101, 88);
+		mockChannelGroup(channelIO, 101, ChannelGroup.ADMIN_GROUP, ChannelGroupType.ADMINISTRATOR, "banedit");
+		mockChannelDetails(channelIO, 101);
+		channelManager.loadChannel(101);
+		Channel channel = channelManager.getChannel(101);
+		assumeTrue(channel.isUserBanned(88));
+		
+		ChannelResponse response = channelManager.removeBan(user, 101, 88);
+		
+		assertEquals(ChannelResponseType.SUCCESS, response.getType());
+		assertFalse(channel.isUserBanned(88));//Make sure the user is no longer a channel member
+	}
+
 }
