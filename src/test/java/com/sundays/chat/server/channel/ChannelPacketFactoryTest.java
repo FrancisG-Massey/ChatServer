@@ -66,7 +66,7 @@ public class ChannelPacketFactoryTest {
 		when(userLookup.getUsername(102)).thenReturn("Test");
 		
 		assumeTrue("Test Channel".equals(dummyChannel.getName()));		
-		assumeTrue("Test Message".equals(dummyChannel.getAttribute("welcomeMessage")));
+		assumeTrue("Test Message".equals(dummyChannel.getAttribute(ChannelAttribute.WELCOME_MESSAGE)));
 		assumeTrue(102 == dummyChannel.getOwnerID());
 		
 		MessagePayload message = factory.createDetailsMessage(dummyChannel, userLookup);

@@ -98,41 +98,41 @@ public class ChannelTest {
 
 	@Test
 	public void testAttributeDefault() {
-		assumeTrue(channel.getAttribute("test.attr") == null);
+		assumeTrue(channel.getAttribute("test.attr", null) == null);
 		
 		assertEquals("DefaultValue", channel.getAttribute("test.attr", "DefaultValue"));
 	}
 
 	@Test
 	public void testNewAttribute() {
-		assumeTrue(channel.getAttribute("test.attr") == null);
+		assumeTrue(channel.getAttribute("test.attr", null) == null);
 		channel.setAttribute("test.attr", "Some Value");
-		assertEquals("Some Value", channel.getAttribute("test.attr"));
+		assertEquals("Some Value", channel.getAttribute("test.attr", null));
 	}
 
 	@Test
 	public void testNewAttributeError() throws IOException {
 		doThrow(new IOException()).when(channelIO).addAttribute(100, "test.attr", "Some Value");
-		assumeTrue(channel.getAttribute("test.attr") == null);
+		assumeTrue(channel.getAttribute("test.attr", null) == null);
 		assertFalse(channel.setAttribute("test.attr", "Some Value"));
-		assertEquals(null, channel.getAttribute("test.attr"));
+		assertEquals(null, channel.getAttribute("test.attr", null));
 	}
 
 	@Test
 	public void testUpdateAttribute() {
 		channel.setAttribute("test.attr", "Some Value");
-		assumeFalse(channel.getAttribute("test.attr") == null);
+		assumeFalse(channel.getAttribute("test.attr", null) == null);
 		channel.setAttribute("test.attr", "New Value");
-		assertEquals("New Value", channel.getAttribute("test.attr"));
+		assertEquals("New Value", channel.getAttribute("test.attr", null));
 	}
 
 	@Test
 	public void testUpdateAttributeError() throws IOException {
 		doThrow(new IOException()).when(channelIO).updateAttribute(100, "test.attr", "New Value");
 		channel.setAttribute("test.attr", "Some Value");
-		assumeFalse(channel.getAttribute("test.attr") == null);
+		assumeFalse(channel.getAttribute("test.attr", null) == null);
 		assertFalse(channel.setAttribute("test.attr", "New Value"));
-		assertEquals("Some Value", channel.getAttribute("test.attr"));
+		assertEquals("Some Value", channel.getAttribute("test.attr", null));
 	}
 
 	@Test

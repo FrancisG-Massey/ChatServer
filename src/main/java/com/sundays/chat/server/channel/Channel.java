@@ -161,11 +161,11 @@ public final class Channel {
 	
 	/**
 	 * Gets the channel attribute associated with the given key.
-	 * @param key The attribute key to lookup
+	 * @param attribute The attribute to lookup
 	 * @return The attribute value, or null if the attribute has not yet been assigned.
 	 */
-	public Serializable getAttribute(String key) {
-        return getAttribute(key, null);
+	public Serializable getAttribute(ChannelAttribute attribute) {
+        return getAttribute(attribute.getName(), attribute.getDefaultValue());
     }
 
 	/**

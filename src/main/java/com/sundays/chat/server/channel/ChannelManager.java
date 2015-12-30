@@ -462,8 +462,7 @@ public class ChannelManager {
         	u1.sendMessage(MessageType.CHANNEL_LIST_ADDITION, channelId, userAdditionNotice);
         }
         user.setChannel(channel.getId());//Sets the user's channel to the current one
-
-        sendChannelLocalMessage(user, channel.getAttribute("welcomeMessage").toString(), 40, channelId);//Sends the opening message to the user
+        sendChannelLocalMessage(user, channel.getAttribute(ChannelAttribute.WELCOME_MESSAGE).toString(), 40, channelId);//Sends the opening message to the user
         
         Map<String, Serializable> args = new HashMap<>();
     	args.put("group", messageFactory.createGroupDetails(channel.getUserGroup(user)));
