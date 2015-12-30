@@ -43,7 +43,7 @@ public class XmlChannelSaveTest {
 	
 	private static File channelsDir = Files.createTempDir();
 	private static File channelSchema = new File("src/main/webapp/WEB-INF/xsd/channel.xsd");
-	private static File testData = new File("resources/testcase.xml");
+	private static File testData = new File("src/test/resources/testcase.xml");
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
