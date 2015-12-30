@@ -48,7 +48,8 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -71,7 +72,7 @@ import com.sundays.chat.utils.NamespaceContextMap;
  */
 public final class XmlChannelSave implements ChannelDataIO {
 
-	private static final Logger logger = Logger.getLogger(XmlChannelSave.class);
+	private static final Logger logger = LoggerFactory.getLogger(XmlChannelSave.class);
 	
 	private final File saveFolder;
 	private DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();

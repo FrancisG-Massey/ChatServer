@@ -15,7 +15,6 @@ public class ChannelResponse {
 	
 	/**
 	 * @param type
-	 * @param messageTemplate
 	 * @param params
 	 */
 	public ChannelResponse(ChannelResponseType type, Map<String, Serializable> params) {

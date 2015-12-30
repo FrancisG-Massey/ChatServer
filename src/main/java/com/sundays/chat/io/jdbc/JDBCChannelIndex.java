@@ -27,7 +27,8 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -39,7 +40,7 @@ import com.sundays.chat.io.ChannelIndex;
  */
 public class JDBCChannelIndex implements ChannelIndex {
 	
-	private static final Logger logger = Logger.getLogger(JDBCChannelIndex.class);
+	private static final Logger logger = LoggerFactory.getLogger(JDBCChannelIndex.class);
 	
 	private final Cache<String, Integer> lookupCache = CacheBuilder.newBuilder().maximumSize(1000).build();
 	private final Cache<Integer, Boolean> existsCache = CacheBuilder.newBuilder().maximumSize(1000).build();

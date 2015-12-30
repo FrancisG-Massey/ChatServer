@@ -29,7 +29,8 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelDetails;
@@ -53,7 +54,7 @@ public class ChannelManager {
 	/**
 	 * 
 	 */
-	private static final Logger logger = Logger.getLogger(ChannelManager.class);
+	private static final Logger logger = LoggerFactory.getLogger(ChannelManager.class);
 	
     /**
      * Creates a map linking the channel ID with the channel's class

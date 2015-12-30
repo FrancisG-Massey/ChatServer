@@ -35,14 +35,15 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sundays.chat.io.UserDataIO;
 import com.sundays.chat.io.UserDetails;
 
 public final class XmlUserManager implements UserDataIO {
 
-	private static final Logger logger = Logger.getLogger(XmlUserManager.class);
+	private static final Logger logger = LoggerFactory.getLogger(XmlUserManager.class);
 	
 	private static final String VERSION = "1.0";
 	

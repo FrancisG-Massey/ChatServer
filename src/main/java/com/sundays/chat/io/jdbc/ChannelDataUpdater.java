@@ -26,13 +26,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sundays.chat.io.ChannelDetails;
 
 public class ChannelDataUpdater {
 	
-	private static final Logger logger = Logger.getLogger(ChannelDataUpdater.class);
+	private static final Logger logger = LoggerFactory.getLogger(ChannelDataUpdater.class);
 		
 	private final String detailTableName;
 	private final String attributeTableName;

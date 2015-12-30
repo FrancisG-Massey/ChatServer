@@ -21,10 +21,13 @@ package com.sundays.chat.server.channel;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ChannelCleanup extends Timer {
+	
+	private static final Logger logger = LoggerFactory.getLogger(ChannelCleanup.class);
 
 	CopyOnWriteArrayList<Runnable> tasks = new CopyOnWriteArrayList<Runnable>();
 	TimerTask currentTask = null;
@@ -45,7 +48,7 @@ public class ChannelCleanup extends Timer {
 			currentTask = new TimerTask () {
 				@Override
 				public void run() {
-					Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Running channel cleanup tasks...");
+					logger.info("Running channel cleanup tasks...");
 					for (Runnable task : tasks) {
 						task.run();
 					}

@@ -30,7 +30,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelDetails;
@@ -40,7 +41,7 @@ import com.sundays.chat.server.channel.ChannelGroup;
 
 public class JDBCChannelSave implements ChannelDataIO {
 
-	private static final Logger logger = Logger.getLogger(JDBCChannelSave.class);
+	private static final Logger logger = LoggerFactory.getLogger(JDBCChannelSave.class);
 
 	private final String attributeTableName;
 	private final String detailTableName;

@@ -29,7 +29,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -46,7 +47,7 @@ import com.sundays.chat.server.message.MessagePayload;
  */
 public final class Channel {
 	
-	private static final Logger logger = Logger.getLogger(Channel.class);
+	private static final Logger logger = LoggerFactory.getLogger(Channel.class);
 
 	private final int id;
 	

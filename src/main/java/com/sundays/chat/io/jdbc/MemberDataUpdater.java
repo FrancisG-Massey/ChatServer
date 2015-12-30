@@ -27,14 +27,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
 import com.sundays.chat.io.ChannelGroupData;
 
 public class MemberDataUpdater {
 	
-	private static final Logger logger = Logger.getLogger(MemberDataUpdater.class);
+	private static final Logger logger = LoggerFactory.getLogger(MemberDataUpdater.class);
 		
 	private final String memberTableName;
 	private final String banTableName;

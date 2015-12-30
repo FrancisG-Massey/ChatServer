@@ -30,10 +30,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
-import org.apache.log4j.Logger;
 import org.jasypt.digest.StandardStringDigester;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -50,7 +51,7 @@ import com.sundays.chat.server.channel.ChannelUser;
  */
 public final class UserManager implements UserLookup {    
 	
-	private static final Logger logger = Logger.getLogger(UserManager.class);
+	private static final Logger logger = LoggerFactory.getLogger(UserManager.class);
 
 	private final Map<String, Integer> lookupByUsername = new ConcurrentHashMap<String, Integer>();
 	

@@ -24,14 +24,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.io.ChannelGroupType;
 
 public class ChannelGroup {
 
-	private static final Logger logger = Logger.getLogger(ChannelGroup.class);
+	private static final Logger logger = LoggerFactory.getLogger(ChannelGroup.class);
 	
     public static final Map<Integer, ChannelGroup> defaultGroups = new HashMap<>(12);
     

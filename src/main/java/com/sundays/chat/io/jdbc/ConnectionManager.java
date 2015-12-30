@@ -24,14 +24,15 @@ import java.sql.SQLException;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sundays.chat.api.servlet.ServletLauncher;
 import com.sundays.chat.utils.ConfigurationException;
 
 public class ConnectionManager implements AutoCloseable {
 	
-	private static final Logger logger = Logger.getLogger(ConnectionManager.class);
+	private static final Logger logger = LoggerFactory.getLogger(ConnectionManager.class);
 	
     private final String username;
     private final String password;
@@ -74,8 +75,8 @@ public class ConnectionManager implements AutoCloseable {
 						logger.info("Database connection closed due to 5 minutes of inactivity.");
 			    		try {
 							close();
-						} catch (SQLException e) {
-							logger.error(e);
+						} catch (SQLException ex) {
+							logger.error("Error closing database", ex);
 						}
 			    	}
 				}
