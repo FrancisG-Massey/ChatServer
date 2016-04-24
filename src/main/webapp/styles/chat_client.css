@@ -37,6 +37,7 @@
 	width: 25%;
 	border: 1px solid black;
 	vertical-align: top;
+	float: right;
 }
 
 #userlist {
@@ -207,8 +208,4 @@ ul.dropdown li:hover {
 }
 .blue {
 	color: blue;
-}
-
-.b {
-	font-weight: bold;
 }

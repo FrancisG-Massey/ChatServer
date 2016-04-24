@@ -16,13 +16,13 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-/*$("body").load(function () {
-	ChatClient.init();
-});*/
+$("body").load(function () {
+	chatClient.init();
+});
 
 $(window).bind('beforeunload', function () {
-	if (ChatClient.session != null) {
-		ChatClient.signOutSync();
+	if (chatClient.session != null) {
+		chatClient.signOutSync();
 	}		
 	//return "Make sure you have logged out before navigating away from the page.";
 });
@@ -43,54 +43,7 @@ function javaColourToCss (colourInt) {
 	return "rgba("+red+","+green+","+blue+","+alpha+")";
 }
 
-var ChatClient2 = angular.module('ChatClient', []);
-
-ChatClient2.controller('UserListController', function ($scope) {
-	$scope.users = [];
-	$scope.showOptions = function (user) {
-		ChatClient.channelList.createOptionList(user);
-	}
-	$scope.$on("userListAddition", function (e, user) {
-		$scope.$apply(function () {
-			$scope.users.push(user);
-			//Resort the user list
-			$scope.users.sort(function (a, b) {
-				return a.name.localeCompare(b.name);
-			});
-		});
-	});
-	$scope.$on("userListRemoval", function (e, userId) {
-		$scope.$apply(function () {
-			for (var pos in $scope.users) {
-				if ($scope.users[pos].id == userId) {
-					delete $scope.users[pos];
-					return;
-				}
-			}
-		});		
-	});
-	$scope.$on("userListUpdate", function (e, user) {
-		$scope.$apply(function () {
-			for (var pos in $scope.users) {
-				if ($scope.users[pos].id == user.id) {
-					$scope.users[pos] = user;
-					//Resort the user list
-					$scope.users.sort(function (a, b) {
-						return a.name.localeCompare(b.name);
-					});
-					return;
-				}
-			}
-		});		
-	});
-	ChatClient.init();
-});
-
-ChatClient2.controller("ChannelListController", function($scope) {
-	
-});
-
-var ChatClient = {
+var chatClient = {
 		dialogTypes : Object.freeze({
 			NONE : 0,
 			RANKLIST : 1,
@@ -112,10 +65,10 @@ var ChatClient = {
 		stopCheckingMessages : false,
 		messageCheckingTimer : null,
 		init : function () {
-			ChatClient.dialog.openDialog = ChatClient.dialogTypes.NONE;
+			chatClient.dialog.openDialog = chatClient.dialogTypes.NONE;
 			$("#message_input").keyup(function(event){
 			    if(event.keyCode == 13){
-			    	ChatClient.sendMessage($(this).val());
+			        chatClient.sendMessage($(this).val());
 			    }
 			}).prop('disabled', true).val("");
 			$("#menu_bar").empty();
@@ -124,7 +77,7 @@ var ChatClient = {
 			$("<li />").text("Channel").css({display: "none"}).appendTo("#menu_bar")
 			.append("<ul id='channel_menu'></ul>");
 			$("<li id='login_button' />").text("Login").click(function () {
-				ChatClient.signIn(prompt("Please enter your username", "test1"), 
+				chatClient.signIn(prompt("Please enter your username", "test1"), 
 					prompt("Please enter your password","test"),
 					null);
 			}).appendTo("#account_menu");
@@ -135,10 +88,10 @@ var ChatClient = {
 					alert("Passwords do not match.");
 					return;
 				}
-				ChatClient.createAccount(name, name, password);
+				chatClient.createAccount(name, name, password);
 			}).appendTo("#account_menu");
 			$("<li id='joinchannel_button' />").text("Join").click(function () {
-				ChatClient.serverChannelsList.open();
+				chatClient.serverChannelsList.open();
 				/*var channelName = prompt("Enter a channel name to join", "Test Channel");
 				if (channelName == null)
 					return;
@@ -155,14 +108,14 @@ var ChatClient = {
 			openDialog : null,
 			onCloseEvents : [],
 			showDialog : function (heading, body, dialogType) {
-				if (ChatClient.dialog.openDialog !== ChatClient.dialogTypes.NONE) {
-					ChatClient.dialog.closeDialog();
+				if (chatClient.dialog.openDialog !== chatClient.dialogTypes.NONE) {
+					chatClient.dialog.closeDialog();
 				}
 				if ($("#dialog_filter").length == 0) {
 	                $("<div id='dialog_filter' />").appendTo("body");
 	                $("<div id='dialog' />").appendTo("#dialog_filter");
 	                $("<input type='button' value='Close' id='dialog_close' />").click(function () {
-	                	ChatClient.dialog.closeDialog();
+	                	chatClient.dialog.closeDialog();
 	                }).appendTo("#dialog");
 	                $("<h2 id='dialog_heading' />").appendTo("#dialog");
 	                $("<div id='dialog_content' />").appendTo("#dialog");
@@ -173,13 +126,13 @@ var ChatClient = {
 				$("#dialog_heading").html(heading);
 				$("#dialog_content").html(body);
 	            $("body").css({ overflow: "hidden" });
-	            ChatClient.dialog.openDialog = dialogType;
+	            chatClient.dialog.openDialog = dialogType;
 			}, 
 			closeDialog : function () {
-				var dialog = ChatClient.dialog;
+				var dialog = chatClient.dialog;
 				$("#dialog_filter").detach();
 		        $("body").css({ overflow: "auto" });
-		        dialog.openDialog = ChatClient.dialogTypes.NONE;
+		        dialog.openDialog = chatClient.dialogTypes.NONE;
 	        	$(dialog.onCloseEvents).each(function (i, callback) {
 	        		callback();	        		
 	        	});
@@ -188,30 +141,30 @@ var ChatClient = {
 		        	dialog.onCloseCallback();
 		        	dialog.onCloseCallback = null;
 		        }*/
-	        	ChatClient.rankList.isOpen = false;
-		        ChatClient.banList.isOpen = false;
-		        ChatClient.permissionList.isOpen = false;
+		        chatClient.rankList.isOpen = false;
+		        chatClient.banList.isOpen = false;
+		        chatClient.permissionList.isOpen = false;
 			},
 			addCloseEvent : function (event) {
-				ChatClient.dialog.onCloseEvents.push(event);
+				chatClient.dialog.onCloseEvents.push(event);
 			}
 		},
 		signIn : function (username, password, callback) {
-			ChatClient.sendJSONRequest("user/login/standard/", {
+			chatClient.sendJSONRequest("user/login/standard/", {
 				"username": username, "password": password
 			}, function (response) {
 				if (response.status === 200) {
 					//alert(JSON.stringify(response));
-					ChatClient.session = response.session;
-					ChatClient.userID = response.userID;
-					ChatClient.username = response.username;
-					$("#username").text(ChatClient.username);
+					chatClient.session = response.session;
+					chatClient.userID = response.userID;
+					chatClient.username = response.username;
+					$("#username").text(chatClient.username);
 					if (response.defaultChannel >= 100) {
-						ChatClient.joinChannel(response.defaultChannel);
+						chatClient.joinChannel(response.defaultChannel);
 					}
 					$("#channel_menu").parent().css({display : ""});
 					$("#login_button").text("Logout").unbind('click').click(function () {
-						ChatClient.signOut(null);
+						chatClient.signOut(null);
 					});
 					$("#accountcreate_button").remove();
 					if (callback) {
@@ -223,17 +176,17 @@ var ChatClient = {
 			});
 		},
 		signOut : function (callback) {
-			ChatClient.stopCheckingMessages = true;
-			ChatClient.sendJSONRequest("user/logout/", {
-				"session": ChatClient.session
+			chatClient.stopCheckingMessages = true;
+			chatClient.sendJSONRequest("user/logout/", {
+				"session": chatClient.session
 			}, function (response) {
 				if (response.status === 200) {
-					ChatClient.session = null;
-					ChatClient.userID = -1;
-					ChatClient.username = "[Not signed in]";
+					chatClient.session = null;
+					chatClient.userID = -1;
+					chatClient.username = "[Not signed in]";
 					$("#username").text("");
 					$("#login_button").text("Login").unbind('click').click(function () {
-						ChatClient.signIn(prompt("Please enter your username", "test1"), 
+						chatClient.signIn(prompt("Please enter your username", "test1"), 
 								prompt("Please enter your password","test"),
 								null);
 					});
@@ -244,10 +197,10 @@ var ChatClient = {
 							alert("Passwords do not match.");
 							return;
 						}
-						ChatClient.createAccount(name, name, password);
+						chatClient.createAccount(name, name, password);
 					}).appendTo("#account_menu");
 					$("#channel_menu").parent().css({display : "none"});
-					ChatClient.clearChannel();
+					chatClient.clearChannel();
 					if (callback)
 						callback();
 				} else {
@@ -256,7 +209,7 @@ var ChatClient = {
 			});
 		},
 		signOutSync : function () {
-			ChatClient.stopCheckingMessages = true;
+			chatClient.stopCheckingMessages = true;
 			$.ajax({
 				url: "user/logout/",
 				async: false,
@@ -266,22 +219,22 @@ var ChatClient = {
 					"Content-Type": "application/json"
 				},
 				data: JSON.stringify({
-					"session": ChatClient.session
+					"session": chatClient.session
 				})
 			}).done(function () {
-				ChatClient.session = null;
-				ChatClient.userID = -1;
+				chatClient.session = null;
+				chatClient.userID = -1;
 			});
 		},
 		createAccount : function (loginName, username, password) {
-			ChatClient.sendJSONRequest("user/create/standard/", {
+			chatClient.sendJSONRequest("user/create/standard/", {
 				"username": username,
 				"loginName": loginName,
 				"password": password
 			}, function (response) {
 				if (response.status === 200) {
 					alert(response.message);
-					ChatClient.signIn(loginName, password, null);
+					chatClient.signIn(loginName, password, null);
 				} else {
 					alert(response.message);
 				}
@@ -290,17 +243,17 @@ var ChatClient = {
 		serverChannelsList : {
 			isOpen : false,
 			open : function () {
-				var thisList = ChatClient.serverChannelsList; 
-				ChatClient.dialog.showDialog("Channels on Server", "<ul id='channellist' class='dialogList'></ul>", ChatClient.dialogTypes.CHANNELLIST);
+				var thisList = chatClient.serverChannelsList; 
+				chatClient.dialog.showDialog("Channels on Server", "<ul id='channellist' class='dialogList'></ul>", chatClient.dialogTypes.CHANNELLIST);
 				$("#dialog").css({
 					height: "25em",
 					marginTop: "-12.5em"
 				});
-				ChatClient.dialog.addCloseEvent(function () {
+				chatClient.dialog.addCloseEvent(function () {
 					thisList.isOpen = false;
 				});
-				ChatClient.sendJSONRequest("search/channel/?all", {
-					"session": ChatClient.session
+				chatClient.sendJSONRequest("search/channel/?all", {
+					"session": chatClient.session
 				}, function (response) {
 					if (response.status === 200) {
 						thisList.isOpen = true;
@@ -311,7 +264,7 @@ var ChatClient = {
 						});
 						thisList.sort();
 					} else {
-						ChatClient.dialog.closeDialog();
+						chatClient.dialog.closeDialog();
 						alert(response.message);
 					}
 				});
@@ -321,8 +274,8 @@ var ChatClient = {
 					if (channelName == null || channelName.length < 1) {
 						return;
 					}
-					ChatClient.joinChannelFromName(channelName);
-					ChatClient.dialog.closeDialog();
+					chatClient.joinChannelFromName(channelName);
+					chatClient.dialog.closeDialog();
 				});
 			},
 			addToList : function (channelID, channelName, memberCount) {
@@ -335,8 +288,8 @@ var ChatClient = {
 						channelName: channelName,
 						memberCount: memberCount
 					}).click(function () {
-						ChatClient.joinChannel(parseInt($(this).data("channelID")));
-						ChatClient.dialog.closeDialog();
+						chatClient.joinChannel(parseInt($(this).data("channelID")));
+						chatClient.dialog.closeDialog();
 						//chatClient.serverChannelsList.createOptionList(this);
 					});
 				}
@@ -350,43 +303,42 @@ var ChatClient = {
 				$(sender).unbind('click').click(function () {
 					$("#channellist_dropdown").remove();
 					$(this).unbind('click').click(function () {
-						ChatClient.serverChannelsList.createOptionList(this);
+						chatClient.serverChannelsList.createOptionList(this);
 					});
 				});
 				$("<li />").text("Join").click(function () {
-					ChatClient.joinChannel(parseInt($(sender).data("channelID")));
-					ChatClient.dialog.closeDialog();
+					chatClient.joinChannel(parseInt($(sender).data("channelID")));
+					chatClient.dialog.closeDialog();
 				}).appendTo("#channellist_dropdown");
 			}
 		},
 		joinChannelFromName : function (channelName) {
-			ChatClient.sendJSONRequest("search/channel/?name="+channelName, {
-				"session": ChatClient.session
+			chatClient.sendJSONRequest("search/channel/?name="+channelName, {
+				"session": chatClient.session
 			}, function (response) {
 				if (response.status === 200) {
-					ChatClient.joinChannel(response.id);
+					chatClient.joinChannel(response.id);
 				} else {
 					alert(response.message);
 				}
 			});	
 		},
 		joinChannel : function (channelID) {
-			ChatClient.sendJSONRequest("channel/"+channelID+"/", {
-				"session": ChatClient.session,
-				"action": "join"
+			chatClient.sendJSONRequest("channel/"+channelID+"/join/", {
+				"session": chatClient.session
 			}, function (response) {
 				if (response.status === 200) {
-					ChatClient.channelID = channelID;
-					ChatClient.channelDetails = response.details;
-					ChatClient.userRank = response.rank;
+					chatClient.channelID = channelID;
+					chatClient.channelDetails = response.details;
+					chatClient.userRank = response.rank;
 					$("#channel_name").html(response.details.name);
-					ChatClient.runMessageChecking();
-					ChatClient.getMemberList();
-					ChatClient.getPermissions();
-					ChatClient.getRankDetails();
-					ChatClient.getGroups();
+					chatClient.runMessageChecking();
+					chatClient.getMemberList();
+					chatClient.getPermissions();
+					chatClient.getRankDetails();
+					chatClient.getGroups();
 					$("#joinchannel_button").text("Leave").unbind('click').click(function () {
-						ChatClient.leaveChannel(ChatClient.channelID);
+						chatClient.leaveChannel(chatClient.channelID);
 					});					
 				} else {
 					alert(response.message);
@@ -394,34 +346,34 @@ var ChatClient = {
 			});	
 		},
 		leaveChannel : function (channelID) {
-			ChatClient.sendJSONRequest("channel/"+channelID+"/leave/", {
-				"session": ChatClient.session
+			chatClient.sendJSONRequest("channel/"+channelID+"/leave/", {
+				"session": chatClient.session
 			}, function (response) {
 				if (response.status === 200) {
 					$("<div class='message_text red' />").text(response.message).appendTo("#messages");
-					ChatClient.clearChannel();
+					chatClient.clearChannel();
 				} else {
 					var clearChannel = confirm("An error occured when trying to leave the channel: "+response.message
 							+"\nDo you want to clear the channel details anyway? Doing so will allow you to join other channels, but it may mean your account still appears to be in the channel.");
 					//alert(response.message);
 					if (clearChannel) {
-						ChatClient.clearChannel();
+						chatClient.clearChannel();
 					}
 				}
 			});	
 		},
 		clearChannel : function () {
-			ChatClient.stopMessageChecking();
-			ChatClient.channelID = -1;
-			ChatClient.channelDetails = {};
-			ChatClient.userRank = -1;
-			ChatClient.userPermissions = {};
-			ChatClient.channelGroups = {};
+			chatClient.stopMessageChecking();
+			chatClient.channelID = -1;
+			chatClient.channelDetails = {};
+			chatClient.userRank = -1;
+			chatClient.userPermissions = {};
+			chatClient.channelGroups = {};
 			$("#channel_name").text("");
 			$("#userlist").empty().css({visibility: "hidden"});
 			$("#message_input").prop('disabled', true);
 			$("#joinchannel_button").text("Join").unbind('click').click(function () {
-				ChatClient.serverChannelsList.open();
+				chatClient.serverChannelsList.open();
 				/*var channelName = prompt("Enter a channel name to join", "Test Channel");
 				if (channelName == null || channelName.length < 1)
 					return;
@@ -433,18 +385,18 @@ var ChatClient = {
 			$("#bans_button").remove();
 		},
 		runMessageChecking : function () {
-			ChatClient.stopCheckingMessages = false;
-			if (!ChatClient.messageChecking)
-				ChatClient.checkMessages(true, ChatClient.channelID);
+			chatClient.stopCheckingMessages = false;
+			if (!chatClient.messageChecking)
+				chatClient.checkMessages(true, chatClient.channelID);
 		},
 		stopMessageChecking : function () {
-			ChatClient.stopCheckingMessages = true;
-			ChatClient.checkMessages(false, ChatClient.channelID);
-			clearTimeout(ChatClient.messageCheckingTimer);
+			chatClient.stopCheckingMessages = true;
+			chatClient.checkMessages(false, chatClient.channelID);
+			clearTimeout(chatClient.messageCheckingTimer);
 		},
 		checkMessages : function (loop, channelID) {			
-			ChatClient.sendJSONRequest("channel/"+channelID+"/messages/get/", {
-				"session": ChatClient.session
+			chatClient.sendJSONRequest("channel/"+channelID+"/messages/get/", {
+				"session": chatClient.session
 			}, function (response) {
 				if (response.status === 200) {
 					$(response.messages).each(function (i, v) {
@@ -463,55 +415,55 @@ var ChatClient = {
 							$("<div class='message_text' />").appendTo("#messages")
 							.data("userID", v.userID)
 							.append("<img src='images/ranks/rank"+v.senderGroup+".png' alt='' title='Rank: "+
-									ChatClient.channelRankDetails[v.senderGroup].rankName+"' />")
+							chatClient.channelRankDetails[v.senderGroup].rankName+"' />")
 							.append("<span>"+v.senderName+": </span>")
 							.append($("<span />").text(v.message));
 							break;
 						case 6://Channel user list addition
-							ChatClient.channelList.addToList(v.userID, v.username, v.group);
-							ChatClient.channelList.sort();
+							chatClient.channelList.addToList(v.userID, v.username, v.group);
+							chatClient.channelList.sort();
 							break;
 						case 7://Channel user list removal
-							ChatClient.channelList.removeFromList(v.userID);
+							chatClient.channelList.removeFromList(v.userID);
 							break;
 						case 8://Channel user list update
-							ChatClient.channelList.updateOnList(v.userID, v.username, v.group);
+							chatClient.channelList.updateOnList(v.userID, v.username, v.group);
 							break;
 						case 9://Permission change
-							ChatClient.permissionList.updateOnList(v.id, v.name, v.value);
+							chatClient.permissionList.updateOnList(v.id, v.name, v.value);
 							//alert(JSON.stringify(v));
-							delete ChatClient.userPermissions[v.name];
-							ChatClient.userPermissions[v.name] = {
+							delete chatClient.userPermissions[v.name];
+							chatClient.userPermissions[v.name] = {
 									permissionID : v.id,
 									name : v.name,
 									value : v.value
 							};
-							ChatClient.updateUserPermissions();
+							chatClient.updateUserPermissions();
 							break;
 						case 10://Left/removed from channel
-							if (ChatClient.channelID == channelID) {
-								ChatClient.clearChannel();
+							if (chatClient.channelID == channelID) {
+								chatClient.clearChannel();
 							}							
 							break;
 						case 11://Add user to rank list
-							ChatClient.rankList.addToList(v.userID, v.username, v.group);
-							ChatClient.rankList.sort();
+							chatClient.rankList.addToList(v.userID, v.username, v.group);
+							chatClient.rankList.sort();
 							break;
 						case 12://Remove user from rank list
-							ChatClient.rankList.removeFromList(v.userID);
+							chatClient.rankList.removeFromList(v.userID);
 							break;
 						case 13://Update rank list
-							ChatClient.rankList.updateOnList(v.userID, v.username, v.group);
+							chatClient.rankList.updateOnList(v.userID, v.username, v.group);
 							break;
 						case 14://Ban list addition
-							ChatClient.banList.addToList(v.userID, v.username);
-							ChatClient.banList.sort();
+							chatClient.banList.addToList(v.userID, v.username);
+							chatClient.banList.sort();
 							break;
 						case 15://Ban list removal
-							ChatClient.banList.removeFromList(v.userID);
+							chatClient.banList.removeFromList(v.userID);
 							break;
 						case 18://User's rank has been changed
-							if (ChatClient.userID == v.userID) {
+							if (chatClient.userID == v.userID) {
 								chatClient.userRank = v.rank;
 								chatClient.updateUserPermissions();
 							}							
@@ -757,8 +709,7 @@ var ChatClient = {
 		},
 		channelList : {
 			addToList : function (userID, username, group) {
-				ChatClient2.users.push({"name":username,"group":group,"id":userID});
-				/*if ($("#user_"+userID).length === 0) {
+				if ($("#user_"+userID).length === 0) {
 					$("<li id='user_"+userID+"' class='channel_user' />").appendTo("#userlist")
 					.append("<img src='"
 							+(group.icon ? group.icon : "images/ranks/default.png")
@@ -773,7 +724,7 @@ var ChatClient = {
 					}).click(function () {
 						chatClient.channelList.createOptionList(this);
 					});
-				}*/
+				}
 			},
 			removeFromList : function (userID) {
 				$("#user_"+userID).remove();
@@ -1190,13 +1141,13 @@ var ChatClient = {
 				}
 			},
 			removeFromList : function (permissionID) {
-				if (ChatClient.permissionList.isOpen) {
+				if (chatClient.permissionList.isOpen) {
 					$("#permissionlist_"+permissionID).remove();
 				}
 			},
 			updateOnList : function (id, name, value) {
 				//alert($("#permissionlist_"+id).length);
-				if (ChatClient.permissionList.isOpen && $("#permissionlist_"+id).length > 0) {
+				if (chatClient.permissionList.isOpen && $("#permissionlist_"+id).length > 0) {
 					$("#permissionlist_"+id+" b").data({
 						permissionID: id,
 						permissionName: name,
@@ -1204,7 +1155,7 @@ var ChatClient = {
 					});
 					$("#permissionlist_"+id+" b span").text(name.toLowerCase());
 					$("#permissionlist_"+id+" select").val(value)
-					.prop("disabled", ((ChatClient.userRank >= value) ? false : true));
+					.prop("disabled", ((chatClient.userRank >= value) ? false : true));
 				}
 			},
 			sort : function () {
@@ -1224,7 +1175,7 @@ var ChatClient = {
 					thisList.isOpen = false;
 				});
 				chatClient.sendJSONRequest("channel/"+chatClient.channelID+"/groups/", {
-					"session": ChatClient.session
+					"session": chatClient.session
 				}, function (response) {
 					if (response.status === 200) {
 						thisList.isOpen = true;
@@ -1240,7 +1191,7 @@ var ChatClient = {
 				});	
 			},
 			addToList : function (groupData) {
-				var thisList = ChatClient.groupList;
+				var thisList = chatClient.groupList;
 				if (thisList.isOpen && $("#grouplist_"+groupData.id).length === 0) {
 					$("<li id='grouplist_"+groupData.id+"' />").appendTo("#grouplist");
 					$("<b />").appendTo("#grouplist_"+groupData.id)
