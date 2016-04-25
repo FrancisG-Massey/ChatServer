@@ -418,6 +418,7 @@ public class ChannelRequestManager extends HttpServlet {
 		JSONObject json = new JSONObject(response.getParams());
 		try {
 			json.put("status", response.getType().getId());
+			json.put("name", response.getType().toString());
 			
 			httpResponse.setContentType("application/json");
 			PrintWriter out = httpResponse.getWriter();

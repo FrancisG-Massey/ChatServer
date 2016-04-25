@@ -18,17 +18,16 @@
  *******************************************************************************/
 package com.sundays.chat.io;
 
+import java.util.UUID;
+
 /**
  * Used to communicate channel details between the persistence layer and the application layer.
  * 
  * @author Francis
  */
-public class ChannelDetails {
-	
-	public static final int VERSION = 5;//The interface version
-	public static final int MIN_VERSION = 5;//The minimum supported version
-	
+public final class ChannelDetails {	
 	private int id;//Channel ID	
+	private UUID uuid;
 	private String name;
 	private String alias;
 	private String description;
@@ -55,6 +54,14 @@ public class ChannelDetails {
 	
 	public void setId(int id) {
 		this.id = id;
+	}
+
+	public UUID getUuid() {
+		return uuid;
+	}
+
+	public void setUuid(UUID uuid) {
+		this.uuid = uuid;
 	}
 
 	public String getName() {

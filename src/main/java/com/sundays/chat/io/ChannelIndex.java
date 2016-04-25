@@ -20,6 +20,8 @@ package com.sundays.chat.io;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * The persistence layer interface for resolving channel names and IDs.
@@ -35,11 +37,26 @@ public interface ChannelIndex extends AutoCloseable {
 	}
 
 	/**
-	 * Fetches the ID of the channel with the specified name
-	 * @param name The channel name
-	 * @return the ID of the channel, or -1 if the channel does not exist
+	 * Fetches the details for channel whos name matches the specified name.
+	 * NOTE: This search is case insensitive.
+	 * @param name The channel name to search for. 
+	 * @return An {@link Optional} wrapper around {@link ChannelDetails}, where {@link Optional#isPresent()} returns false if no match was found.
 	 */
-	public int lookupByName (String name);
+	public Optional<ChannelDetails> lookupByName (String name) throws IOException;
+	
+	/**
+	 * Fetches the details for channel whos uuid matches the specified uuid.
+	 * @param uuid The channel uuid to search for. 
+	 * @return An {@link Optional} wrapper around {@link ChannelDetails}, where {@link Optional#isPresent()} returns false if no match was found.
+	 */
+	public Optional<ChannelDetails> lookupByUuid (UUID uuid) throws IOException;
+	
+	/**
+	 * Fetches the details for with the specified internal ID.
+	 * @param id The internal channel id, which is used only within this application instance
+	 * @return An {@link Optional} wrapper around {@link ChannelDetails}, where {@link Optional#isPresent()} returns false if no match was found.
+	 */
+	public Optional<ChannelDetails> lookupById (int id) throws IOException;
 	
 	/**
 	 * Fetches a lookup map of channel names and IDs based on the provided search term and type 
@@ -49,14 +66,6 @@ public interface ChannelIndex extends AutoCloseable {
 	 * @return a map containing the names linked to ids of matching channels
 	 */
 	public Map<String, Integer> search (String term, SearchType type, int limit);
-	
-	/**
-	 * Checks whether a channel exists with the specified ID.
-	 * 
-	 * @param id The ID of the channel to check
-	 * @return true if the channel exists, false otherwise.
-	 */
-	public boolean channelExists (int id);
 	
 	public void commitChanges () throws IOException;
 }

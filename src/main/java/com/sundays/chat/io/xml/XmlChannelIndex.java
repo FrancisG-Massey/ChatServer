@@ -28,6 +28,8 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
@@ -39,6 +41,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelIndex;
 
 /**
@@ -57,7 +60,7 @@ public final class XmlChannelIndex implements ChannelIndex {
 	
 	private static final String VERSION = "1.0";
 
-	private Map<String, Integer> lookupByName = new HashMap<>();
+	private Map<String, ChannelDetails> lookupByName = new HashMap<>();
 	private Map<Integer, String> lookupById = new HashMap<>();
 
 	private final File indexFile;
@@ -89,7 +92,10 @@ public final class XmlChannelIndex implements ChannelIndex {
 				if (reader.getLocalName().equalsIgnoreCase("channel")) {
 					String name = reader.getAttributeValue(null, "name");
 					int id = Integer.parseInt(reader.getAttributeValue(null, "id"));
-					lookupByName.put(name, id);
+					ChannelDetails details = new ChannelDetails();
+					details.setId(id);
+					details.setName(name);
+					lookupByName.put(name, details);
 					lookupById.put(id, name);
 				}
 			}
@@ -97,35 +103,46 @@ public final class XmlChannelIndex implements ChannelIndex {
 	}
 
 	@Override
-	public int lookupByName(String name) {
-		return lookupByName.get(name);
+	public Optional<ChannelDetails> lookupByName(String name) {
+		if (lookupByName.containsKey(name)) {
+			return Optional.of(lookupByName.get(name));
+		} else {
+			return Optional.empty();
+		}		
+	}
+
+	@Override
+	public Optional<ChannelDetails> lookupByUuid(UUID uuid) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Optional<ChannelDetails> lookupById(int id) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
 	public Map<String, Integer> search(String term, SearchType type, int limit) {
 		Map<String, Integer> results = new HashMap<>();
 		int count = 0;
-		for (Map.Entry<String, Integer> channel : lookupByName.entrySet()) {
+		for (Map.Entry<String, ChannelDetails> channel : lookupByName.entrySet()) {
 			if (count > limit) {
 				break;
 			}
 			switch (type) {
 			case ALL:
-				results.put(channel.getKey(), channel.getValue());
+				results.put(channel.getKey(), channel.getValue().getId());
 				break;
 			case CONTAINS:
 				if (channel.getKey().contains(term)) {
-					results.put(channel.getKey(), channel.getValue());
+					results.put(channel.getKey(), channel.getValue().getId());
 				}
 				break;		
 			}
 		}
 		return results;
-	}
-
-	@Override
-	public boolean channelExists(int id) {
-		return lookupById.containsKey(id);
 	}
 	
 	@Override
@@ -150,7 +167,7 @@ public final class XmlChannelIndex implements ChannelIndex {
 		writer.writeStartDocument("UTF-8", "1.1");
 		writer.writeStartElement("channelSet");
 		writer.writeAttribute("version", VERSION);
-		for (Map.Entry<String, Integer> channel : lookupByName.entrySet()) {
+		for (Map.Entry<String, ChannelDetails> channel : lookupByName.entrySet()) {
 			writer.writeEmptyElement("channel");
 			writer.writeAttribute("id", channel.getKey());
 		}

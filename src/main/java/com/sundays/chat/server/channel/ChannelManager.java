@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -172,7 +173,12 @@ public class ChannelManager {
 	}
     
     public boolean channelExists (int channelID) {
-    	return channelIndex.channelExists(channelID);
+    	try {
+			return channelIndex.lookupById(channelID).isPresent();
+		} catch (IOException ex) {
+			logger.error("Error looking up channel by ID "+channelID, ex);	
+			return false;
+		}
     }
     
     public boolean channelLoaded (int channelID) {
@@ -180,7 +186,18 @@ public class ChannelManager {
     }
     
     public int getChannelID (String name) {
-    	return channelIndex.lookupByName(name);
+    	Optional<ChannelDetails> details;
+		try {
+			details = channelIndex.lookupByName(name);
+		} catch (IOException ex) {
+			logger.error("Failed to find ID for channel "+name+".", ex);
+			return -1;
+		}
+    	if (details.isPresent()) {
+    		return details.get().getId();
+    	} else {
+    		return -1;
+    	}
     }
 
     protected void loadChannel (int channelID) throws IOException {

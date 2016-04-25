@@ -232,7 +232,7 @@ public class JDBCChannelSave implements ChannelDataIO {
 		Set<ChannelGroupData> groups = new HashSet<ChannelGroupData>();
 		try {
 			if (groupFetchQuery == null) {
-				groupFetchQuery = dbCon.getConnection().prepareStatement("SELECT `id`, `name`, `permissions`, `type`, `icon`," + " `overrides` FROM `"
+				groupFetchQuery = dbCon.getConnection().prepareStatement("SELECT `id`, `name`, `permissions`, `type`, `icon` FROM `"
 				+ groupTableName + "` WHERE `channelID` = ?");
 			}
 			groupFetchQuery.setInt(1, channelID);

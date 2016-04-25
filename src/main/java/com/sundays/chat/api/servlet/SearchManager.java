@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -31,10 +32,12 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.io.ChannelIndex.SearchType;
-import com.sundays.chat.server.channel.ChannelManager;
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.utils.HttpRequestTools;
 
@@ -44,7 +47,11 @@ import com.sundays.chat.utils.HttpRequestTools;
 public class SearchManager extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
+	private static final Logger logger = LoggerFactory.getLogger(SearchManager.class);
+	
 	private ServletLauncher server;
+	
+	private ChannelIndex channelIndex;
        
     /**
      * @see HttpServlet#HttpServlet()
@@ -60,6 +67,7 @@ public class SearchManager extends HttpServlet {
     	if (!server.initalised) {
     		server.init(config);
     	}
+    	channelIndex = server.getIO().getChannelIndex();
     }
 
 	/**
@@ -104,17 +112,22 @@ public class SearchManager extends HttpServlet {
 	private JSONObject processRequest (HttpServletRequest request, String[] requestInfo) throws JSONException {
 		JSONObject responseJSON = new JSONObject();
 		if (requestInfo[0].equalsIgnoreCase("channel")) {
-			Map<String, String[]> parameters = request.getParameterMap();
-			ChannelManager cm = server.getChannelManager();
-			
+			Map<String, String[]> parameters = request.getParameterMap();			
 			if (parameters.containsKey("name")) {
 				String channelName = request.getParameter("name");
-				int cID = cm.getChannelID(channelName);
-				if (cID == 0) {
+				Optional<ChannelDetails> searchResult;
+				try {
+					searchResult = channelIndex.lookupByName(channelName);
+				} catch (IOException ex) {
+					logger.error("Error looking up channel by name "+channelName, ex);					
+					return null;//TODO: Return 500 in this case
+				}
+				if (!searchResult.isPresent()) {
 					responseJSON.put("status", HttpServletResponse.SC_NOT_FOUND);
 					responseJSON.put("message", "Channel not found.");
 				} else {
-					MessagePayload channelDetails = cm.getChannelDetails(cID, false);
+					int channelId = searchResult.get().getId();
+					MessagePayload channelDetails = server.getChannelManager().getChannelDetails(channelId, false);
 					if (channelDetails == null) {
 						responseJSON.put("isLoaded", false);
 					} else {
@@ -124,14 +137,14 @@ public class SearchManager extends HttpServlet {
 					responseJSON.put("status", HttpServletResponse.SC_OK);
 					responseJSON.put("type", "exact");
 					responseJSON.put("keyName", channelName);
-					responseJSON.put("id", cID);
+					responseJSON.put("id", channelId);
 				}
 			} else if (parameters.containsKey("contains")) {
 				String searchTerm = parameters.get("contains")[0];
 				Map<String, Integer> channels = getChannelIndex().search(searchTerm, SearchType.CONTAINS, 100);
 				List<JSONObject> matchingChannels = new ArrayList<JSONObject>();
 				for (Map.Entry<String, Integer> c : channels.entrySet()) {
-					MessagePayload channelDetails = cm.getChannelDetails(c.getValue(), false);
+					MessagePayload channelDetails = server.getChannelManager().getChannelDetails(c.getValue(), false);
 					JSONObject returnChannel;
 					if (channelDetails == null) {
 						returnChannel = new JSONObject(channelDetails);
@@ -151,7 +164,7 @@ public class SearchManager extends HttpServlet {
 				Map<String, Integer> channels = getChannelIndex().search("", SearchType.ALL, 100);
 				List<JSONObject> matchingChannels = new ArrayList<JSONObject>();
 				for (Map.Entry<String, Integer> c : channels.entrySet()) {
-					MessagePayload channelDetails = cm.getChannelDetails(c.getValue(), false);
+					MessagePayload channelDetails = server.getChannelManager().getChannelDetails(c.getValue(), false);
 					JSONObject returnChannel;
 					if (channelDetails == null) {
 						returnChannel = new JSONObject(channelDetails);
