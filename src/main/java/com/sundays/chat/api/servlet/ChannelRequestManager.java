@@ -193,9 +193,10 @@ public class ChannelRequestManager extends HttpServlet {
 		sendResponseJSON(httpResponse, responseMessage);
 	}
 	
-	private boolean processMessageRequest (String[] requestParams, JSONObject requestMessage, int channelID, User user, HttpServletResponse response) throws IOException {
+	private void processMessageRequest (String[] requestParams, JSONObject requestMessage, int channelID, User user, HttpServletResponse response) throws IOException {
 		if (requestParams.length < 3) {
-			return false;
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+			return;
 		}
 		JSONObject responseMessage = new JSONObject();
 		try {
@@ -222,13 +223,13 @@ public class ChannelRequestManager extends HttpServlet {
 					responseMessage.put("status", HttpServletResponse.SC_NO_CONTENT);
 				}
 			} else {
-				return false;
+				return;
 			}
 			sendResponseJSON(response, responseMessage);
-			return true;
+			return;
 		} catch (JSONException ex) {
 			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			return true;
+			return;
 		}
 	}
 	

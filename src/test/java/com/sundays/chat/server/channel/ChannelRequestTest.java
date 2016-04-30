@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.log4j.BasicConfigurator;
@@ -67,10 +68,10 @@ public class ChannelRequestTest {
 	}
 	
 	private void mockChannelDetails (ChannelDataIO channelIO, int channelId) throws IOException {
-		when(index.channelExists(101)).thenReturn(true);
 		ChannelDetails details = new ChannelDetails();
 		details.setId(channelId);
 		details.setName("Test Channel");
+		when(index.lookupById(101)).thenReturn(Optional.of(details));
 		when(channelIO.getChannelDetails(channelId)).thenReturn(details);
 	}
 	
@@ -113,8 +114,8 @@ public class ChannelRequestTest {
 	}
 
 	@Test
-	public void testJoinNoChannel() {
-		when(index.channelExists(101)).thenReturn(false);
+	public void testJoinNoChannel() throws IOException {
+		when(index.lookupById(101)).thenReturn(Optional.empty());
 		ChannelResponse response = channelManager.joinChannel(user, 101);
 		assumeTrue(channelManager.getChannel(101) == null);
 		

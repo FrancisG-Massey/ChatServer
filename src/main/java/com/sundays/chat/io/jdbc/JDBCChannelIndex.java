@@ -22,8 +22,8 @@ import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -134,8 +134,8 @@ public class JDBCChannelIndex implements ChannelIndex {
 	}
 
 	@Override
-	public Map<String, Integer> search(String term, SearchType type, int limit) {
-		Map<String, Integer> results = new HashMap<String, Integer>();
+	public Collection<ChannelDetails> search(String term, SearchType type, int limit) {
+		Collection<ChannelDetails> results = new ArrayList<ChannelDetails>();
 		return results;
 	}
 

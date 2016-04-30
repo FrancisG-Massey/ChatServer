@@ -19,6 +19,7 @@
 package com.sundays.chat.io;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -63,9 +64,9 @@ public interface ChannelIndex extends AutoCloseable {
 	 * @param term The search term. This can be an empty string or null if SearchTerm.ALL is used
 	 * @param type The type of search to perform
 	 * @param limit The maximum number of results to return
-	 * @return a map containing the names linked to ids of matching channels
+	 * @return a collection containing the details of matching channels
 	 */
-	public Map<String, Integer> search (String term, SearchType type, int limit);
+	public Collection<ChannelDetails> search (String term, SearchType type, int limit);
 	
 	public void commitChanges () throws IOException;
 }

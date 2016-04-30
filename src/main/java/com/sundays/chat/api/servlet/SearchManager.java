@@ -20,6 +20,7 @@ package com.sundays.chat.api.servlet;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,7 +31,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.io.ChannelIndex.SearchType;
-import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.utils.HttpRequestTools;
 
 /**
@@ -73,33 +72,26 @@ public class SearchManager extends HttpServlet {
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void doGet(HttpServletRequest request, HttpServletResponse httpResponse) throws ServletException, IOException {
 		if (request.getPathInfo() == null) {
 			//No type specified
-			response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+			httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
 			return;
 		}
 		String[] requestInfo = request.getPathInfo().substring(1).split("/");
 		if (requestInfo.length == 0) {
 			//No type specified
-			response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+			httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
 			return;
 		}
-		JSONObject responseJSON = null;
-		
-		try {
-			responseJSON = processRequest(request, requestInfo);
-			if (responseJSON.length() == 0) {
-				responseJSON.put("status", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			} else if (!responseJSON.has("status")) {
-				responseJSON.put("status", HttpServletResponse.SC_OK);
-			}				
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		switch (requestInfo[0]) {
+		case "channel":
+			processChannelSearch(request, requestInfo, httpResponse);
+			return;
+		default:
+			httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
+			return;
 		}
-		HttpRequestTools.sendResponseJSON(response, responseJSON);
 	}
 
 	/**
@@ -109,87 +101,57 @@ public class SearchManager extends HttpServlet {
 		this.doGet(request, response);//Relay request as GET request
 	}
 	
-	private JSONObject processRequest (HttpServletRequest request, String[] requestInfo) throws JSONException {
+	private void processChannelSearch (HttpServletRequest httpRequest, String[] requestInfo, HttpServletResponse httpResponse) throws IOException {
+		Map<String, String[]> parameters = httpRequest.getParameterMap();	
 		JSONObject responseJSON = new JSONObject();
-		if (requestInfo[0].equalsIgnoreCase("channel")) {
-			Map<String, String[]> parameters = request.getParameterMap();			
-			if (parameters.containsKey("name")) {
-				String channelName = request.getParameter("name");
-				Optional<ChannelDetails> searchResult;
-				try {
-					searchResult = channelIndex.lookupByName(channelName);
-				} catch (IOException ex) {
-					logger.error("Error looking up channel by name "+channelName, ex);					
-					return null;//TODO: Return 500 in this case
-				}
-				if (!searchResult.isPresent()) {
-					responseJSON.put("status", HttpServletResponse.SC_NOT_FOUND);
-					responseJSON.put("message", "Channel not found.");
-				} else {
-					int channelId = searchResult.get().getId();
-					MessagePayload channelDetails = server.getChannelManager().getChannelDetails(channelId, false);
-					if (channelDetails == null) {
-						responseJSON.put("isLoaded", false);
-					} else {
-						responseJSON = new JSONObject(channelDetails);
-						responseJSON.put("isLoaded", true);						
-					}
-					responseJSON.put("status", HttpServletResponse.SC_OK);
-					responseJSON.put("type", "exact");
-					responseJSON.put("keyName", channelName);
-					responseJSON.put("id", channelId);
-				}
-			} else if (parameters.containsKey("contains")) {
-				String searchTerm = parameters.get("contains")[0];
-				Map<String, Integer> channels = getChannelIndex().search(searchTerm, SearchType.CONTAINS, 100);
-				List<JSONObject> matchingChannels = new ArrayList<JSONObject>();
-				for (Map.Entry<String, Integer> c : channels.entrySet()) {
-					MessagePayload channelDetails = server.getChannelManager().getChannelDetails(c.getValue(), false);
-					JSONObject returnChannel;
-					if (channelDetails == null) {
-						returnChannel = new JSONObject(channelDetails);
-						returnChannel.put("isLoaded", false);
-					} else {
-						returnChannel = new JSONObject(channelDetails);
-						returnChannel.put("isLoaded", true);						
-					}
-					returnChannel.put("keyName", c.getKey());
-					returnChannel.put("id", c.getValue());
-					matchingChannels.add(returnChannel);
-				}
-				responseJSON.put("status", HttpServletResponse.SC_OK);
-				responseJSON.put("type", "contains");
-				responseJSON.put("channels", matchingChannels);
-			} else if (parameters.containsKey("all")) {
-				Map<String, Integer> channels = getChannelIndex().search("", SearchType.ALL, 100);
-				List<JSONObject> matchingChannels = new ArrayList<JSONObject>();
-				for (Map.Entry<String, Integer> c : channels.entrySet()) {
-					MessagePayload channelDetails = server.getChannelManager().getChannelDetails(c.getValue(), false);
-					JSONObject returnChannel;
-					if (channelDetails == null) {
-						returnChannel = new JSONObject(channelDetails);
-						returnChannel.put("isLoaded", false);
-					} else {
-						returnChannel = new JSONObject(channelDetails);
-						returnChannel.put("isLoaded", true);						
-					}
-					returnChannel.put("keyName", c.getKey());
-					returnChannel.put("id", c.getValue());
-					matchingChannels.add(returnChannel);
-				}
-				responseJSON.put("status", HttpServletResponse.SC_OK);
-				responseJSON.put("type", "all");
-				responseJSON.put("channels", matchingChannels);
-			} else {
+		if (parameters.containsKey("name")) {
+			String channelName = httpRequest.getParameter("name");
+			Optional<ChannelDetails> searchResult;
+			try {
+				searchResult = channelIndex.lookupByName(channelName);
+			} catch (IOException ex) {
+				logger.error("Error looking up channel by name "+channelName, ex);		
+				httpResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				return;
+			}
+			if (!searchResult.isPresent()) {
 				responseJSON.put("status", HttpServletResponse.SC_NOT_FOUND);
 				responseJSON.put("message", "Channel not found.");
+			} else {
+				ChannelDetails channel = searchResult.get();
+				JSONObject channelJSON = new  JSONObject(channel);
+				channelJSON.put("isLoaded", server.getChannelManager().channelLoaded(channel.getId()));
+				
+				responseJSON.put("status", HttpServletResponse.SC_OK);
+				responseJSON.put("type", "exact");
+				responseJSON.put("channel", channelJSON);
 			}
+		} else if (parameters.containsKey("contains")) {
+			String searchTerm = parameters.get("contains")[0];
+			Collection<ChannelDetails> channels = channelIndex.search(searchTerm, SearchType.CONTAINS, 100);
+			List<JSONObject> matchingChannels = new ArrayList<JSONObject>();
+			for (ChannelDetails channel : channels) {
+				JSONObject returnChannel = new JSONObject(channel);
+				returnChannel.put("loaded", server.getChannelManager().channelLoaded(channel.getId()));
+				matchingChannels.add(returnChannel);
+			}
+			responseJSON.put("status", HttpServletResponse.SC_OK);
+			responseJSON.put("type", "contains");
+			responseJSON.put("channels", matchingChannels);
+		} else if (parameters.containsKey("all")) {
+			Collection<ChannelDetails> channels = channelIndex.search("", SearchType.ALL, 100);
+			List<JSONObject> matchingChannels = new ArrayList<JSONObject>();
+			for (ChannelDetails channel : channels) {
+				JSONObject returnChannel = new JSONObject(channel);
+				returnChannel.put("loaded", server.getChannelManager().channelLoaded(channel.getId()));
+				matchingChannels.add(returnChannel);
+			}
+			responseJSON.put("status", HttpServletResponse.SC_OK);
+			responseJSON.put("type", "all");
+			responseJSON.put("channels", matchingChannels);
+		} else {
+			httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "No valid search term included in the request.");
 		}
-		return responseJSON;
+		HttpRequestTools.sendResponseJSON(httpResponse, responseJSON);
 	}
-	
-	private ChannelIndex getChannelIndex () {
-		return server.getIO().getChannelIndex();
-	}
-
 }

@@ -26,7 +26,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -124,8 +126,8 @@ public final class XmlChannelIndex implements ChannelIndex {
 	}
 
 	@Override
-	public Map<String, Integer> search(String term, SearchType type, int limit) {
-		Map<String, Integer> results = new HashMap<>();
+	public Collection<ChannelDetails> search(String term, SearchType type, int limit) {
+		Collection<ChannelDetails> results = new HashSet<>();
 		int count = 0;
 		for (Map.Entry<String, ChannelDetails> channel : lookupByName.entrySet()) {
 			if (count > limit) {
@@ -133,11 +135,11 @@ public final class XmlChannelIndex implements ChannelIndex {
 			}
 			switch (type) {
 			case ALL:
-				results.put(channel.getKey(), channel.getValue().getId());
+				results.add(channel.getValue());
 				break;
 			case CONTAINS:
 				if (channel.getKey().contains(term)) {
-					results.put(channel.getKey(), channel.getValue().getId());
+					results.add(channel.getValue());
 				}
 				break;		
 			}
