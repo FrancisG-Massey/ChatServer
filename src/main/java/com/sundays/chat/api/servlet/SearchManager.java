@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2015 Francis G.
+ * Copyright (c) 2013, 2016 Francis G.
  *
  * This file is part of ChatServer.
  *
@@ -120,7 +120,7 @@ public class SearchManager extends HttpServlet {
 			} else {
 				ChannelDetails channel = searchResult.get();
 				JSONObject channelJSON = new  JSONObject(channel);
-				channelJSON.put("isLoaded", server.getChannelManager().channelLoaded(channel.getId()));
+				channelJSON.put("isLoaded", server.getChannelManager().isLoaded(channel.getId()));
 				
 				responseJSON.put("status", HttpServletResponse.SC_OK);
 				responseJSON.put("type", "exact");
@@ -132,7 +132,7 @@ public class SearchManager extends HttpServlet {
 			List<JSONObject> matchingChannels = new ArrayList<JSONObject>();
 			for (ChannelDetails channel : channels) {
 				JSONObject returnChannel = new JSONObject(channel);
-				returnChannel.put("loaded", server.getChannelManager().channelLoaded(channel.getId()));
+				returnChannel.put("loaded", server.getChannelManager().isLoaded(channel.getId()));
 				matchingChannels.add(returnChannel);
 			}
 			responseJSON.put("status", HttpServletResponse.SC_OK);
@@ -143,7 +143,7 @@ public class SearchManager extends HttpServlet {
 			List<JSONObject> matchingChannels = new ArrayList<JSONObject>();
 			for (ChannelDetails channel : channels) {
 				JSONObject returnChannel = new JSONObject(channel);
-				returnChannel.put("loaded", server.getChannelManager().channelLoaded(channel.getId()));
+				returnChannel.put("loaded", server.getChannelManager().isLoaded(channel.getId()));
 				matchingChannels.add(returnChannel);
 			}
 			responseJSON.put("status", HttpServletResponse.SC_OK);

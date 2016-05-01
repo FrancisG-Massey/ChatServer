@@ -135,16 +135,14 @@ public class ChannelDataUpdater {
 				if (channelUpdateQuery == null) {
 					channelUpdateQuery = dbCon.getConnection().prepareStatement("UPDATE `"+detailTableName+"` SET" +
 							" `name` = ?, `abbrieviation` = ?," +
-							" `trackMessages` = ?, " +
 							" `owner` = ? WHERE `id` = ?");
 				}
 				for (Entry<Integer, ChannelDetails> update : detailChangesCopy.entrySet()) {
 					ChannelDetails details = update.getValue();
 					channelUpdateQuery.setString(1, details.getName());
 					channelUpdateQuery.setString(2, details.getAlias());
-					channelUpdateQuery.setBoolean(3, details.isTrackMessages());
-					channelUpdateQuery.setInt(4, details.getOwner());
-					channelUpdateQuery.setInt(5, details.getId());
+					channelUpdateQuery.setInt(3, details.getOwner());
+					channelUpdateQuery.setInt(4, details.getId());
 					try {
 						channelUpdateQuery.execute();
 		            } catch (SQLException ex) {

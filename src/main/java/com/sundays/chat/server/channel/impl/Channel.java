@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2015 Francis G.
+ * Copyright (c) 2013, 2016 Francis G.
  *
  * This file is part of ChatServer.
  *
@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.server.channel;
+package com.sundays.chat.server.channel.impl;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -38,6 +38,7 @@ import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.io.ChannelGroupType;
+import com.sundays.chat.server.channel.ChannelUser;
 import com.sundays.chat.server.message.MessagePayload;
 
 /**
@@ -56,7 +57,6 @@ public final class Channel {
     private String alias = "undefined";
     private final Map<Integer, Integer> members;
     private final Set<Integer> permBans;
-    private boolean trackMessages = false;
     private final Map<Integer, ChannelGroup> groups;
     private final Map<String, Serializable> attributes;
     
@@ -106,7 +106,6 @@ public final class Channel {
         this.ownerID = details.getOwner();
         this.attributes = loadAttributes(io.getChannelAttributes(id));
         this.alias = details.getAlias();
-        this.trackMessages = details.isTrackMessages();
         this.groups = loadGroups(io.getChannelGroups(id));
         this.permBans = loadBanList();//Bans MUST be loaded before ranks. This ensures that people on the ban list take priority over people on the rank list
         this.members = loadMembers();
@@ -391,7 +390,7 @@ public final class Channel {
 
     //Saving stages
     protected ChannelDetails getChannelDetails () {    	
-    	return new ChannelDetails(id, name, alias, trackMessages, ownerID);
+    	return new ChannelDetails(id, null, name, alias, ownerID);
     }
     
     //Alter temporary data
@@ -590,7 +589,7 @@ public final class Channel {
     
     //Retrieve channel data
     protected Set<ChannelUser> getUsers() {
-        return Collections.unmodifiableSet(this.users);
+        return this.users;
     }
 
     /**
@@ -603,7 +602,7 @@ public final class Channel {
     }
     
     protected Set<Integer> getBans() {
-    	return Collections.unmodifiableSet(this.permBans);
+    	return this.permBans;
     }
     
     /**

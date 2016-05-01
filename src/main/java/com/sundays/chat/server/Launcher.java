@@ -19,7 +19,7 @@
 package com.sundays.chat.server;
 
 import com.sundays.chat.io.IOManager;
-import com.sundays.chat.server.channel.ChannelManager;
+import com.sundays.chat.server.channel.impl.ChannelManager;
 import com.sundays.chat.server.user.UserManager;
 
 public abstract class Launcher {

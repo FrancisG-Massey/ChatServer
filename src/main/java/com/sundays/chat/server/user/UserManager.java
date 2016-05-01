@@ -234,7 +234,7 @@ public final class UserManager implements UserLookup {
         if (user.getChannelId() != -1) {
         	//If the user is in a channel, make them leave it
             currentChannel = user.getChannelId();
-            server.getChannelManager().leaveChannel(user, currentChannel);
+            server.getChannelManager().leave(user, currentChannel);
         }
         if (user.getDefaultChannel() != -1 && user.getDefaultChannel() != currentChannel) {
             /*

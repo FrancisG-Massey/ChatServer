@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2015 Francis G.
+ * Copyright (c) 2013, 2016 Francis G.
  *
  * This file is part of ChatServer.
  *
@@ -21,6 +21,8 @@ package com.sundays.chat.api.servlet;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -34,10 +36,12 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sundays.chat.server.channel.ChannelGroup;
-import com.sundays.chat.server.channel.ChannelManager;
+import com.sundays.chat.io.ChannelDetails;
+import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.server.channel.ChannelResponse;
 import com.sundays.chat.server.channel.ChannelResponseType;
+import com.sundays.chat.server.channel.impl.ChannelGroup;
+import com.sundays.chat.server.channel.impl.ChannelManager;
 import com.sundays.chat.server.user.User;
 import com.sundays.chat.server.user.UserManager;
 import com.sundays.chat.server.user.UserMessageWrapper;
@@ -53,6 +57,8 @@ public class ChannelRequestManager extends HttpServlet {
 	private static final Logger logger = LoggerFactory.getLogger(ChannelRequestManager.class);
 	
 	private ChannelManager channelManager;
+	
+	private ChannelIndex channelIndex;
 	
 	private UserManager userManager;
        
@@ -72,6 +78,7 @@ public class ChannelRequestManager extends HttpServlet {
     	}
     	channelManager = launcher.getChannelManager();
     	userManager = launcher.getUserManager();
+    	channelIndex = launcher.getIO().getChannelIndex();
     }
     
 	/**
@@ -79,28 +86,29 @@ public class ChannelRequestManager extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		if (request.getPathInfo() == null) {//No channel ID specified
-			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No channel ID specified");
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No channel UUID specified");
 			return;
 		}
 		String[] requestInfo = request.getPathInfo().substring(1).split("/");
 		if (requestInfo.length == 0) {//No channel ID specified
-			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No channel ID specified");
+			response.sendError(HttpServletResponse.SC_NOT_FOUND, "No channel UUID specified");
 			return;
 		}
-		int channelId = 0;
+		UUID channelUuid;
 		try {
-			channelId = Integer.parseInt(requestInfo[0]);
-		} catch (NumberFormatException e) {//Channel ID is not a number
-			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid channel ID specified");
+			channelUuid = UUID.fromString(requestInfo[0]);
+		} catch (IllegalArgumentException ex) {
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid channel UUID specified");
 			return;
 		}
-		if (!channelManager.channelExists(channelId)) {
-			response.sendError(HttpServletResponse.SC_NOT_FOUND, "Channel not found: "+channelId);
+		Optional<ChannelDetails> channel = channelIndex.lookupByUuid(channelUuid);
+		if (!channel.isPresent()) {
+			response.sendError(HttpServletResponse.SC_NOT_FOUND, "Channel not found: "+channelUuid);
 			return;
 		}
 		
 		try {
-			processGetRequest(requestInfo, channelId, response);
+			processGetRequest(requestInfo, channel.get(), response);
 		} catch (JSONException ex) {
 			logger.error("Failed to process request.", ex);
 			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -111,33 +119,35 @@ public class ChannelRequestManager extends HttpServlet {
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse httpResponse) throws ServletException, IOException {
-		if (request.getPathInfo() == null) {//No channel ID specified
+	protected void doPost(HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws ServletException, IOException {
+		if (httpRequest.getPathInfo() == null) {//No channel ID specified
 			httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST);
 			return;
 		}
-		String[] requestParams = request.getPathInfo().substring(1).split("/");
-		if (requestParams.length == 0) {//No channel ID specified
+		String[] requestInfo = httpRequest.getPathInfo().substring(1).split("/");
+		if (requestInfo.length == 0) {//No channel ID specified
 			httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST);
 			return;
 		}
-		int channelId = -1;
+		UUID channelUuid;
 		try {
-			channelId = Integer.parseInt(requestParams[0]);
-		} catch (NumberFormatException e) {//Channel ID is not a number
-			httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST);
+			channelUuid = UUID.fromString(requestInfo[0]);
+		} catch (IllegalArgumentException ex) {
+			httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid channel UUID specified");
 			return;
 		}
-		if (!channelManager.channelExists(channelId)) {
-			httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND, "Channel not found: "+channelId);
+		Optional<ChannelDetails> channel = channelIndex.lookupByUuid(channelUuid);
+		if (!channel.isPresent()) {
+			httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND, "Channel not found: "+channelUuid);
 			return;
 		}
-		if (!request.getContentType().split(";")[0].equals("application/json")) {
+		
+		if (!httpRequest.getContentType().split(";")[0].equals("application/json")) {
 			httpResponse.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE);
 		} else {
 			JSONObject jsonRequest = null;
 			try {
-				jsonRequest = HttpRequestTools.getRequestJSON(request);
+				jsonRequest = HttpRequestTools.getRequestJSON(httpRequest);
 			} catch (JSONException e) {
 				httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST);
 				return;
@@ -148,42 +158,45 @@ public class ChannelRequestManager extends HttpServlet {
 				httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "You must be logged in to use this method.");
 				return;
 			}
-			if (requestParams.length == 1) {
-				processChannelRequest(channelId, user, jsonRequest, httpResponse);
+			if (requestInfo.length == 1) {
+				processChannelRequest(channel.get().getId(), user, jsonRequest, httpResponse);
 			} else {
-				switch (requestParams[1]) {
+				switch (requestInfo[1]) {
 				case "members":
-					processMemberRequest(jsonRequest, channelId, user, httpResponse);
+					processMemberRequest(jsonRequest, channel.get().getId(), user, httpResponse);
 					return;
 				case "bans":
-					processBanRequest(jsonRequest, channelId, user, httpResponse);
+					processBanRequest(jsonRequest, channel.get().getId(), user, httpResponse);
 					return;
 				case "messages":
-					processMessageRequest(requestParams, jsonRequest, channelId, user, httpResponse);
+					processMessageRequest(requestInfo, jsonRequest, channel.get().getId(), user, httpResponse);
 					return;
 				}
 			}
 		}
 	}
 	
-	private void processGetRequest (String[] requestParams, int channelID, HttpServletResponse httpResponse) throws JSONException, IOException {
+	private void processGetRequest (String[] requestParams, ChannelDetails channel, HttpServletResponse httpResponse) throws JSONException, IOException {
 		JSONObject responseMessage;
 		if (requestParams.length == 1) {
 			//Request for channel details
-			responseMessage = new JSONObject(channelManager.getChannelDetails(channelID, true));			
+			responseMessage = new JSONObject(channelManager.getDetails(channel.getId()));			
 		} else {
 			switch (requestParams[1]) {
 			case "users"://Request for channel list
-				responseMessage = new JSONObject(channelManager.getUserList(channelID));
+				if (!channelManager.isLoaded(channel.getId())) {
+					httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND, "Channel "+channel.getName()+" is not currently loaded.");
+				}
+				responseMessage = new JSONObject(channelManager.getUsers(channel.getId()));
 				break;
 			case "members"://Request for channel member list
-				responseMessage = new JSONObject(channelManager.getMemberList(channelID));
+				responseMessage = new JSONObject(channelManager.getMemberList(channel.getId()));
 				break;
 			case "bans"://Request for channel permissions
-				responseMessage = new JSONObject(channelManager.getBanList(channelID));
+				responseMessage = new JSONObject(channelManager.getBans(channel.getId()));
 				break;
 			case "groups"://Request for channel groups
-				responseMessage = new JSONObject(channelManager.getChannelGroups(channelID));
+				responseMessage = new JSONObject(channelManager.getChannelGroups(channel.getId()));
 				break;
 			default:
 				httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -236,20 +249,20 @@ public class ChannelRequestManager extends HttpServlet {
 	private void processChannelRequest(int channelId, User user, JSONObject jsonRequest, HttpServletResponse httpResponse) throws IOException {
 		String action = jsonRequest.optString("action");
 		if (action == null) {
-			JSONObject response = new JSONObject(channelManager.getChannelDetails(channelId, true));
+			JSONObject response = new JSONObject(channelManager.getDetails(channelId));
 			sendResponseJSON(httpResponse, response);
 			return;
 		}
 		ChannelResponse response;
 		switch (action) {
 		case "join"://Request to join channel
-			response = channelManager.joinChannel(user, channelId);					
+			response = channelManager.join(user, channelId);					
 			break;
 		case "leave"://Request to leave channel
-			response = channelManager.leaveChannel(user, user.getChannelId());
+			response = channelManager.leave(user, user.getChannelId());
 			break;
 		case "reset"://Request to reset the channel
-			response = channelManager.resetChannel(user, channelId);
+			response = channelManager.reset(user, channelId);
 			break;
 		case "kick"://Request to kick a user from the channel (also applies a 60 second ban)
 			int kickTargetId = jsonRequest.optInt("userId", -1);
@@ -373,7 +386,7 @@ public class ChannelRequestManager extends HttpServlet {
 	private void processBanRequest (JSONObject jsonRequest, int channelID, User user, HttpServletResponse httpResponse) throws IOException {
 		String action = jsonRequest.optString("action");
 		if (action == null) {
-			JSONObject response = new JSONObject(channelManager.getBanList(channelID));
+			JSONObject response = new JSONObject(channelManager.getBans(channelID));
 			sendResponseJSON(httpResponse, response);
 			return;
 		}

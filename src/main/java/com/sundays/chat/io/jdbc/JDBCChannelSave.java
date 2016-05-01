@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2015 Francis G.
+ * Copyright (c) 2013, 2016 Francis G.
  *
  * This file is part of ChatServer.
  *
@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +38,7 @@ import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.ChannelDetails;
 import com.sundays.chat.io.ChannelGroupData;
 import com.sundays.chat.io.ChannelGroupType;
-import com.sundays.chat.server.channel.ChannelGroup;
+import com.sundays.chat.server.channel.impl.ChannelGroup;
 
 public class JDBCChannelSave implements ChannelDataIO {
 
@@ -145,8 +146,7 @@ public class JDBCChannelSave implements ChannelDataIO {
 		try {
 			if (detailFetchQuery == null) {
 				detailFetchQuery = dbCon.getConnection().prepareStatement(
-						"SELECT `id`, `name`, `abbrieviation`, "
-								+ "`permissions`, `rankNames`, `trackMessages`," + "`owner`" + " FROM `"
+						"SELECT `id`, `uuid`, `name`, `abbrieviation`, `owner`" + " FROM `"
 								+ detailTableName + "` WHERE `id` = ?");
 			}
 			detailFetchQuery.setInt(1, channelID);
@@ -154,10 +154,10 @@ public class JDBCChannelSave implements ChannelDataIO {
 			ResultSet res = detailFetchQuery.getResultSet();
 			while (res.next()) {
 				details = new ChannelDetails(res.getInt(1),// Channel ID
-						res.getString(2),// Channel Name
-						res.getString(3),// Channel Abbreviation
-						res.getBoolean(6),// Whether or not to track messages
-						res.getInt(7));// Channel owner userID
+						UUID.fromString(res.getString(2)),
+						res.getString(3),// Channel Name
+						res.getString(4),// Channel Abbreviation
+						res.getInt(5));// Channel owner userID
 			}
 		} catch (SQLException ex) {
 			logger.error("Failed to fetch details for channel " + channelID, ex);

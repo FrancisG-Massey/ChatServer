@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2015 Francis G.
+ * Copyright (c) 2013, 2016 Francis G.
  *
  * This file is part of ChatServer.
  *
@@ -16,17 +16,18 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.server.channel;
+package com.sundays.chat.server.channel.impl;
 
 import java.awt.Color;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -40,6 +41,11 @@ import com.sundays.chat.io.IOManager;
 import com.sundays.chat.server.Settings;
 import com.sundays.chat.server.TaskScheduler;
 import com.sundays.chat.server.TaskScheduler.TaskPriority;
+import com.sundays.chat.server.channel.ChannelAPI;
+import com.sundays.chat.server.channel.ChannelNotFoundException;
+import com.sundays.chat.server.channel.ChannelResponse;
+import com.sundays.chat.server.channel.ChannelResponseType;
+import com.sundays.chat.server.channel.ChannelUser;
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.message.MessageType;
 import com.sundays.chat.server.user.UserLookup;
@@ -50,7 +56,7 @@ import com.sundays.chat.server.user.UserLookup;
  * 
  * @author Francis
  */
-public class ChannelManager {
+public class ChannelManager implements ChannelAPI {
 	
 	/**
 	 * 
@@ -94,7 +100,7 @@ public class ChannelManager {
         messageFactory = ChannelPacketFactory.getInstance();
     }
     
-    private void setTasks (TaskScheduler taskQueue) {
+    private final void setTasks (TaskScheduler taskQueue) {
     	taskQueue.scheduleStandardTask(getDefaultCleanups(),//Adds the default tasks to the cleanup thread.
         		5, Settings.channelCleanupThreadFrequency, TimeUnit.MINUTES, true);//Schedule the channel cleanup thread, which removes any obsolete information on a regular basis and saves the channel permanent data.
     	taskQueue.addShutdownTask(new Runnable () {
@@ -172,7 +178,7 @@ public class ChannelManager {
 		};
 	}
     
-    public boolean channelExists (int channelID) {
+    private boolean channelExists (int channelID) {
     	try {
 			return channelIndex.lookupById(channelID).isPresent();
 		} catch (IOException ex) {
@@ -180,32 +186,17 @@ public class ChannelManager {
 			return false;
 		}
     }
-    
-    public boolean channelLoaded (int channelID) {
-    	return channels.containsKey(channelID);
-    }
-    
-    public int getChannelID (String name) {
-    	Optional<ChannelDetails> details;
-		try {
-			details = channelIndex.lookupByName(name);
-		} catch (IOException ex) {
-			logger.error("Failed to find ID for channel "+name+".", ex);
-			return -1;
-		}
-    	if (details.isPresent()) {
-    		return details.get().getId();
-    	} else {
-    		return -1;
-    	}
-    }
 
-    protected void loadChannel (int channelID) throws IOException {
+    protected void loadChannel (int channelID) {
         if (!channels.containsKey(channelID)) {
-            ChannelDetails details = channelIO.getChannelDetails(channelID);
-            channels.put(channelID, new Channel(channelID, details, channelIO));
-            
-            logger.debug("Channel '"+channels.get(channelID).getName() +"' has been loaded onto the server.");
+        	try {
+	            ChannelDetails details = channelIO.getChannelDetails(channelID);
+	            channels.put(channelID, new Channel(channelID, details, channelIO));
+	            
+	            logger.debug("Channel '"+channels.get(channelID).getName() +"' has been loaded onto the server.");
+        	} catch (IOException ex) {
+        		logger.error("Failed to load channel "+channelID, ex);
+        	}
         }        
     }
     
@@ -241,7 +232,7 @@ public class ChannelManager {
 	    	c.unloadInitialised = true;
             for (ChannelUser u : c.getUsers()) {
             	this.sendChannelLocalMessage(u, "You have been removed from the channel.", 155, c.getId(), Color.RED);
-            	leaveChannel(u, c.getId());
+            	leave(u, c.getId());
             }            
             channels.remove(c.getId());
             logger.info("Channel '"+c.getName()+"' has been unloaded from the server.");
@@ -322,63 +313,10 @@ public class ChannelManager {
     	//TODO: Implement
     }
     
-    /**
-     * Gets the basic details for this channel, including the following items:
-     * <ul>
-     * 	<li>memberCount - The number of members belonging to the channel</li>
-     *  <li>guestsCanJoin - True if users who aren't channenl members can join, false otherwise</li>
-     *  <li>name - The name of the channel</li>
-     *  <li>welcomeMessage - The message displayed to users when they join the channel</li>
-     *  <li>messageColour - The colour used to display the welcome message</li>
-     *  <li>owner.id - The user ID of the channel owner</li>
-     *  <li>owner.name - The username of the channel owner</li>
-     * </ul>
-     * @param channelID The ID of the channel to retrieve details for
-     * @param load True if the channel should be loaded (if not already), false otherwise
-     * @return A {@link MessagePayload} containing the channel details, or null if the details couldn't be found
-     */
-    public MessagePayload getChannelDetails (int channelID, boolean load) {
-        Channel channel = getChannel(channelID);
-        if (channel == null) {
-        	if (!load) {
-        		return null;
-        	}
-        	try {
-				loadChannel(channelID);
-			} catch (IOException ex) {
-				logger.error("Failed to load channel "+channelID, ex);
-				return null;
-			}
-        	channel = getChannel(channelID);
-        	if (channel == null) {
-        		return null;
-        	}
-        }
-        return messageFactory.createDetailsMessage(channel, userManager);
-    }
-        
-    public MessagePayload getUserList (int channelID) {
-    	Channel channel = getChannel(channelID);
-        MessagePayload channelList;
-        if (channel == null) {
-        	channelList = new MessagePayload();
-        	channelList.put("id", channelID);
-			channelList.put("totalUsers", 0);	
-        } else {
-        	channelList = messageFactory.createChannelUserList(channel);
-        }
-        return channelList;
-    }
-    
     public MessagePayload getMemberList (int channelID) {
         Channel channel = getChannel(channelID);
         if (channel == null) {
-        	try {
-				loadChannel(channelID);
-			} catch (IOException ex) {
-				logger.error("Failed to load channel "+channelID, ex);
-				return null;
-			}
+			loadChannel(channelID);
         	channel = getChannel(channelID);
         	if (channel == null) {
         		return null;
@@ -387,41 +325,74 @@ public class ChannelManager {
         return messageFactory.createMemberList(channel, userManager);
     }
     
-    public MessagePayload getBanList (int channelID) {
-        Channel channel = getChannel(channelID);
+    public MessagePayload getChannelGroups (int channelID) {
+    	Channel channel = getChannel(channelID);
         if (channel == null) {
-        	try {
-				loadChannel(channelID);
-			} catch (IOException ex) {
-				logger.error("Failed to load channel "+channelID, ex);
-				return null;
-			}
+			loadChannel(channelID);
         	channel = getChannel(channelID);
         	if (channel == null) {
         		return null;
         	}
         }
-        return messageFactory.createBanList(channel, userManager);
-    }
-    
-    public MessagePayload getChannelGroups (int channelID) {
-    	Channel channel = getChannel(channelID);
-        if (channel == null) {
-        	try {
-				loadChannel(channelID);
-			} catch (IOException ex) {
-				logger.error("Failed to load channel "+channelID, ex);
-				return null;
-			}
-        	channel = getChannel(channelID);
-        }
     	return messageFactory.createGroupList(channel);
     }
     
     /*
-     * Basic functions (join, leave, send message)
+     * (non-Javadoc)
+     * @see com.sundays.chat.server.channel.ChannelAPI#channelLoaded(int)
      */
-    public ChannelResponse joinChannel (ChannelUser user, int channelId) {
+    public boolean isLoaded (int channelID) {
+    	return channels.containsKey(channelID);
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see com.sundays.chat.server.channel.ChannelAPI#getChannelDetails(int)
+     */
+	@Override
+	public ChannelDetails getDetails(int channelId) {
+		Channel channel = getChannel(channelId);
+		if (channel == null) {
+			throw new IllegalStateException("Channel "+channelId+" not loaded!");
+		}
+		return channel.getChannelDetails();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see com.sundays.chat.server.channel.ChannelAPI#getChannelUsers(int)
+	 */
+	@Override
+	public Collection<ChannelUser> getUsers(int channelId) throws IllegalStateException {
+		Channel channel = getChannel(channelId);
+		if (channel == null) {
+			throw new IllegalStateException("Channel "+channelId+" not loaded!");
+		}
+		return Collections.unmodifiableCollection(channel.getUsers());
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see com.sundays.chat.server.channel.ChannelAPI#getBans(int)
+	 */
+	@Override
+	public Collection<Integer> getBans(int channelId) throws ChannelNotFoundException {
+		Channel channel = getChannel(channelId);
+        if (channel == null) {
+			loadChannel(channelId);
+        	channel = getChannel(channelId);
+        	if (channel == null) {
+        		throw new ChannelNotFoundException(channelId);
+        	}
+        }
+		return Collections.unmodifiableCollection(channel.getBans());
+	}
+    
+    /* (non-Javadoc)
+	 * @see com.sundays.chat.server.channel.ChannelManagerAPI#joinChannel(com.sundays.chat.server.channel.ChannelUser, int)
+	 */
+    @Override
+	public ChannelResponse join (ChannelUser user, int channelId) throws ChannelNotFoundException {
         Channel channel = getChannel(channelId);
         if (channel == null) {
             //Checks if the channel is currently loaded
@@ -431,13 +402,11 @@ public class ChannelManager {
                 return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_FOUND);
             } else {
                 //If the channel exists but is not loaded, load the channel
-                try {
-					loadChannel(channelId);
-				} catch (IOException ex) {
-					logger.error("Failed to load channel "+channelId, ex);
-					return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR);
-				}
+				loadChannel(channelId);
                 channel = getChannel(channelId);
+                if (channel == null) {
+                	return new ChannelResponse(ChannelResponseType.UNKNOWN_ERROR);
+                }
             }            
         }
         if (channelId == user.getChannelId()) {
@@ -488,7 +457,11 @@ public class ChannelManager {
         return new ChannelResponse(ChannelResponseType.SUCCESS, args);
     }
     
-    public ChannelResponse sendMessage (ChannelUser user, int channelId, String message) {
+    /* (non-Javadoc)
+	 * @see com.sundays.chat.server.channel.ChannelManagerAPI#sendMessage(com.sundays.chat.server.channel.ChannelUser, int, java.lang.String)
+	 */
+    @Override
+	public ChannelResponse sendMessage (ChannelUser user, int channelId, String message) {
         Channel channel = getChannel(channelId);
         if (channel == null) {
         	//105 Cannot send message: not currently in a channel.
@@ -521,7 +494,11 @@ public class ChannelManager {
         return new ChannelResponse(ChannelResponseType.SUCCESS);
     }
 
-    public ChannelResponse leaveChannel (ChannelUser user, int channelId) {
+    /* (non-Javadoc)
+	 * @see com.sundays.chat.server.channel.ChannelManagerAPI#leaveChannel(com.sundays.chat.server.channel.ChannelUser, int)
+	 */
+    @Override
+	public ChannelResponse leave (ChannelUser user, int channelId) {
         Channel channel = getChannel(channelId);
     	if (channelId == -1) {
     		return new ChannelResponse(ChannelResponseType.NO_CHANGE);
@@ -554,7 +531,11 @@ public class ChannelManager {
     /*
      * Moderator functions
      */
-    public ChannelResponse resetChannel (ChannelUser user, int channelId) {
+    /* (non-Javadoc)
+	 * @see com.sundays.chat.server.channel.ChannelManagerAPI#resetChannel(com.sundays.chat.server.channel.ChannelUser, int)
+	 */
+    @Override
+	public ChannelResponse reset (ChannelUser user, int channelId) {
         Channel channel = getChannel(channelId);
         if (channel == null) {//The channel is not currently loaded
         	//107 The channel you have attempted to reset is not loaded.\nResetting will have no effect.
@@ -576,7 +557,11 @@ public class ChannelManager {
         return new ChannelResponse(ChannelResponseType.SUCCESS);
     }
     
-    public ChannelResponse kickUser (ChannelUser user, int channelId, int kickTargetId) {
+    /* (non-Javadoc)
+	 * @see com.sundays.chat.server.channel.ChannelManagerAPI#kickUser(com.sundays.chat.server.channel.ChannelUser, int, int)
+	 */
+    @Override
+	public ChannelResponse kickUser (ChannelUser user, int channelId, int kickTargetId) {
         Channel channel = getChannel(channelId);
         if (channel == null) {//The channel is not currently loaded
         	//111 The channel you have attempted to kick this user from is not loaded.
@@ -599,7 +584,7 @@ public class ChannelManager {
         	//114 You can only kick users with a lower rank level than yours.
             return new ChannelResponse(ChannelResponseType.NOT_AUTHORISED_SPECIFIC);
         }
-        leaveChannel(kickedUser, channelId);
+        leave(kickedUser, channelId);
         sendChannelLocalMessage(kickedUser, "You have been kicked from the channel.", 115, channelId, Color.RED);
         channel.setTempBan(kickTargetId, 60_000);//Sets a 60 second temporary ban (gives the user performing the kick a chance to choose whether or not to temporarily ban)
         
@@ -609,7 +594,11 @@ public class ChannelManager {
         return new ChannelResponse(ChannelResponseType.SUCCESS, args);
     }
     
-    public ChannelResponse tempBanUser (ChannelUser user, int channelId, int banTargetId, int durationMins) {
+    /* (non-Javadoc)
+	 * @see com.sundays.chat.server.channel.ChannelManagerAPI#tempBanUser(com.sundays.chat.server.channel.ChannelUser, int, int, int)
+	 */
+    @Override
+	public ChannelResponse tempBanUser (ChannelUser user, int channelId, int banTargetId, int durationMins) {
         Channel channel = getChannel(channelId);
         if (channel == null) {//The channel is not currently loaded
         	//117 The channel you have attempted to temporarily ban this user from is not loaded.
@@ -689,7 +678,11 @@ public class ChannelManager {
 		return new ChannelResponse(ChannelResponseType.SUCCESS, args);
     }
     
-    public ChannelResponse setAttribute (ChannelUser user, int channelId, String key, Serializable value) {
+    /* (non-Javadoc)
+	 * @see com.sundays.chat.server.channel.ChannelManagerAPI#setAttribute(com.sundays.chat.server.channel.ChannelUser, int, java.lang.String, java.io.Serializable)
+	 */
+    @Override
+	public ChannelResponse setAttribute (ChannelUser user, int channelId, String key, Serializable value) {
     	Channel channel = getChannel(channelId);
     	if (channel == null) {//The channel is not currently loaded
         	return new ChannelResponse(ChannelResponseType.CHANNEL_NOT_LOADED);
@@ -725,7 +718,11 @@ public class ChannelManager {
     	return new ChannelResponse(ChannelResponseType.SUCCESS);
     }
     
-    public ChannelResponse addMember (ChannelUser user, int channelID, int userId) {
+    /* (non-Javadoc)
+	 * @see com.sundays.chat.server.channel.ChannelManagerAPI#addMember(com.sundays.chat.server.channel.ChannelUser, int, int)
+	 */
+    @Override
+	public ChannelResponse addMember (ChannelUser user, int channelID, int userId) {
     	Channel channel = getChannel(channelID);
         if (channel == null) {
         	//If the channel was not found, send an error message
@@ -781,7 +778,11 @@ public class ChannelManager {
         return new ChannelResponse(ChannelResponseType.SUCCESS, args);
     }
     
-    public ChannelResponse updateMember (ChannelUser user, int channelId, int userId, int groupId) {
+    /* (non-Javadoc)
+	 * @see com.sundays.chat.server.channel.ChannelManagerAPI#updateMember(com.sundays.chat.server.channel.ChannelUser, int, int, int)
+	 */
+    @Override
+	public ChannelResponse updateMember (ChannelUser user, int channelId, int userId, int groupId) {
         Channel channel = getChannel(channelId);
         if (channel == null) {
         	//158 The channel must be loaded before you can modify rank data.\nTry joining the channel first.
@@ -845,7 +846,11 @@ public class ChannelManager {
         return new ChannelResponse(ChannelResponseType.SUCCESS, args);
     }
     
-    public ChannelResponse removeMember (ChannelUser user, int channelID, int userId) {
+    /* (non-Javadoc)
+	 * @see com.sundays.chat.server.channel.ChannelManagerAPI#removeMember(com.sundays.chat.server.channel.ChannelUser, int, int)
+	 */
+    @Override
+	public ChannelResponse removeMember (ChannelUser user, int channelID, int userId) {
     	Channel channel = getChannel(channelID);
         if (channel == null) {//If the channel was not found, send an error message
         	//158 The channel must be loaded before you can modify rank data.\nTry joining the channel first.
@@ -903,7 +908,11 @@ public class ChannelManager {
         return new ChannelResponse(ChannelResponseType.SUCCESS, args);
     }
     
-    public ChannelResponse addBan (ChannelUser user, int channelID, int userID) {
+    /* (non-Javadoc)
+	 * @see com.sundays.chat.server.channel.ChannelManagerAPI#addBan(com.sundays.chat.server.channel.ChannelUser, int, int)
+	 */
+    @Override
+	public ChannelResponse addBan (ChannelUser user, int channelID, int userID) {
         Channel channel = getChannel(channelID);
         if (channel == null) {
         	//161 The channel must be loaded before you can modify ban data.\nTry joining the channel first.
@@ -949,7 +958,11 @@ public class ChannelManager {
         return new ChannelResponse(ChannelResponseType.SUCCESS, args);
     }
     
-    public ChannelResponse removeBan (ChannelUser user, int channelID, int userID) {
+    /* (non-Javadoc)
+	 * @see com.sundays.chat.server.channel.ChannelManagerAPI#removeBan(com.sundays.chat.server.channel.ChannelUser, int, int)
+	 */
+    @Override
+	public ChannelResponse removeBan (ChannelUser user, int channelID, int userID) {
         Channel channel = getChannel(channelID);
         if (channel == null) {
         	//161 The channel must be loaded before you can modify ban data.\nTry joining the channel first.

@@ -1,4 +1,22 @@
-package com.sundays.chat.server.channel;
+/*******************************************************************************
+ * Copyright (c) 2013, 2016 Francis G.
+ *
+ * This file is part of ChatServer.
+ *
+ * ChatServer is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * ChatServer is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
+ *******************************************************************************/
+package com.sundays.chat.server.channel.impl;
 
 import static org.junit.Assert.*;
 import static org.junit.Assume.*;
@@ -25,6 +43,12 @@ import com.sundays.chat.io.ChannelGroupType;
 import com.sundays.chat.io.ChannelIndex;
 import com.sundays.chat.io.IOManager;
 import com.sundays.chat.server.TaskScheduler;
+import com.sundays.chat.server.channel.ChannelResponse;
+import com.sundays.chat.server.channel.ChannelResponseType;
+import com.sundays.chat.server.channel.ChannelUser;
+import com.sundays.chat.server.channel.impl.Channel;
+import com.sundays.chat.server.channel.impl.ChannelGroup;
+import com.sundays.chat.server.channel.impl.ChannelManager;
 import com.sundays.chat.server.user.UserLookup;
 
 /**
@@ -98,7 +122,7 @@ public class ChannelRequestTest {
 	}
 	
 	private void addChannelUser(ChannelUser user, int channelId) {
-		ChannelResponse response = channelManager.joinChannel(user, channelId);
+		ChannelResponse response = channelManager.join(user, channelId);
 
 		assumeTrue(response.getType() == ChannelResponseType.SUCCESS);//Make sure the user actually joined the channel		
 		Channel channel = channelManager.getChannel(channelId);
@@ -116,7 +140,7 @@ public class ChannelRequestTest {
 	@Test
 	public void testJoinNoChannel() throws IOException {
 		when(index.lookupById(101)).thenReturn(Optional.empty());
-		ChannelResponse response = channelManager.joinChannel(user, 101);
+		ChannelResponse response = channelManager.join(user, 101);
 		assumeTrue(channelManager.getChannel(101) == null);
 		
 		assertEquals(ChannelResponseType.CHANNEL_NOT_FOUND, response.getType());
@@ -126,7 +150,7 @@ public class ChannelRequestTest {
 	public void testJoinBanned() throws IOException {
 		mockChannelDetails(channelIO, 101);
 		mockBan(channelIO, 101, 150);
-		ChannelResponse response = channelManager.joinChannel(user, 101);
+		ChannelResponse response = channelManager.join(user, 101);
 		assertEquals(ChannelResponseType.BANNED, response.getType());
 		Channel channel = channelManager.getChannel(101);
 		assertFalse(channel.getUsers().contains(user));
@@ -142,7 +166,7 @@ public class ChannelRequestTest {
 		channel.setTempBan(user.getId(), Integer.MAX_VALUE);
 		assumeTrue(channel.getTempBans().containsKey(user.getId()));
 		
-		ChannelResponse response = channelManager.joinChannel(user, 101);
+		ChannelResponse response = channelManager.join(user, 101);
 		assertEquals(ChannelResponseType.BANNED_TEMP, response.getType());
 		assertFalse(channel.getUsers().contains(user));
 	}
@@ -152,7 +176,7 @@ public class ChannelRequestTest {
 		mockChannelDetails(channelIO, 101);
 		mockChannelGroup(channelIO, 101, ChannelGroup.GUEST_GROUP, ChannelGroupType.ADMINISTRATOR);
 		
-		ChannelResponse response = channelManager.joinChannel(user, 101);
+		ChannelResponse response = channelManager.join(user, 101);
 		assertEquals(ChannelResponseType.NOT_AUTHORISED_GENERAL, response.getType());
 		Channel channel = channelManager.getChannel(101);
 		assertFalse(channel.getUsers().contains(user));
@@ -163,7 +187,7 @@ public class ChannelRequestTest {
 		mockChannelDetails(channelIO, 101);
 		mockChannelGroup(channelIO, 101, ChannelGroup.GUEST_GROUP, ChannelGroupType.ADMINISTRATOR, "join");
 		
-		ChannelResponse response = channelManager.joinChannel(user, 101);
+		ChannelResponse response = channelManager.join(user, 101);
 		assertEquals(ChannelResponseType.SUCCESS, response.getType());
 		Channel channel = channelManager.getChannel(101);
 		assertTrue(channel.getUsers().contains(user));
@@ -178,7 +202,7 @@ public class ChannelRequestTest {
 		Channel channel = channelManager.getChannel(101);
 		assumeFalse(channel.getUsers().contains(user));
 		
-		ChannelResponse response = channelManager.leaveChannel(user, 101);
+		ChannelResponse response = channelManager.leave(user, 101);
 		assertEquals(ChannelResponseType.NO_CHANGE, response.getType());
 	}
 
@@ -186,7 +210,7 @@ public class ChannelRequestTest {
 	public void testLeaveSuccess() throws IOException {
 		mockChannelDetails(channelIO, 101);
 		mockChannelGroup(channelIO, 101, ChannelGroup.GUEST_GROUP,ChannelGroupType.ADMINISTRATOR, "join");
-		ChannelResponse response = channelManager.joinChannel(user, 101);
+		ChannelResponse response = channelManager.join(user, 101);
 		
 		assumeTrue(response.getType() == ChannelResponseType.SUCCESS);//Make sure the user actually joined the channel		
 		Channel channel = channelManager.getChannel(101);
@@ -194,7 +218,7 @@ public class ChannelRequestTest {
 
 		when(user.getChannelId()).thenReturn(101);//Make the user return 101 as the channel ID
 		
-		response = channelManager.leaveChannel(user, 101);
+		response = channelManager.leave(user, 101);
 		assertEquals(ChannelResponseType.SUCCESS, response.getType());//Check the return code
 		assertFalse(channel.getUsers().contains(user));//Make sure the user was removed
 		verify(user).setChannel(-1);//Make sure the user isn't marked as in the channel
@@ -203,7 +227,7 @@ public class ChannelRequestTest {
 	@Test
 	public void testResetChannelNotLoaded() {
 		assumeTrue(channelManager.getChannel(101) == null);
-		ChannelResponse response = channelManager.resetChannel(user, 101);
+		ChannelResponse response = channelManager.reset(user, 101);
 		
 		assertEquals(ChannelResponseType.CHANNEL_NOT_LOADED, response.getType());
 	}
@@ -213,7 +237,7 @@ public class ChannelRequestTest {
 		mockChannelDetails(channelIO, 101);
 		channelManager.loadChannel(101);
 		assumeFalse(channelManager.getChannel(101) == null);
-		ChannelResponse response = channelManager.resetChannel(user, 101);
+		ChannelResponse response = channelManager.reset(user, 101);
 		
 		assertEquals(ChannelResponseType.NOT_AUTHORISED_GENERAL, response.getType());
 		Channel channel = channelManager.getChannel(101);
@@ -228,7 +252,7 @@ public class ChannelRequestTest {
 		channelManager.loadChannel(101);
 		assumeFalse(channelManager.getChannel(101) == null);
 		
-		ChannelResponse response = channelManager.resetChannel(user, 101);
+		ChannelResponse response = channelManager.reset(user, 101);
 		
 		assertEquals(ChannelResponseType.SUCCESS, response.getType());
 		Channel channel = channelManager.getChannel(101);

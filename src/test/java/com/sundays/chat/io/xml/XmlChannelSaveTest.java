@@ -37,7 +37,7 @@ import org.junit.Test;
 
 import com.google.common.io.Files;
 import com.sundays.chat.io.ChannelDetails;
-import com.sundays.chat.server.channel.ChannelGroup;
+import com.sundays.chat.server.channel.impl.ChannelGroup;
 
 public class XmlChannelSaveTest {
 	

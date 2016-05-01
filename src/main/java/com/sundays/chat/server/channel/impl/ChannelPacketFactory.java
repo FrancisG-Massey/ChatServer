@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2015 Francis G.
+ * Copyright (c) 2013, 2016 Francis G.
  *
  * This file is part of ChatServer.
  *
@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.server.channel;
+package com.sundays.chat.server.channel.impl;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.sundays.chat.server.channel.ChannelUser;
 import com.sundays.chat.server.message.MessagePayload;
 import com.sundays.chat.server.user.UserLookup;
 

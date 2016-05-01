@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2015 Francis G.
+ * Copyright (c) 2013, 2016 Francis G.
  *
  * This file is part of ChatServer.
  *
@@ -19,4 +19,4 @@
 /**
  * 
  */
-package com.sundays.chat.server.channel;
+package com.sundays.chat.server.channel.impl;

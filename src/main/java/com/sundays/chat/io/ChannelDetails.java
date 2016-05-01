@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2015 Francis G.
+ * Copyright (c) 2013, 2016 Francis G.
  *
  * This file is part of ChatServer.
  *
@@ -32,19 +32,25 @@ public final class ChannelDetails {
 	private String alias;
 	private String description;
 	private int owner;
-	private boolean trackMessages;
 	
 	public ChannelDetails () {
 		
 	}
 	
-	public ChannelDetails (int id, String name, 
-			String abbreviation, boolean trackMessages, int owner) {
+	public ChannelDetails (ChannelDetails details) {
+		this.id = details.id;
+		this.uuid = details.uuid;
+		this.name = details.name;
+		this.alias = details.alias;
+		this.owner = details.owner;
+	}
+	
+	public ChannelDetails (int id, UUID uuid, String name, String alias, int owner) {
 		//Full constructor used when data can be added all at once
 		this.id = id;
+		this.uuid = uuid;
 		this.name = name;
-		this.alias = abbreviation;
-		this.trackMessages = trackMessages;
+		this.alias = alias;
 		this.owner = owner;
 	}
 	
@@ -104,26 +110,12 @@ public final class ChannelDetails {
 		this.owner = owner;
 	}
 
-	/**
-	 * @return the trackMessages
-	 */
-	public boolean isTrackMessages() {
-		return trackMessages;
-	}
-
-	/**
-	 * @param trackMessages the trackMessages to set
-	 */
-	public void setTrackMessages(boolean trackMessages) {
-		this.trackMessages = trackMessages;
-	}
-
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
 		return "ChannelDetails [id=" + id + ", name=" + name + ", alias=" + alias + ", description="
-				+ description + ", owner=" + owner + ", trackMessages=" + trackMessages + "]";
+				+ description + ", owner=" + owner + "]";
 	}
 }

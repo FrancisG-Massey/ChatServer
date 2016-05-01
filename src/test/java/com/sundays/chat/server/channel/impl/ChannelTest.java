@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2015 Francis G.
+ * Copyright (c) 2013, 2016 Francis G.
  *
  * This file is part of ChatServer.
  *
@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with ChatServer.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
-package com.sundays.chat.server.channel;
+package com.sundays.chat.server.channel.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -38,6 +38,9 @@ import org.junit.Test;
 
 import com.sundays.chat.io.ChannelDataIO;
 import com.sundays.chat.io.UserDetails;
+import com.sundays.chat.server.channel.ChannelUser;
+import com.sundays.chat.server.channel.impl.Channel;
+import com.sundays.chat.server.channel.impl.ChannelGroup;
 import com.sundays.chat.server.user.User;
 
 public class ChannelTest {
