@@ -1,4 +1,11 @@
 /build
 /bin
 
+
+
 *~
+
+# Eclipse project files
+.settings
+.project
+.classpath
